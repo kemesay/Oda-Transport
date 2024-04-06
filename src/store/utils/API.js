@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const BACKEND_API = axios.create({
-  baseURL: "https://api.odatransportation.com",
+  baseURL: "http://api.odatransportation.com",
 });
 
 BACKEND_API.interceptors.request.use((config) => {

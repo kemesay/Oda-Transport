@@ -1,10 +1,10 @@
 
 import React from "react"
 export const columns =  [
-    {
-        accessorKey: 'userId',
-        header: 'ID',
-      },    
+    // {
+    //     accessorKey: 'userId',
+    //     header: 'ID',
+    //   },    
       {
         accessorKey: 'fullName',
         header: 'Full Name'
@@ -19,10 +19,16 @@ export const columns =  [
         accessorKey: 'phoneNumber',
         header: 'Phone Number',
       },    
+      // {
+      //   accessorKey: 'role',
+      //   header: 'Role',
+      // },
+
       {
-        accessorKey: 'role',
-        header: 'Role',
+        accessorKey: 'password',
+        header: 'Password',
       }
+
   ]
 
  

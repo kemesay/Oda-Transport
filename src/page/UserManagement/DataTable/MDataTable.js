@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from "react";
 import { useMemo } from "react";
 import {
   MRT_EditActionButtons,
   MaterialReactTable,
   useMaterialReactTable,
 } from "material-react-table";
+
 import {
   Box,
   Button,
@@ -12,25 +13,23 @@ import {
   DialogContent,
   DialogTitle,
   MenuItem,
+  TextField,
   Typography,
-
 } from "@mui/material";
-
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { mkConfig, generateCsv, download } from "export-to-csv";
 import { AccountCircle, DeleteForever, Share } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 const csvConfig = mkConfig({
   fieldSeparator: ",",
   decimalSeparator: ".",
   useKeysAsHeaders: true,
 });
-
 const MDataTable = (props) => {
-
+  const navigate = useNavigate();
   const columns = useMemo(() => props.columns, []);
-
   const handleExportRows = (rows) => {
     const rowData = rows.map((row) => row.original);
     const csv = generateCsv(csvConfig)(rowData);
@@ -56,8 +55,8 @@ const MDataTable = (props) => {
     onCreatingRowSave: props?.handleNewAdd,
     onEditingRowSave: props?.handleEdit,
     getRowId: (row) => row?.id,
-    onRowSelectionChange:props?.setRowSelection,
-    renderDetailPanel:props?.renderDetailPanel,
+    onRowSelectionChange: props?.setRowSelection,
+    renderDetailPanel: props?.renderDetailPanel,
     muiSearchTextFieldProps: {
       size: "small",
       variant: "outlined",
@@ -91,7 +90,7 @@ const MDataTable = (props) => {
     muiTableBodyCellProps: {
       sx: {
         fontSize: "13px",
-        padding: '2px',
+        padding: "2px",
         fontFamily: "Roboto",
         borderRight: "1.5px solid #EDE7E7",
         textAlign: "center",
@@ -105,19 +104,23 @@ const MDataTable = (props) => {
       },
     },
     renderCreateRowDialogContent: props?.add
-      ? ({ table, row, internalEditComponents }) => (
-          <>
-            <DialogTitle variant="h5">{props?.title}</DialogTitle>
-            <DialogContent
-              sx={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-            >
-              {internalEditComponents}
-            </DialogContent>
-            <DialogActions>
-              <MRT_EditActionButtons variant="text" table={table} row={row} />
-            </DialogActions>
-          </>
-        )
+      ? ({ table, row, internalEditComponents }) => {
+          console.log("internalEditComponents", internalEditComponents);
+
+          return (
+            <>
+              <DialogTitle variant="h5">{props?.title}</DialogTitle>
+              <DialogContent
+                sx={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+              >
+                {internalEditComponents}
+              </DialogContent>
+              <DialogActions>
+                <MRT_EditActionButtons variant="text" table={table} row={row} />
+              </DialogActions>
+            </>
+          );
+        }
       : () => {},
 
     renderEditRowDialogContent: ({ table, row, internalEditComponents }) => (
@@ -133,23 +136,6 @@ const MDataTable = (props) => {
         </DialogActions>
       </>
     ),
-    // renderRowActions: ({ row, table }) => (
-    //   <Box sx={{ display: "flex", gap: "1rem" }}>
-    //     <Tooltip title="Edit">
-    //       <IconButton onClick={() => table.setEditingRow(row)}>
-    //         <EditIcon />
-    //       </IconButton>
-    //     </Tooltip>
-    //     <Tooltip title="Delete">
-    //       <IconButton
-    //         color="error"
-    //         onClick={() => props?.openDeleteConfirmModal(row)}
-    //       >
-    //         <DeleteIcon />
-    //       </IconButton>
-    //     </Tooltip>
-    //   </Box>
-    // ),
 
     renderRowActionMenuItems: ({ table, closeMenu, row }) => [
       <MenuItem
@@ -162,33 +148,23 @@ const MDataTable = (props) => {
       >
         <AccountCircle /> View
       </MenuItem>,
-      <MenuItem
-      hidden={props?.handleManageClick ? "" : true}
-      key={2}
-      onClick={() => {
-        props.handleManageClick(row.original); // Call the navigation function with the row data
-        closeMenu();
-      }}
-    >
-      <ManageAccountsIcon /> Manage
-    </MenuItem>,
-
-      <MenuItem 
-      hidden={props?.openDeleteConfirmModal?"":true}
-      key={3} 
-      onClick={() => props?.openDeleteConfirmModal(row)}>
-        <DeleteForever /> Delete
-      </MenuItem>,
-
-      // <MenuItem
-      //   key={4}
+      //   <MenuItem
+      //   hidden={props?.handleManageClick ? "" : true}
+      //   key={2}
       //   onClick={() => {
-      //     console.info("Share", row);
+      //     props.handleManageClick(row.original); // Call the navigation function with the row data
       //     closeMenu();
       //   }}
       // >
-      //   <Share /> Share
+      //   <ManageAccountsIcon /> Manage
       // </MenuItem>,
+      <MenuItem
+        hidden={props?.openDeleteConfirmModal ? "" : true}
+        key={3}
+        onClick={() => props?.openDeleteConfirmModal(row)}
+      >
+        <DeleteForever /> Delete
+      </MenuItem>,
     ],
 
     renderTopToolbarCustomActions: props?.add
@@ -208,17 +184,56 @@ const MDataTable = (props) => {
                 flexWrap: "wrap",
               }}
             >
+              {props.title === "Air ports" ? (
+                <Button
+                  // variant="contained"
+                  sx={{
+                    color: "black",
+                    backgroundColor: "info.main",
+                    backgroundColor: "green",
+                  }}
+                  onClick={() => {
+                    navigate("/dashboard/add-airport");
+                  }}
+                >
+                  {`Add NEW AIRPORT`}
+                </Button>
+              ) : props.title == "Car" ? (
+                <Button
+                  // variant="contained"
+                  sx={{
+                    color: "black",
+                    backgroundColor: "info.main",
+                    backgroundColor: "green",
+                  }}
+                  onClick={() => {
+                    navigate("/dashboard/add-car");
+                  }}
+                >
+                  {`Add NEW CAR`}
+                </Button>
+              ) : (
+                <Button
+                  // variant="contained"
+                  sx={{
+                    color: "black",
+                    backgroundColor: "info.main",
+                    backgroundColor: "green",
+                  }}
+                  onClick={() => {
+                    table.setCreatingRow(true);
+                  }}
+                >
+                  {`Add NEW ${props?.add}` || "ADD NEW ENTITY"}
+                </Button>
+              )}
+
               <Button
-                // variant="contained"
-                style={{ color: "black" }}
-                onClick={() => {
-                  table.setCreatingRow(true);
+                sx={{
+                  color: "black",
+                  backgroundColor: "info.main",
+                  backgroundColor: "green",
                 }}
-              >
-                {`Add NEW ${props?.add}` || "ADD NEW ENTITY"}
-              </Button>
-              <Button
-                //export all data that is currently in the table (ignore pagination, sorting, filtering, etc.)
                 onClick={handleExportData}
                 startIcon={<FileDownloadIcon />}
                 style={{ color: "black" }}
@@ -231,7 +246,11 @@ const MDataTable = (props) => {
                   !table.getIsSomeRowsSelected() &&
                   !table.getIsAllRowsSelected()
                 }
-                //only export selected rows
+                sx={{
+                  color: "black",
+                  backgroundColor: "info.main",
+                  backgroundColor: "green",
+                }}
                 onClick={() =>
                   handleExportRows(table.getSelectedRowModel().rows)
                 }
@@ -271,7 +290,7 @@ const MDataTable = (props) => {
     },
 
     state: {
-      rowSelection:props.rowSelection || {} ,
+      rowSelection: props.rowSelection || {},
       isLoading: props?.isLoading,
       showProgressBars: props.isRefetching,
       isSaving: props.isSaving,
@@ -286,7 +305,7 @@ const MDataTable = (props) => {
           color: "green",
           fontFamily: "Roboto",
           background: "white",
-          padding: '10px 20px',
+          padding: "10px 20px",
           fontSize: "16px",
           fontWeight: "530",
           fontStyle: "normal",
@@ -297,9 +316,9 @@ const MDataTable = (props) => {
       >
         {props.headerTitle}
       </Typography>
-
       <MaterialReactTable table={table} />
     </div>
   );
 };
+MDataTable.defaultProps = {};
 export default MDataTable;

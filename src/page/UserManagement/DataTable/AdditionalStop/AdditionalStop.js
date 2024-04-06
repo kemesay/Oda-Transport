@@ -5,14 +5,13 @@ import useGetData from "../../../../store/hooks/useGetData";
 import usePostData from "../../../../store/hooks/usePostData";
 import usePutData from "../../../../store/hooks/usePutData";
 import { columns } from "./columns";
+import { useNavigate } from "react-router-dom";
 
-function EtraOptions() {
-  const [extraOptionId, setExtraOptionId] = React.useState(null);
+function AddtionalStop() {
+  const [additionalStopId, setAdditionalStopId] = React.useState(null);
+  const navigate = useNavigate();
 
-  let endpoint = `/api/v1/extra-options`;
-  let getEndpoint = `/api/v1/extra-options`;
-  let deleteEndpoint = `/api/v1/extra-options`;
-  let editEndpoint = `/api/v1/extra-options`;
+  let endpoint = `/api/v1/additional-stops`;
 
   const {
     data: response,
@@ -20,7 +19,7 @@ function EtraOptions() {
     isError: isErrorGet,
     isFetching: isFetchingTax,
     error: errorGet,
-  } = useGetData(getEndpoint);
+  } = useGetData(endpoint);
 
   const { mutate, isLoading, isError, data, isSuccess } = usePostData(endpoint);
   const handleNewAdd = async ({ values, table }) => {
@@ -35,30 +34,42 @@ function EtraOptions() {
     isError: isErrorUpdate,
     isSuccess: setSuccessUpdate,
     error: errorupdate,
-  } = usePutData(editEndpoint,extraOptionId, data);
+  } = usePutData(endpoint, additionalStopId, data);
 
   const handleEdit = async ({ row, values, table }) => {
     update({
-      endpoint: editEndpoint,
-      Id: row.original.extraOptionId,
+      endpoint: endpoint,
+      Id: row.original.additionalStopId,
       data: values,
     });
     table.setEditingRow(null);
   };
-
-  const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(deleteEndpoint, extraOptionId);
+  const handleViewClick = (rowData) => {
+    navigate("/dashboard/additionalstop/additional-stop-detail", { state: { rowData } });
+  };
+  const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(
+    endpoint,
+    additionalStopId
+  );
 
   const openDeleteConfirmModal = (row) => {
-    if (window.confirm("Are you sure you want to delete this Etra_option?")) {
-      deleteData({ endpoint: deleteEndpoint, Id: row.original.extraOptionId });
+    if (
+      window.confirm(
+        "Are you sure you want to delete this Addtional Stop?"
+      )
+    ) {
+      deleteData({
+        endpoint: endpoint,
+        Id: row.original.additionalStopId,
+      });
     }
   };
 
   return (
     <div>
       <MDataTable
-        headerTitle="Extra Options"
-        add="Extra Option"
+        headerTitle="Addtional Stop"
+        add="Addtional Stop"
         openDeleteConfirmModal={openDeleteConfirmModal}
         handleNewAdd={handleNewAdd}
         handleEdit={handleEdit}
@@ -67,9 +78,11 @@ function EtraOptions() {
         data={response || []}
         isLoading={isLoadingGet}
         isError={isErrorGet}
-        title={"Extra Option"}
+        title={"Addtional Stop"}
+        handleViewClick={handleViewClick}
+
       />
     </div>
   );
 }
-export default EtraOptions;
+export default AddtionalStop;

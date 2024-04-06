@@ -4,15 +4,16 @@ import useDeleteData from "../../../../store/hooks/useDeleteData";
 import useGetData from "../../../../store/hooks/useGetData";
 import usePostData from "../../../../store/hooks/usePostData";
 import usePutData from "../../../../store/hooks/usePutData";
-import MyComponent, { columns } from './columns';
+import { columns } from "./columns";
 import { useNavigate } from "react-router-dom";
 
-function Cars() {
-  const [carId, setCarId] = React.useState(null);
+function HourlyCharacter() {
+  const [hourlyCharacterId, setHourlyCharacterId] = React.useState(null);
   const navigate = useNavigate();
 
-  let endpoint = `/api/v1/cars`;
+  let endpoint = `/api/v1/hourly-charter-books`;
   
+
   const {
     data: response,
     isLoading: isLoadingGet,
@@ -24,7 +25,6 @@ function Cars() {
   const { mutate, isLoading, isError, data, isSuccess } = usePostData(endpoint);
   const handleNewAdd = async ({ values, table }) => {
     mutate(values);
-
     table.setCreatingRow(null);
   };
 
@@ -34,32 +34,40 @@ function Cars() {
     isError: isErrorUpdate,
     isSuccess: setSuccessUpdate,
     error: errorupdate,
-  } = usePutData(endpoint,carId, data);
+  } = usePutData(endpoint, hourlyCharacterId, data);
 
   const handleEdit = async ({ row, values, table }) => {
     update({
       endpoint: endpoint,
-      Id: row.original.carId,
+      Id: row.original.hourlyCharacterId,
       data: values,
     });
     table.setEditingRow(null);
   };
+  const handleViewClick = (rowData) => {
+    navigate("/dashboard/book/hourly-book-detail", { state: { rowData } });
+  };
 
-  const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(endpoint, carId);
+  const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(endpoint,hourlyCharacterId);
 
   const openDeleteConfirmModal = (row) => {
-    if (window.confirm("Are you sure you want to delete this Car?")) {
-      deleteData({ endpoint: endpoint, Id: row.original.carId });
+    if (
+      window.confirm(
+        "Are you sure you want to delete this Hourly Character Book?"
+      )
+    ) {
+      deleteData({
+        endpoint: endpoint,
+        Id: row.original.hourlyCharacterId,
+      });
     }
   };
-  const handleViewClick = (rowData) =>{
-    navigate('/dashboard/car/cardetails',{state:{rowData}})
-  }
+
   return (
     <div>
       <MDataTable
-        headerTitle="Cars"
-        add="Car"
+        headerTitle="Hourly Character Booking"
+        add="Hourly Character Book"
         openDeleteConfirmModal={openDeleteConfirmModal}
         handleNewAdd={handleNewAdd}
         handleEdit={handleEdit}
@@ -68,10 +76,11 @@ function Cars() {
         data={response || []}
         isLoading={isLoadingGet}
         isError={isErrorGet}
-        title={"Car"}
+        title={"Hourly Character Book"}
         handleViewClick={handleViewClick}
+
       />
     </div>
   );
 }
-export default Cars;
+export default HourlyCharacter;

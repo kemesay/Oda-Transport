@@ -4,14 +4,13 @@ import useDeleteData from "../../../../store/hooks/useDeleteData";
 import useGetData from "../../../../store/hooks/useGetData";
 import usePostData from "../../../../store/hooks/usePostData";
 import usePutData from "../../../../store/hooks/usePutData";
-import MyComponent, { columns } from './columns';
+import { columns } from "./columns";
 import { useNavigate } from "react-router-dom";
 
-function Cars() {
-  const [carId, setCarId] = React.useState(null);
+function ExtraOptions() {
+  const [extraOptionId, setExtraOptionId] = React.useState(null);
   const navigate = useNavigate();
-
-  let endpoint = `/api/v1/cars`;
+  let endpoint = `/api/v1/extra-options`;
   
   const {
     data: response,
@@ -34,32 +33,32 @@ function Cars() {
     isError: isErrorUpdate,
     isSuccess: setSuccessUpdate,
     error: errorupdate,
-  } = usePutData(endpoint,carId, data);
-
+  } = usePutData(endpoint,extraOptionId, data);
+  const handleViewClick = (rowData) => {
+    navigate("/dashboard/extra/extra-detail", { state: { rowData } });
+  };
   const handleEdit = async ({ row, values, table }) => {
     update({
       endpoint: endpoint,
-      Id: row.original.carId,
+      Id: row.original.extraOptionId,
       data: values,
     });
     table.setEditingRow(null);
   };
 
-  const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(endpoint, carId);
+  const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(endpoint, extraOptionId);
 
   const openDeleteConfirmModal = (row) => {
-    if (window.confirm("Are you sure you want to delete this Car?")) {
-      deleteData({ endpoint: endpoint, Id: row.original.carId });
+    if (window.confirm("Are you sure you want to delete this Extra_option?")) {
+      deleteData({ endpoint: endpoint, Id: row.original.extraOptionId });
     }
   };
-  const handleViewClick = (rowData) =>{
-    navigate('/dashboard/car/cardetails',{state:{rowData}})
-  }
+
   return (
     <div>
       <MDataTable
-        headerTitle="Cars"
-        add="Car"
+        headerTitle="Extra Options"
+        add="Extra Option"
         openDeleteConfirmModal={openDeleteConfirmModal}
         handleNewAdd={handleNewAdd}
         handleEdit={handleEdit}
@@ -68,10 +67,10 @@ function Cars() {
         data={response || []}
         isLoading={isLoadingGet}
         isError={isErrorGet}
-        title={"Car"}
+        title={"Extra Option"}
         handleViewClick={handleViewClick}
       />
     </div>
   );
 }
-export default Cars;
+export default ExtraOptions;

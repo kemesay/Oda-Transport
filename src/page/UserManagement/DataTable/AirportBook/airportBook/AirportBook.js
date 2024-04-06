@@ -1,15 +1,25 @@
 import React from "react";
-import MDataTable from "../MDataTable";
-import useDeleteData from "../../../../store/hooks/useDeleteData";
-import useGetData from "../../../../store/hooks/useGetData";
-import usePostData from "../../../../store/hooks/usePostData";
-import usePutData from "../../../../store/hooks/usePutData";
+import MDataTable from "../../MDataTable";
+import useDeleteData from "../../../../../store/hooks/useDeleteData";
+import useGetData12 from "../../../../../store/hooks/airbook";
+import usePostData from "../../../../../store/hooks/usePostData";
+import usePutData from "../../../../../store/hooks/usePutData";
 import { columns } from "./columns";
 import { useNavigate } from "react-router-dom";
-function PointToPointBooks() {
-  const [pointToPointBookId, setPointToPointBookId] = React.useState(null);
-const navigate = useNavigate();
-  let endpoint = `/api/v1/point-to-point-books`;
+
+function AirportBooks() {
+  const [airportBookId, setAirportBookId] = React.useState(null);
+  const navigate = useNavigate();
+
+  let endpoint = `/api/v1/airport-books`;
+  const queryParams = {
+    page: 1,
+    pageSize: 7,
+    paymentStatus: "PAID",
+    bookingStatus: "BOOKED",
+    sortDirection: "ASC",
+    // Add other query parameters here
+  };
 
   const {
     data: response,
@@ -17,7 +27,7 @@ const navigate = useNavigate();
     isError: isErrorGet,
     isFetching: isFetchingTax,
     error: errorGet,
-  } = useGetData(endpoint);
+  } = useGetData12(queryParams);
 
   const { mutate, isLoading, isError, data, isSuccess } = usePostData(endpoint);
   const handleNewAdd = async ({ values, table }) => {
@@ -32,44 +42,35 @@ const navigate = useNavigate();
     isError: isErrorUpdate,
     isSuccess: setSuccessUpdate,
     error: errorupdate,
-  } = usePutData(endpoint, pointToPointBookId, data);
+  } = usePutData(endpoint, airportBookId, data);
 
   const handleEdit = async ({ row, values, table }) => {
     update({
       endpoint: endpoint,
-      Id: row.original.pointToPointBookId,
+      Id: row.original.airportBookId,
       data: values,
     });
     table.setEditingRow(null);
   };
-
   const handleViewClick = (rowData) => {
-    navigate("/dashboard/book/p2p-book-detail", { state: { rowData } });
+    navigate("/dashboard/book/book-detail", { state: { rowData } });
   };
 
   const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(
     endpoint,
-    pointToPointBookId
+    airportBookId
   );
-
   const openDeleteConfirmModal = (row) => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this Point to Point Book?"
-      )
-    ) {
-      deleteData({
-        endpoint: endpoint,
-        Id: row.original.pointToPointBookId,
-      });
+    if (window.confirm("Are you sure you want to delete Airport Book?")) {
+      deleteData({ endpoint: endpoint, Id: row.original.airportBookId });
     }
   };
 
   return (
     <div>
       <MDataTable
-        headerTitle="Point to Point Books"
-        add="Point to Point Book"
+        headerTitle="AirportBooks"
+        add="Airport Book"
         openDeleteConfirmModal={openDeleteConfirmModal}
         handleNewAdd={handleNewAdd}
         handleEdit={handleEdit}
@@ -78,11 +79,10 @@ const navigate = useNavigate();
         data={response || []}
         isLoading={isLoadingGet}
         isError={isErrorGet}
-        title={"Point to Point Book"}
+        title={"Airport Book"}
         handleViewClick={handleViewClick}
-
       />
     </div>
   );
 }
-export default PointToPointBooks;
+export default AirportBooks;

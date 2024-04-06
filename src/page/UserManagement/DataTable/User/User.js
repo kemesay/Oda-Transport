@@ -4,17 +4,12 @@ import useDeleteData from "../../../../store/hooks/useDeleteData";
 import useGetData from "../../../../store/hooks/useGetData";
 import usePostData from "../../../../store/hooks/usePostData";
 import usePutData from "../../../../store/hooks/usePutData";
-
+import { useNavigate } from "react-router-dom";
 import { columns } from "./columns";
 
 function Users() {
   const [userId, setUserId] = React.useState(null);
-
   let endpoint = `/api/v1/users`;
-  // let getEndpoint = `/api/v1/users`;
-  // let deleteEndpoint = `/api/v1/users`;
-  // let editEndpoint = `/api/v1/users`;
-
   const {
     data: response,
     isLoading: isLoadingGet,
@@ -22,6 +17,7 @@ function Users() {
     isFetching: isFetchingTax,
     error: errorGet,
   } = useGetData(endpoint);
+  const navigate = useNavigate();
 
   const { mutate, isLoading, isError, data, isSuccess } = usePostData(endpoint);
   const handleNewAdd = async ({ values, table }) => {
@@ -46,6 +42,9 @@ function Users() {
     });
     table.setEditingRow(null);
   };
+  const handleViewClick = (rowData) => {
+    navigate("/dashboard/user/user-detail", { state: { rowData } });
+  };
 
   const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(endpoint, userId);
 
@@ -69,6 +68,7 @@ function Users() {
         isLoading={isLoadingGet}
         isError={isErrorGet}
         title={"User"}
+        handleViewClick={handleViewClick}
       />
     </div>
   );

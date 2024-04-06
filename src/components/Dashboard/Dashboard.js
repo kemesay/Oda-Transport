@@ -131,12 +131,12 @@ export default function Dashboard() {
           }}
         >
           <Container maxWidth="100" sx={{ mt: 2, mb: 4 }}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
+            {/* <Grid container spacing={3}>
+              <Grid item xs={12}> */}
                 {/* Render nested routes */}
                 <Outlet />
-              </Grid>
-            </Grid>
+              {/* </Grid>
+            </Grid> */}
           </Container>
         </Box>
       </Box>
