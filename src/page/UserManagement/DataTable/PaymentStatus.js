@@ -11,9 +11,9 @@ import DialogTitle from "@mui/material/DialogTitle";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-export default function PaymentStatusPopup({ open, handleClose, hourlyCharterBookId }) {
+export default function PaymentStatusPopup({ open, handleClose, bookingId, bookingType }) {
   const [status, setStatus] = useState("NOT_PAID"); // Default value
-  const [isRejected, setIsRejected] = useState(false);
+  const [isUpdated, setIsUpdated] = useState(false);
   const paymentStatusOptions = [
     "NOT_PAID",
     "AWAITING_PAYMENT",
@@ -26,20 +26,33 @@ export default function PaymentStatusPopup({ open, handleClose, hourlyCharterBoo
 
   const handleReject = async () => {
     await axios
-      .put(`http://api.odatransportation.com/api/v1/hourly-charter-books/${hourlyCharterBookId}/payment-status`, {
+      .put(`http://api.odatransportation.com/api/v1/${getEndpoint()}/payment-status`, {
         status: status,
       })
       .then((response) => {
         if (response.status === 200) {
           handleClose();
-          setIsRejected(true);
+          setIsUpdated(true);
         }
         // navigate("/dashboard/airportbook")
       });
   };
 
   const handleSnackbarClose = () => {
-    setIsRejected(false);
+    setIsUpdated(false);
+  };
+
+  const getEndpoint = () => {
+    switch (bookingType) {
+      case "hourlyCharter":
+        return `hourly-charter-books/${bookingId}`;
+      case "airport":
+        return `airport-books/${bookingId}`;
+      case "pointToPoint":
+        return `point-to-point-books/${bookingId}`;
+      default:
+        return ""; // Default case
+    }
   };
 
   return (
@@ -83,7 +96,7 @@ export default function PaymentStatusPopup({ open, handleClose, hourlyCharterBoo
         </DialogActions>
       </Dialog>
       <Snackbar
-        open={isRejected}
+        open={isUpdated}
         autoHideDuration={4000}
         onClose={handleSnackbarClose}
       >

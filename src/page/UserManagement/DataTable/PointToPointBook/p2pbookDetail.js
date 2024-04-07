@@ -12,6 +12,8 @@ import {
 import ReasonPopup from "../AirportBook/airportBook/ReasonPopup";
 import axios from "axios";
 import useGetData from "../../../../store/hooks/useGetData";
+import PaymentStatusPopup from "../PaymentStatus";
+import BookingStatusPoup from "../BookingStatus";
 function P2pBookDetail(props) {
   const location = useLocation();
   // const [pointToPointBookId, setPointToPointBookId] = React.useState(null);
@@ -39,47 +41,52 @@ function P2pBookDetail(props) {
   } = location.state?.rowData || {};
 
   const pointToPointBookId = location.state?.rowData?.pointToPointBookId; // Provide a default value if Car is undefined
-
-  console.log("vvvv", location.state?.rowData);
-
-  const endpoint = `/api/v1/point-to-point-books/${pointToPointBookId}`;
-  const {
-    data: response,
-    isLoading: isLoadingGet,
-    isError: isErrorGet,
-    isFetching: isFetchingTax,
-    error: errorGet,
-  } = useGetData(endpoint);
-  console.log("hhhh", response);
+ 
+  // const endpoint = `/api/v1/point-to-point-books/${pointToPointBookId}`;
+  // const {
+  //   data: response,
+  //   isLoading: isLoadingGet,
+  //   isError: isErrorGet,
+  //   isFetching: isFetchingTax,
+  //   error: errorGet,
+  // } = useGetData(endpoint);
+  // console.log("hhhh", response);
 
   // const extraOptionId = location.state?.rowData?.ExtraOptions?.extraOptionId;
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
-  // const navigate = useNavigate();
-  const handleClickOpen = () => {
+  const [popupType, setPopupType] = useState(null);
+
+  const handleClickOpen = (type) => {
     setOpen(true);
+    setPopupType(type);
   };
+
   const handleSnackbarClose = (event, reason) => {
     setIsAccepted(false);
   };
+
   const handleClose = () => {
     setOpen(false);
+    setPopupType(null);
   };
+
   const handleAcceptBook = async () => {
     await axios
       .post("http://api.odatransportation.com/api/v1/admin/bookings/approve", {
-        bookingId: pointtopointBookId,
-        bookingType: "Hourly",
+        bookingId: pointToPointBookId,
+        bookingType: "AIRPORT",
         action: "ACCEPTED",
       })
       .then((response) => {
-        if (response.status == 200) {
+        if (response.status === 200) {
           setIsAccepted(true);
           // navigate("/dashboard/airportbook");
         }
-        console.log("response: ", response);
+        // console.log("response: ", response);
       });
   };
+
   const Field = ({ label, value }) => {
     return (
       <Grid item xs={6}>
@@ -103,7 +110,7 @@ function P2pBookDetail(props) {
         container
         justifyContent={"center"}
         alignItems={"center"}
-        spacing={2}
+        spacing={3}
       >
         <Grid item container xs={11} lg={10} spacing={2} mt={2}>
           <Field label="Trip Type" value={tripType} />
@@ -127,25 +134,32 @@ function P2pBookDetail(props) {
           <Field label="TotaTripFee In Dollars" value={totalTripFeeInDollars} />
           <Field label="Payment Status" value={paymentStatus} />
           <Field label="Booking Status" value={bookingStatus} />
-          <Field label="User Id" value={userId} />
+          {/* <Field label="User Id" value={userId} />
 
           <Field
             label="Additional Stop On The Way Description"
             value={additionalStopOnTheWayDescription}
-          />
-          <Field label="Car Name" value={response?.Car?.carName} />
+          /> */}
+          {/* <Field label="Car Name" value={response?.Car?.carName} />
           <Field label="carId " value={response?.Car?.carId} />
           <Field label="PricePerMile" value={response?.Car?.pricePerMile} />
 
-
-          <Field label="Additional StopId" value={response?.AdditionalStopOnTheWay?.additionalStopId} />
-          <Field label="stop Type" value={response?.AdditionalStopOnTheWay?.stopType} />
-          <Field label="Additional Stop Price" value={response?.AdditionalStopOnTheWay?.additionalStopPrice} />
-          <Field label="currency" value={response?.AdditionalStopOnTheWay?.currency} />
-
-
-
-
+          <Field
+            label="Additional StopId"
+            value={response?.AdditionalStopOnTheWay?.additionalStopId}
+          />
+          <Field
+            label="stop Type"
+            value={response?.AdditionalStopOnTheWay?.stopType}
+          />
+          <Field
+            label="Additional Stop Price"
+            value={response?.AdditionalStopOnTheWay?.additionalStopPrice}
+          />
+          <Field
+            label="currency"
+            value={response?.AdditionalStopOnTheWay?.currency}
+          /> */}
         </Grid>
         <Grid item lg={5}>
           <Button
@@ -158,23 +172,67 @@ function P2pBookDetail(props) {
           </Button>
         </Grid>
 
-        <Grid item lg={5}>
+        <Grid item sx={5}>
           <Button
             variant="contained"
             color="warning"
             fullWidth
-            onClick={handleClickOpen}
+            onClick={() => handleClickOpen("REJECT")}
           >
-            REJECT
+            REJECT BOOKING
+          </Button>
+        </Grid>
+
+        <Grid item sx={5}>
+          <Button
+            variant="contained"
+            color="warning"
+            fullWidth
+            onClick={() => handleClickOpen("EDIT_BOOKING_STATUS")}
+          >
+            EDIT BOOKING STATUS
+          </Button>
+        </Grid>
+
+        <Grid item sx={5}>
+          <Button
+            variant="contained"
+            color="warning"
+            fullWidth
+            onClick={() => handleClickOpen("EDIT_PAYMENT_STATUS")}
+          >
+            EDIT PAYMENT STATUS
           </Button>
         </Grid>
       </Grid>
-      <ReasonPopup
-        pointtopointBookId={pointtopointBookId}
-        open={open}
-        handleClickOpen={handleClickOpen}
-        handleClose={handleClose}
-      />
+
+      {/* Render the appropriate popup component based on popupType */}
+      {popupType === "REJECT" && (
+        <ReasonPopup
+          bookingId={pointToPointBookId}
+          bookingType="P2P"
+          open={open}
+          handleClose={handleClose}
+        />
+      )}
+
+      {popupType === "EDIT_BOOKING_STATUS" && (
+        <BookingStatusPoup
+          bookingId={pointtopointBookId}
+          bookingType="pointToPoint"
+          open={open}
+          handleClose={handleClose}
+        />
+      )}
+
+      {popupType === "EDIT_PAYMENT_STATUS" && (
+        <PaymentStatusPopup
+          bookingId={pointtopointBookId}
+          bookingType="pointToPoint"
+          open={open}
+          handleClose={handleClose}
+        />
+      )}
       <Snackbar
         open={isAccepted}
         autoHideDuration={4000}

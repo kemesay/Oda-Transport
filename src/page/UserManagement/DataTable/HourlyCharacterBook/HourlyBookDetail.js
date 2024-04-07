@@ -9,15 +9,14 @@ import {
   Button,
   Snackbar,
 } from "@mui/material";
-import ReasonPopup from "../AirportBook/airportBook/ReasonPopup";
 import axios from "axios";
 import BookingStatusPoup from "../BookingStatus";
 import PaymentStatusPoup from "../PaymentStatus";
+import ReasonPopup from "../AirportBook/airportBook/ReasonPopup";
 
 function ViewHourlyBookDetail(props) {
   const location = useLocation();
   const {
-    hourlyCharterBookId,
     pickupPhysicalAddress,
     dropoffPhysicalAddress,
     selectedHours,
@@ -34,6 +33,7 @@ function ViewHourlyBookDetail(props) {
     userId,
     carId,
   } = location.state?.rowData || {};
+  const hourlyCharterBookId = location.state?.rowData?.hourlyCharterBookId;
 
   const [open, setOpen] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
@@ -57,13 +57,15 @@ function ViewHourlyBookDetail(props) {
     await axios
       .post("http://api.odatransportation.com/api/v1/admin/bookings/approve", {
         bookingId: hourlyCharterBookId,
-        bookingType: "Hourly",
+        bookingType: "AIRPORT",
         action: "ACCEPTED",
       })
       .then((response) => {
-        if (response.status === 200) {
+        if (response.status == 200) {
           setIsAccepted(true);
+          // navigate("/dashboard/airportbook");
         }
+        // console.log("response: ", response);
       });
   };
 
@@ -164,10 +166,11 @@ function ViewHourlyBookDetail(props) {
       {/* Render the appropriate popup component based on popupType */}
       {popupType === "REJECT" && (
         <ReasonPopup
-          hourlyCharterBookId={hourlyCharterBookId}
-          open={open}
-          handleClose={handleClose}
-        />
+        bookingId={hourlyCharterBookId}
+        bookingType="HOURLY_CHARTER"
+        open={open}
+        handleClose={handleClose}
+      />
       )}
 
       {popupType === "EDIT_BOOKING_STATUS" && (
@@ -181,7 +184,8 @@ function ViewHourlyBookDetail(props) {
 
       {popupType === "EDIT_PAYMENT_STATUS" && (
         <PaymentStatusPoup
-          hourlyCharterBookId={hourlyCharterBookId}
+          bookingId={hourlyCharterBookId}
+          bookingType="hourlyCharter"
           open={open}
           handleClose={handleClose}
         />

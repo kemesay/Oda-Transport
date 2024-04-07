@@ -11,10 +11,12 @@ import {
 } from "@mui/material";
 import ReasonPopup from "./ReasonPopup";
 import axios from "axios";
+import PaymentStatusPopup from "../../PaymentStatus";
+import BookingStatusPoup from "../../BookingStatus";
 function ViewBookDetail(props) {
   const location = useLocation();
   const {
-    airportBookId,
+    
     tripType,
     airportId,
     numberOfPassengers,
@@ -38,23 +40,26 @@ function ViewBookDetail(props) {
     passengerCellPhone,
   } = location.state?.rowData || {};
 
+  const airportBookId = location.state?.rowData?.airportBookId;
 
-  const extraOptionId = location.state?.rowData?.ExtraOptions?.extraOptionId;
-
-
-
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
-  // const navigate = useNavigate();
-  const handleClickOpen = () => {
+  const [popupType, setPopupType] = useState(null);
+
+  const handleClickOpen = (type) => {
     setOpen(true);
+    setPopupType(type);
   };
+
   const handleSnackbarClose = (event, reason) => {
     setIsAccepted(false);
   };
+
   const handleClose = () => {
     setOpen(false);
+    setPopupType(null);
   };
+
   const handleAcceptBook = async () => {
     await axios
       .post("http://api.odatransportation.com/api/v1/admin/bookings/approve", {
@@ -67,7 +72,7 @@ function ViewBookDetail(props) {
           setIsAccepted(true);
           // navigate("/dashboard/airportbook");
         }
-        console.log("response: ", response);
+        // console.log("response: ", response);
       });
   };
   const Field = ({ label, value }) => {
@@ -123,23 +128,67 @@ function ViewBookDetail(props) {
           </Button>
         </Grid>
 
-        <Grid item lg={5}>
+        <Grid item sx={5}>
           <Button
             variant="contained"
             color="warning"
             fullWidth
-            onClick={handleClickOpen}
+            onClick={() => handleClickOpen("REJECT")}
           >
-            REJECT
+            REJECT BOOKING
+          </Button>
+        </Grid>
+
+        <Grid item sx={5}>
+          <Button
+            variant="contained"
+            color="warning"
+            fullWidth
+            onClick={() => handleClickOpen("EDIT_BOOKING_STATUS")}
+          >
+            EDIT BOOKING STATUS
+          </Button>
+        </Grid>
+
+        <Grid item sx={5}>
+          <Button
+            variant="contained"
+            color="warning"
+            fullWidth
+            onClick={() => handleClickOpen("EDIT_PAYMENT_STATUS")}
+          >
+            EDIT PAYMENT STATUS
           </Button>
         </Grid>
       </Grid>
-      <ReasonPopup
-        airportBookId={airportBookId}
+
+      {popupType === "REJECT" && (
+        <ReasonPopup
+        bookingId={airportBookId}
+        bookingType="AIRPORT"
         open={open}
-        handleClickOpen={handleClickOpen}
         handleClose={handleClose}
       />
+      )}
+
+      {popupType === "EDIT_BOOKING_STATUS" && (
+        <BookingStatusPoup
+          bookingId={airportBookId}
+          bookingType="airport"
+          open={open}
+          handleClose={handleClose}
+        />
+      )}
+
+      {popupType === "EDIT_PAYMENT_STATUS" && (
+        <PaymentStatusPopup
+          bookingId={airportBookId}
+          bookingType="airport"
+          open={open}
+          handleClose={handleClose}
+        />
+      )}
+
       <Snackbar
         open={isAccepted}
         autoHideDuration={4000}

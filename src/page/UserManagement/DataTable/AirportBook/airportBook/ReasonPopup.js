@@ -11,28 +11,29 @@ import DialogTitle from "@mui/material/DialogTitle";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-export default function ReasonPopup({ open, handleClose, airportBookId }) {
-  const [reason, setReason] = useState();
+export default function ReasonPopup({ open, handleClose, bookingId, bookingType }) {
+  const [reason, setReason] = useState("");
   const [isRejected, setIsRejected] = useState(false);
-//   const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const handleReject = async () => {
     await axios
       .post("http://api.odatransportation.com/api/v1/admin/bookings/approve", {
-        bookingId: airportBookId,
-        bookingType: "AIRPORT",
+        bookingId: bookingId,
+        bookingType: bookingType.toUpperCase(),
         action: "REJECTED",
         rejectionReason: reason,
       })
       .then((response) => {
-        if (response.status == 200) {
+        if (response.status === 200) {
           handleClose();
           setIsRejected(true);
         }
         // navigate("/dashboard/airportbook")
-       });
+      });
   };
-  const handleSnackbarClose = (event, reason) => {
+
+  const handleSnackbarClose = () => {
     setIsRejected(false);
   };
 
@@ -73,8 +74,8 @@ export default function ReasonPopup({ open, handleClose, airportBookId }) {
           />
         </DialogContent>
         <DialogActions>
-          <Button  onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleReject}>Summit</Button>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleReject}>Submit</Button>
         </DialogActions>
       </Dialog>
       <Snackbar
