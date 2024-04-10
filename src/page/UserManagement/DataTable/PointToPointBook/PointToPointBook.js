@@ -44,7 +44,7 @@ const navigate = useNavigate();
   };
 
   const handleViewClick = (rowData) => {
-    navigate("/dashboard/book/p2p-book-detail", { state: { rowData } });
+    navigate("/dashboard/book/p2pbook-detail", { state: { rowData } });
   };
 
   const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(

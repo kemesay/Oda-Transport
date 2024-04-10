@@ -14,12 +14,13 @@ import axios from "axios";
 import useGetData from "../../../../store/hooks/useGetData";
 import PaymentStatusPopup from "../PaymentStatus";
 import BookingStatusPoup from "../BookingStatus";
+import { BACKEND_API } from "../../../../store/utils/API";
 function P2pBookDetail(props) {
   const location = useLocation();
   // const [pointToPointBookId, setPointToPointBookId] = React.useState(null);
 
   const {
-    pointtopointBookId,
+    // pointtopointBookId,
     tripType,
     pickupPhysicalAddress,
     dropoffPhysicalAddress,
@@ -32,16 +33,13 @@ function P2pBookDetail(props) {
     bookingFor,
     passengerFullName,
     passengerCellPhone,
-    additionalStopId,
-    additionalStopOnTheWayDescription,
     totalTripFeeInDollars,
     paymentStatus,
     bookingStatus,
-    userId,
   } = location.state?.rowData || {};
 
   const pointToPointBookId = location.state?.rowData?.pointToPointBookId; // Provide a default value if Car is undefined
- 
+
   // const endpoint = `/api/v1/point-to-point-books/${pointToPointBookId}`;
   // const {
   //   data: response,
@@ -70,21 +68,50 @@ function P2pBookDetail(props) {
     setOpen(false);
     setPopupType(null);
   };
+  const endpoint = `/api/v1/admin/bookings/approve`;
 
   const handleAcceptBook = async () => {
-    await axios
-      .post("http://api.odatransportation.com/api/v1/admin/bookings/approve", {
+    try {
+      const response = await BACKEND_API.post(endpoint, {
         bookingId: pointToPointBookId,
-        bookingType: "AIRPORT",
+        bookingType: "P2P",
         action: "ACCEPTED",
-      })
-      .then((response) => {
-        if (response.status === 200) {
-          setIsAccepted(true);
-          // navigate("/dashboard/airportbook");
-        }
-        // console.log("response: ", response);
       });
+
+      if (response.status === 200) {
+        setIsAccepted(true);
+        // navigate("/dashboard/airportbook");
+      }
+      // console.log("response: ", response);
+    } catch (error) {
+      console.error("Error occurred while accepting book:", error);
+    }
+  };
+
+  const getBackgroundColorforpayment = (paymentStatus) => {
+    switch (paymentStatus) {
+      case "PAID":
+        return "green";
+      case "CANCELLED":
+        return "red";
+      default:
+        return "orange";
+    }
+  };
+
+  const getBackgroundColorforbooking = (bookingStatus) => {
+    switch (bookingStatus) {
+      case "ACCEPTED":
+        return "green";
+      case "COMPLETED":
+        return "green";
+      case "CANCELLED":
+        return "red";
+      case "REJECTED":
+        return "red";
+      default:
+        return "orange";
+    }
   };
 
   const Field = ({ label, value }) => {
@@ -104,6 +131,7 @@ function P2pBookDetail(props) {
       </Grid>
     );
   };
+
   return (
     <>
       <Grid
@@ -113,6 +141,30 @@ function P2pBookDetail(props) {
         spacing={3}
       >
         <Grid item container xs={11} lg={10} spacing={2} mt={2}>
+          <Grid item xs={6}>
+            <Typography
+              sx={{
+                color: "white",
+                backgroundColor: getBackgroundColorforpayment(paymentStatus),
+                border: "1px solid",
+                paddingX: "3px",
+              }}
+            >
+              Payment Status: {paymentStatus}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography
+              sx={{
+                color: "white",
+                backgroundColor: getBackgroundColorforbooking(bookingStatus),
+                border: "1px solid",
+                paddingX: "3px",
+              }}
+            >
+              Booking Status: {bookingStatus}
+            </Typography>
+          </Grid>
           <Field label="Trip Type" value={tripType} />
           <Field
             label="pickup Physical Address"
@@ -132,8 +184,6 @@ function P2pBookDetail(props) {
           <Field label="Passenger CellPhone" value={passengerCellPhone} />
           <Field label="Pickup Date Time" value={pickupDateTime} />
           <Field label="TotaTripFee In Dollars" value={totalTripFeeInDollars} />
-          <Field label="Payment Status" value={paymentStatus} />
-          <Field label="Booking Status" value={bookingStatus} />
           {/* <Field label="User Id" value={userId} />
 
           <Field
@@ -161,21 +211,34 @@ function P2pBookDetail(props) {
             value={response?.AdditionalStopOnTheWay?.currency}
           /> */}
         </Grid>
-        <Grid item lg={5}>
+
+        <Grid item md={3}>
           <Button
             variant="contained"
-            color="primary"
+            sx={{
+              backgroundColor: "#03930a", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
             fullWidth
             onClick={handleAcceptBook}
           >
-            ACCEPT
+            ACCEPT BOOKING
           </Button>
         </Grid>
 
         <Grid item sx={5}>
           <Button
             variant="contained"
-            color="warning"
+            sx={{
+              backgroundColor: "red", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
             fullWidth
             onClick={() => handleClickOpen("REJECT")}
           >
@@ -186,7 +249,13 @@ function P2pBookDetail(props) {
         <Grid item sx={5}>
           <Button
             variant="contained"
-            color="warning"
+            sx={{
+              backgroundColor: "primary", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
             fullWidth
             onClick={() => handleClickOpen("EDIT_BOOKING_STATUS")}
           >
@@ -197,7 +266,13 @@ function P2pBookDetail(props) {
         <Grid item sx={5}>
           <Button
             variant="contained"
-            color="warning"
+            sx={{
+              backgroundColor: "primary", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
             fullWidth
             onClick={() => handleClickOpen("EDIT_PAYMENT_STATUS")}
           >
@@ -205,7 +280,6 @@ function P2pBookDetail(props) {
           </Button>
         </Grid>
       </Grid>
-
       {/* Render the appropriate popup component based on popupType */}
       {popupType === "REJECT" && (
         <ReasonPopup
@@ -218,7 +292,7 @@ function P2pBookDetail(props) {
 
       {popupType === "EDIT_BOOKING_STATUS" && (
         <BookingStatusPoup
-          bookingId={pointtopointBookId}
+          bookingId={pointToPointBookId}
           bookingType="pointToPoint"
           open={open}
           handleClose={handleClose}
@@ -227,7 +301,7 @@ function P2pBookDetail(props) {
 
       {popupType === "EDIT_PAYMENT_STATUS" && (
         <PaymentStatusPopup
-          bookingId={pointtopointBookId}
+          bookingId={pointToPointBookId}
           bookingType="pointToPoint"
           open={open}
           handleClose={handleClose}

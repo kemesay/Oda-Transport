@@ -91,8 +91,25 @@ export default function PaymentStatusPopup({ open, handleClose, bookingId, booki
           </select>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleReject}>Submit</Button>
+          <Button   variant="contained"
+            sx={{
+              backgroundColor: "red", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
+            fullWidth onClick={handleClose}>Cancel</Button>
+          <Button   variant="contained"
+            sx={{
+              backgroundColor: "#03930a", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
+            fullWidth
+           onClick={handleReject}>Submit</Button>
         </DialogActions>
       </Dialog>
       <Snackbar

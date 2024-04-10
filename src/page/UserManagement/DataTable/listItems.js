@@ -53,36 +53,29 @@ const menus = [
     icon: <HourglassBottom />,
   },
 
-  // {
-  //   index: 6,
-  //   link: "/dashboard/adminbooking",
-  //   title: "Admin-Booking",
-  //   icon: <GrUserAdmin />,
-  // },
   {
     index: 6,
-    link: "/dashboard/airportbooking",
-    title: "airportbooking",
+    title: "AirP Booking",
     icon: <LocalAirport />,
     subItems: [
       {
         index: 0,
         link: "/dashboard/airports",
         title: "Airports",
-        // icon: <Portrait />,
+        icon: <Portrait />,
 
       },
       {
         index: 1,
         link: "/dashboard/airportPickupPreference",
-        title: "AirportPickupPreference",
+        title: "Port Preference",
         icon: <FlightTakeoff/>,
 
       },
       {
         index: 2,
         link: "/dashboard/airportbook",
-        title: "Airport Book",
+        title: "Airport Booking",
         icon: <LocalAirport/>,
 
       },
@@ -115,6 +108,11 @@ function ListItems() {
     }
   };
 
+  const handleSubItemClick = (event, link, index) => {
+    setSelectedIndex(index);
+    navigate(link);
+  };
+
   return (
     <>
       {menus.map((menu, key) => (
@@ -144,17 +142,23 @@ function ListItems() {
           {menu.subItems && (
             <Collapse in={open} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
-                {menu.subItems.map((subItem, index) => (
+                {menu.subItems.map((subItem, itemindex) => (
                   <ListItemButton
-                    key={index}
-                    sx={{ pl: 4 }}
-                    onClick={() => {
-                      setSelectedIndex(subItem.index);
-                      navigate(subItem.link);
+                    key={itemindex}
+                    sx={{
+                      pl: 6,
+                      "&.Mui-selected": {
+                        color: "#488550",
+                        backgroundColor: "#FFF",
+                        borderRadius: "21.5px",
+                        paddingRight: "6px"
+                      },
                     }}
+                    selected={selectedIndex === subItem.index}
+                    onClick={(event) => handleSubItemClick(event, subItem.link, subItem.index)}
                   >
                     <ListItemIcon>
-                      <StarBorder />
+                      {subItem.icon}
                     </ListItemIcon>
                     <ListItemText primary={subItem.title} />
                   </ListItemButton>

@@ -45,7 +45,7 @@ function HourlyCharacter() {
     table.setEditingRow(null);
   };
   const handleViewClick = (rowData) => {
-    navigate("/dashboard/book/hourly-book-detail", { state: { rowData } });
+    navigate("/dashboard/book/hourlybook-detail", { state: { rowData } });
   };
 
   const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(endpoint,hourlyCharacterId);

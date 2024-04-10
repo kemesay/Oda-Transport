@@ -10,8 +10,13 @@ import DialogTitle from "@mui/material/DialogTitle";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-export default function BookingStatusPoup({ open, handleClose, bookingId, bookingType }) {
-  const [status, setStatus] = useState("PENDING_APPROVAL"); // Default value 
+export default function BookingStatusPoup({
+  open,
+  handleClose,
+  bookingId,
+  bookingType,
+}) {
+  const [status, setStatus] = useState("PENDING_APPROVAL"); // Default value
   const [isUpdated, setIsUpdated] = useState(false);
   const bookingStatusOptions = [
     "PENDING_APPROVAL",
@@ -26,15 +31,18 @@ export default function BookingStatusPoup({ open, handleClose, bookingId, bookin
     "RETURN_PICKUP_COMPLETED",
     "OVERDUE",
     "DISPUTED",
-    "COMPLETED"
+    "COMPLETED",
   ];
   const navigate = useNavigate();
 
   const handleBook = async () => {
     await axios
-      .put(`http://api.odatransportation.com/api/v1/${getEndpoint()}/booking-status`, {
-        status: status,
-      })
+      .put(
+        `http://api.odatransportation.com/api/v1/${getEndpoint()}/booking-status`,
+        {
+          status: status,
+        }
+      )
       .then((response) => {
         if (response.status === 200) {
           handleClose();
@@ -80,9 +88,7 @@ export default function BookingStatusPoup({ open, handleClose, bookingId, bookin
       >
         <DialogTitle>Change Book Status</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Please, Select Book status
-          </DialogContentText>
+          <DialogContentText>Please, Select Book status</DialogContentText>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -98,8 +104,34 @@ export default function BookingStatusPoup({ open, handleClose, bookingId, bookin
           </select>
         </DialogContent>
         <DialogActions>
-          <Button  onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleBook}>Summit</Button>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "red", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
+            fullWidth
+            onClick={handleClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#03930a", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
+            fullWidth
+            onClick={handleBook}
+          >
+            Summit
+          </Button>
         </DialogActions>
       </Dialog>
       <Snackbar

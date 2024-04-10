@@ -13,24 +13,24 @@ import ReasonPopup from "./ReasonPopup";
 import axios from "axios";
 import PaymentStatusPopup from "../../PaymentStatus";
 import BookingStatusPoup from "../../BookingStatus";
+import { BACKEND_API } from "../../../../../store/utils/API";
 function ViewBookDetail(props) {
   const location = useLocation();
   const {
-    
     tripType,
     airportId,
     numberOfPassengers,
     numberOfSuitcases,
     accommodationAddress,
-    accommodationLongitude,
-    accommodationLatitude,
+    bookingStatus,
+    paymentStatus,
     airline,
     arrivalFlightNumber,
     specialInstructions,
     pickupDateTime,
-    returnPickupDateTime,
+    totalTripFeeInDollars,
     distanceInMiles,
-    carId,
+    userId,
     additionalStopId,
     additionalStopOnTheWayDescription,
     pickupPreferenceId,
@@ -60,21 +60,51 @@ function ViewBookDetail(props) {
     setPopupType(null);
   };
 
+  const endpoint = `/api/v1/admin/bookings/approve`;
   const handleAcceptBook = async () => {
-    await axios
-      .post("http://api.odatransportation.com/api/v1/admin/bookings/approve", {
+    try {
+      const response = await BACKEND_API.post(endpoint, {
         bookingId: airportBookId,
         bookingType: "AIRPORT",
         action: "ACCEPTED",
-      })
-      .then((response) => {
-        if (response.status == 200) {
-          setIsAccepted(true);
-          // navigate("/dashboard/airportbook");
-        }
-        // console.log("response: ", response);
       });
+
+      if (response.status === 200) {
+        setIsAccepted(true);
+        // navigate("/dashboard/airportbook");
+      }
+      // console.log("response: ", response);
+    } catch (error) {
+      console.error("Error occurred while accepting book:", error);
+    }
   };
+
+  const getBackgroundColorforpayment = (paymentStatus) => {
+    switch (paymentStatus) {
+      case "PAID":
+        return "green";
+      case "CANCELLED":
+        return "red";
+      default:
+        return "orange";
+    }
+  };
+
+  const getBackgroundColorforbooking = (bookingStatus) => {
+    switch (bookingStatus) {
+      case "ACCEPTED":
+        return "green";
+      case "COMPLETED":
+        return "green";
+      case "CANCELLED":
+        return "red";
+      case "REJECTED":
+        return "red";
+      default:
+        return "orange";
+    }
+  };
+
   const Field = ({ label, value }) => {
     return (
       <Grid item xs={6}>
@@ -101,6 +131,30 @@ function ViewBookDetail(props) {
         spacing={2}
       >
         <Grid item container xs={11} lg={10} spacing={2} mt={2}>
+          <Grid item xs={6}>
+            <Typography
+              sx={{
+                color: "white",
+                backgroundColor: getBackgroundColorforpayment(paymentStatus),
+                border: "1px solid",
+                paddingX: "3px",
+              }}
+            >
+              Payment Status: {paymentStatus}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography
+              sx={{
+                color: "white",
+                backgroundColor: getBackgroundColorforbooking(bookingStatus),
+                border: "1px solid",
+                paddingX: "3px",
+              }}
+            >
+              Booking Status: {bookingStatus}
+            </Typography>
+          </Grid>
           <Field label="Trip Type" value={tripType} />
           <Field label="Airport id" value={airportId} />
           <Field label="Num. of Passenger" value={numberOfPassengers} />
@@ -108,20 +162,37 @@ function ViewBookDetail(props) {
           <Field label="Accomodation Addr." value={accommodationAddress} />
           <Field label="Airline" value={airline} />
           <Field label="Flight Num." value={arrivalFlightNumber} />
-
-          {/* <Field label="Length" value={length} />
-        <Field label="Interior Color" value={interiorColor} />
-        <Field label="Exterior Color" value={exteriorColor} />
-        <Field label="Power" value={power} />
-        <Field label="Transmission Type" value={transmissionType} />
-        <Field label="Fuel Type" value={fuelType} />
-        <Field label="Extras" value={extras} /> */}
+          <Field label="Accommodation Address" value={accommodationAddress} />
+          <Field label="Airline" value={airline} />
+          <Field label="Special Instructions" value={specialInstructions} />
+          <Field label="Pickup DateTime" value={pickupDateTime} />
+          <Field label="Arrival Flight Number" value={arrivalFlightNumber} />
+          <Field label="distanceInMiles" value={distanceInMiles} />
+          <Field
+            label="Additional stop on the way descrption"
+            value={additionalStopOnTheWayDescription}
+          />
+          <Field label="Booking For" value={bookingFor} />
+          <Field label="Passenger FullName" value={passengerFullName} />
+          <Field
+            label="Total trip fee In Dollars"
+            value={totalTripFeeInDollars}
+          />
+          <Field label="userId" value={userId} />
+          <Field label="additionalStopId" value={additionalStopId} />
+          <Field label="pickupPreferenceId" value={pickupPreferenceId} />
         </Grid>
         <Grid item lg={5}>
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
+        <Button
+ variant="contained"
+ sx={{
+   backgroundColor: "#03930a", // Set background color to #03930a
+   color: "white", // Set text color to white or any color you prefer
+   "&:hover": {
+     backgroundColor: "#027c08", // Change color on hover if needed
+   },
+ }}
+ fullWidth
             onClick={handleAcceptBook}
           >
             ACCEPT
@@ -130,9 +201,15 @@ function ViewBookDetail(props) {
 
         <Grid item sx={5}>
           <Button
-            variant="contained"
-            color="warning"
-            fullWidth
+             variant="contained"
+             sx={{
+               backgroundColor: "red", // Set background color to #03930a
+               color: "white", // Set text color to white or any color you prefer
+               "&:hover": {
+                 backgroundColor: "#027c08", // Change color on hover if needed
+               },
+             }}
+             fullWidth
             onClick={() => handleClickOpen("REJECT")}
           >
             REJECT BOOKING
@@ -164,11 +241,11 @@ function ViewBookDetail(props) {
 
       {popupType === "REJECT" && (
         <ReasonPopup
-        bookingId={airportBookId}
-        bookingType="AIRPORT"
-        open={open}
-        handleClose={handleClose}
-      />
+          bookingId={airportBookId}
+          bookingType="AIRPORT"
+          open={open}
+          handleClose={handleClose}
+        />
       )}
 
       {popupType === "EDIT_BOOKING_STATUS" && (

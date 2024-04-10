@@ -53,11 +53,11 @@ function App() {
                 element={<ViewBookDetail />}
               ></Route>
               <Route
-                path={"book/hourly-book-detail"}
+                path={"book/hourlybook-detail"}
                 element={<ViewHourlyBookDetail />}
               ></Route>
               <Route
-                path={"book/p2p-book-detail"}
+                path={"book/p2pbook-detail"}
                 element={<P2pBookDetail />}
               ></Route>
               <Route path={"user/user-detail"} element={<UserDetail />}></Route>

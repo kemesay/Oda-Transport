@@ -13,6 +13,7 @@ import axios from "axios";
 import BookingStatusPoup from "../BookingStatus";
 import PaymentStatusPoup from "../PaymentStatus";
 import ReasonPopup from "../AirportBook/airportBook/ReasonPopup";
+import { BACKEND_API } from "../../../../store/utils/API";
 
 function ViewHourlyBookDetail(props) {
   const location = useLocation();
@@ -33,6 +34,7 @@ function ViewHourlyBookDetail(props) {
     userId,
     carId,
   } = location.state?.rowData || {};
+
   const hourlyCharterBookId = location.state?.rowData?.hourlyCharterBookId;
 
   const [open, setOpen] = useState(false);
@@ -53,21 +55,51 @@ function ViewHourlyBookDetail(props) {
     setPopupType(null);
   };
 
+  const endpoint = `/api/v1/admin/bookings/approve`;
   const handleAcceptBook = async () => {
-    await axios
-      .post("http://api.odatransportation.com/api/v1/admin/bookings/approve", {
+    try {
+      const response = await BACKEND_API.post(endpoint, {
         bookingId: hourlyCharterBookId,
-        bookingType: "AIRPORT",
+        bookingType: "HOURLY_CHARTER",
         action: "ACCEPTED",
-      })
-      .then((response) => {
-        if (response.status == 200) {
-          setIsAccepted(true);
-          // navigate("/dashboard/airportbook");
-        }
-        // console.log("response: ", response);
       });
+  
+      if (response.status === 200) {
+        setIsAccepted(true);
+        // navigate("/dashboard/airportbook");
+      }
+      // console.log("response: ", response);
+    } catch (error) {
+      console.error("Error occurred while accepting book:", error);
+    }
   };
+
+  const getBackgroundColorforpayment = (paymentStatus) => {
+    switch (paymentStatus) {
+      case "PAID":
+        return "green";
+      case "CANCELLED":
+        return "red";
+      default:
+        return "orange";
+    }
+  };
+
+  const getBackgroundColorforbooking = (bookingStatus) => {
+    switch (bookingStatus) {
+      case "ACCEPTED":
+        return "green";
+        case "COMPLETED":
+          return "green";
+      case "CANCELLED":
+        return "red";
+        case "REJECTED":
+          return "red";
+      default:
+        return "orange";
+    }
+  };
+
 
   const Field = ({ label, value }) => {
     return (
@@ -95,6 +127,30 @@ function ViewHourlyBookDetail(props) {
         spacing={3}
       >
         <Grid item container xs={11} lg={10} spacing={2} mt={2}>
+        <Grid item xs={6}>
+            <Typography
+              sx={{
+                color: "white",
+                backgroundColor: getBackgroundColorforpayment(paymentStatus),
+                border: "1px solid",
+                paddingX: "3px",
+              }}
+            >
+              Payment Status: {paymentStatus}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography
+              sx={{
+                color: "white",
+                backgroundColor: getBackgroundColorforbooking(bookingStatus),
+                border: "1px solid",
+                paddingX: "3px",
+              }}
+            >
+              Booking Status: {bookingStatus}
+            </Typography>
+          </Grid>     
           <Field label="hourly Charter BookId" value={hourlyCharterBookId} />
           <Field
             label="pickup Physical Address"
@@ -166,11 +222,11 @@ function ViewHourlyBookDetail(props) {
       {/* Render the appropriate popup component based on popupType */}
       {popupType === "REJECT" && (
         <ReasonPopup
-        bookingId={hourlyCharterBookId}
-        bookingType="HOURLY_CHARTER"
-        open={open}
-        handleClose={handleClose}
-      />
+          bookingId={hourlyCharterBookId}
+          bookingType="HOURLY_CHARTER"
+          open={open}
+          handleClose={handleClose}
+        />
       )}
 
       {popupType === "EDIT_BOOKING_STATUS" && (
