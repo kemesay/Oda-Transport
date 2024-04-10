@@ -8,7 +8,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import axios from "axios";
+import { BACKEND_API } from "../../../store/utils/API";
 import { useNavigate } from "react-router-dom";
 
 export default function ReasonPopup({
@@ -19,23 +19,33 @@ export default function ReasonPopup({
 }) {
   const [reason, setReason] = useState("");
   const [isRejected, setIsRejected] = useState(false);
+  const endpoint = `/api/v1/admin/bookings/approve`
   const navigate = useNavigate();
 
   const handleReject = async () => {
-    await axios
-      .post("http://api.odatransportation.com/api/v1/admin/bookings/approve", {
-        bookingId: bookingId,
-        bookingType: bookingType.toUpperCase(),
-        action: "REJECTED",
-        rejectionReason: reason,
-      })
-      .then((response) => {
-        if (response.status === 200) {
-          handleClose();
-          setIsRejected(true);
+    try {
+      // Make POST request using the BACKEND_API instance
+      const response = await BACKEND_API.post(
+       endpoint,
+        {
+          bookingId: bookingId,
+          bookingType: bookingType.toUpperCase(),
+          action: "REJECTED",
+          rejectionReason: reason,
         }
-        // navigate("/dashboard/airportbook")
-      });
+      );
+  
+      // Handle response
+      if (response.status === 200) {
+        handleClose();
+        setIsRejected(true);
+      }
+      // Handle navigation if needed
+      // navigate("/dashboard/airportbook")
+    } catch (error) {
+      console.error("Error occurred while rejecting book:", error);
+      // Handle error if needed
+    }
   };
 
   const handleSnackbarClose = () => {

@@ -9,11 +9,11 @@ import {
   Button,
   Snackbar,
 } from "@mui/material";
-import axios from "axios";
 import BookingStatusPoup from "../BookingStatus";
 import PaymentStatusPoup from "../PaymentStatus";
-import ReasonPopup from "../AirportBook/airportBook/ReasonPopup";
+import ReasonPopup from "../ReasonPopup";
 import { BACKEND_API } from "../../../../store/utils/API";
+import PaymentStatusPopup from "../PaymentStatus";
 
 function ViewHourlyBookDetail(props) {
   const location = useLocation();
@@ -63,7 +63,7 @@ function ViewHourlyBookDetail(props) {
         bookingType: "HOURLY_CHARTER",
         action: "ACCEPTED",
       });
-  
+
       if (response.status === 200) {
         setIsAccepted(true);
         // navigate("/dashboard/airportbook");
@@ -89,17 +89,16 @@ function ViewHourlyBookDetail(props) {
     switch (bookingStatus) {
       case "ACCEPTED":
         return "green";
-        case "COMPLETED":
-          return "green";
+      case "COMPLETED":
+        return "green";
       case "CANCELLED":
         return "red";
-        case "REJECTED":
-          return "red";
+      case "REJECTED":
+        return "red";
       default:
         return "orange";
     }
   };
-
 
   const Field = ({ label, value }) => {
     return (
@@ -127,7 +126,7 @@ function ViewHourlyBookDetail(props) {
         spacing={3}
       >
         <Grid item container xs={11} lg={10} spacing={2} mt={2}>
-        <Grid item xs={6}>
+          <Grid item xs={6}>
             <Typography
               sx={{
                 color: "white",
@@ -150,7 +149,7 @@ function ViewHourlyBookDetail(props) {
             >
               Booking Status: {bookingStatus}
             </Typography>
-          </Grid>     
+          </Grid>
           <Field label="hourly Charter BookId" value={hourlyCharterBookId} />
           <Field
             label="pickup Physical Address"
@@ -174,10 +173,16 @@ function ViewHourlyBookDetail(props) {
         <Field label="Extras" value={extras} /> */}
         </Grid>
 
-        <Grid item md={3}>
+        <Grid item lg={5}>
           <Button
             variant="contained"
-            color="primary"
+            sx={{
+              backgroundColor: "#03930a", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
             fullWidth
             onClick={handleAcceptBook}
           >
@@ -188,7 +193,13 @@ function ViewHourlyBookDetail(props) {
         <Grid item sx={5}>
           <Button
             variant="contained"
-            color="warning"
+            sx={{
+              backgroundColor: "red", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
             fullWidth
             onClick={() => handleClickOpen("REJECT")}
           >
@@ -219,7 +230,6 @@ function ViewHourlyBookDetail(props) {
         </Grid>
       </Grid>
 
-      {/* Render the appropriate popup component based on popupType */}
       {popupType === "REJECT" && (
         <ReasonPopup
           bookingId={hourlyCharterBookId}
@@ -239,7 +249,7 @@ function ViewHourlyBookDetail(props) {
       )}
 
       {popupType === "EDIT_PAYMENT_STATUS" && (
-        <PaymentStatusPoup
+        <PaymentStatusPopup
           bookingId={hourlyCharterBookId}
           bookingType="hourlyCharter"
           open={open}
@@ -247,7 +257,6 @@ function ViewHourlyBookDetail(props) {
         />
       )}
 
-      {/* Snackbar for success message */}
       <Snackbar
         open={isAccepted}
         autoHideDuration={4000}

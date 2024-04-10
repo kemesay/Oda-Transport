@@ -7,7 +7,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import axios from "axios";
+import { BACKEND_API } from "../../../store/utils/API";
 import { useNavigate } from "react-router-dom";
 
 export default function BookingStatusPoup({
@@ -35,21 +35,28 @@ export default function BookingStatusPoup({
   ];
   const navigate = useNavigate();
 
+  const endpoint = `/api/v1/`
   const handleBook = async () => {
-    await axios
-      .put(
-        `http://api.odatransportation.com/api/v1/${getEndpoint()}/booking-status`,
+    try {
+      // Make PUT request using the BACKEND_API instance
+      const response = await BACKEND_API.put(
+        `${endpoint}${getEndpoint()}/booking-status`,
         {
           status: status,
         }
-      )
-      .then((response) => {
-        if (response.status === 200) {
-          handleClose();
-          setIsUpdated(true);
-        }
-        // navigate("/dashboard/airportbook")
-      });
+      );
+  
+      // Handle response
+      if (response.status === 200) {
+        handleClose();
+        setIsUpdated(true);
+      }
+      // Handle navigation if needed
+      // navigate("/dashboard/airportbook")
+    } catch (error) {
+      console.error("Error occurred while rejecting book:", error);
+      // Handle error if needed
+    }
   };
 
   const handleSnackbarClose = () => {

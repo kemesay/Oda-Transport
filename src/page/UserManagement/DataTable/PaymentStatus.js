@@ -2,14 +2,13 @@ import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import TextField from "@mui/material/TextField";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { BACKEND_API } from "../../../store/utils/API";
 
 export default function PaymentStatusPopup({ open, handleClose, bookingId, bookingType }) {
   const [status, setStatus] = useState("NOT_PAID"); // Default value
@@ -23,19 +22,28 @@ export default function PaymentStatusPopup({ open, handleClose, bookingId, booki
     "REFUNDED",
     "CANCELLED"
   ];
-
-  const handleReject = async () => {
-    await axios
-      .put(`http://api.odatransportation.com/api/v1/${getEndpoint()}/payment-status`, {
-        status: status,
-      })
-      .then((response) => {
-        if (response.status === 200) {
-          handleClose();
-          setIsUpdated(true);
+  const endpoint = `/api/v1/`
+  const handleBook = async () => {
+    try {
+      // Make PUT request using the BACKEND_API instance
+      const response = await BACKEND_API.put(
+        `${endpoint}${getEndpoint()}/payment-status`,
+        {
+          status: status,
         }
-        // navigate("/dashboard/airportbook")
-      });
+      );
+  
+      // Handle response
+      if (response.status === 200) {
+        handleClose();
+        setIsUpdated(true);
+      }
+      // Handle navigation if needed
+      // navigate("/dashboard/airportbook")
+    } catch (error) {
+      console.error("Error occurred while rejecting book:", error);
+      // Handle error if needed
+    }
   };
 
   const handleSnackbarClose = () => {
@@ -109,7 +117,7 @@ export default function PaymentStatusPopup({ open, handleClose, bookingId, booki
               },
             }}
             fullWidth
-           onClick={handleReject}>Submit</Button>
+           onClick={handleBook}>Submit</Button>
         </DialogActions>
       </Dialog>
       <Snackbar

@@ -9,8 +9,7 @@ import {
   Button,
   Snackbar,
 } from "@mui/material";
-import ReasonPopup from "./ReasonPopup";
-import axios from "axios";
+import ReasonPopup from "../../ReasonPopup";
 import PaymentStatusPopup from "../../PaymentStatus";
 import BookingStatusPoup from "../../BookingStatus";
 import { BACKEND_API } from "../../../../../store/utils/API";
@@ -183,33 +182,33 @@ function ViewBookDetail(props) {
           <Field label="pickupPreferenceId" value={pickupPreferenceId} />
         </Grid>
         <Grid item lg={5}>
-        <Button
- variant="contained"
- sx={{
-   backgroundColor: "#03930a", // Set background color to #03930a
-   color: "white", // Set text color to white or any color you prefer
-   "&:hover": {
-     backgroundColor: "#027c08", // Change color on hover if needed
-   },
- }}
- fullWidth
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#03930a", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
+            fullWidth
             onClick={handleAcceptBook}
           >
-            ACCEPT
+            ACCEPT BOOKING
           </Button>
         </Grid>
 
         <Grid item sx={5}>
           <Button
-             variant="contained"
-             sx={{
-               backgroundColor: "red", // Set background color to #03930a
-               color: "white", // Set text color to white or any color you prefer
-               "&:hover": {
-                 backgroundColor: "#027c08", // Change color on hover if needed
-               },
-             }}
-             fullWidth
+            variant="contained"
+            sx={{
+              backgroundColor: "red", // Set background color to #03930a
+              color: "white", // Set text color to white or any color you prefer
+              "&:hover": {
+                backgroundColor: "#027c08", // Change color on hover if needed
+              },
+            }}
+            fullWidth
             onClick={() => handleClickOpen("REJECT")}
           >
             REJECT BOOKING

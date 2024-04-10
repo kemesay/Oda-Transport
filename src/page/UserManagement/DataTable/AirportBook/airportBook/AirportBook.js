@@ -6,11 +6,9 @@ import usePostData from "../../../../../store/hooks/usePostData";
 import usePutData from "../../../../../store/hooks/usePutData";
 import { columns } from "./columns";
 import { useNavigate } from "react-router-dom";
-
 function AirportBooks() {
   const [airportBookId, setAirportBookId] = React.useState(null);
   const navigate = useNavigate();
-
   let endpoint = `/api/v1/airport-books`;
   const queryParams = {
     page: 1,

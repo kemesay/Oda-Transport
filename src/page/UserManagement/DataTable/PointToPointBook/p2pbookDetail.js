@@ -9,9 +9,7 @@ import {
   Button,
   Snackbar,
 } from "@mui/material";
-import ReasonPopup from "../AirportBook/airportBook/ReasonPopup";
-import axios from "axios";
-import useGetData from "../../../../store/hooks/useGetData";
+import ReasonPopup from "../ReasonPopup";
 import PaymentStatusPopup from "../PaymentStatus";
 import BookingStatusPoup from "../BookingStatus";
 import { BACKEND_API } from "../../../../store/utils/API";
@@ -40,20 +38,11 @@ function P2pBookDetail(props) {
 
   const pointToPointBookId = location.state?.rowData?.pointToPointBookId; // Provide a default value if Car is undefined
 
-  // const endpoint = `/api/v1/point-to-point-books/${pointToPointBookId}`;
-  // const {
-  //   data: response,
-  //   isLoading: isLoadingGet,
-  //   isError: isErrorGet,
-  //   isFetching: isFetchingTax,
-  //   error: errorGet,
-  // } = useGetData(endpoint);
-  // console.log("hhhh", response);
 
-  // const extraOptionId = location.state?.rowData?.ExtraOptions?.extraOptionId;
   const [open, setOpen] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [popupType, setPopupType] = useState(null);
+  
 
   const handleClickOpen = (type) => {
     setOpen(true);
@@ -69,7 +58,6 @@ function P2pBookDetail(props) {
     setPopupType(null);
   };
   const endpoint = `/api/v1/admin/bookings/approve`;
-
   const handleAcceptBook = async () => {
     try {
       const response = await BACKEND_API.post(endpoint, {
@@ -138,7 +126,7 @@ function P2pBookDetail(props) {
         container
         justifyContent={"center"}
         alignItems={"center"}
-        spacing={3}
+        spacing={2}
       >
         <Grid item container xs={11} lg={10} spacing={2} mt={2}>
           <Grid item xs={6}>
@@ -184,36 +172,10 @@ function P2pBookDetail(props) {
           <Field label="Passenger CellPhone" value={passengerCellPhone} />
           <Field label="Pickup Date Time" value={pickupDateTime} />
           <Field label="TotaTripFee In Dollars" value={totalTripFeeInDollars} />
-          {/* <Field label="User Id" value={userId} />
-
-          <Field
-            label="Additional Stop On The Way Description"
-            value={additionalStopOnTheWayDescription}
-          /> */}
-          {/* <Field label="Car Name" value={response?.Car?.carName} />
-          <Field label="carId " value={response?.Car?.carId} />
-          <Field label="PricePerMile" value={response?.Car?.pricePerMile} />
-
-          <Field
-            label="Additional StopId"
-            value={response?.AdditionalStopOnTheWay?.additionalStopId}
-          />
-          <Field
-            label="stop Type"
-            value={response?.AdditionalStopOnTheWay?.stopType}
-          />
-          <Field
-            label="Additional Stop Price"
-            value={response?.AdditionalStopOnTheWay?.additionalStopPrice}
-          />
-          <Field
-            label="currency"
-            value={response?.AdditionalStopOnTheWay?.currency}
-          /> */}
         </Grid>
 
         <Grid item md={3}>
-          <Button
+        <Button
             variant="contained"
             sx={{
               backgroundColor: "#03930a", // Set background color to #03930a
@@ -225,7 +187,7 @@ function P2pBookDetail(props) {
             fullWidth
             onClick={handleAcceptBook}
           >
-            ACCEPT BOOKING
+            ACCEPT
           </Button>
         </Grid>
 
@@ -249,13 +211,7 @@ function P2pBookDetail(props) {
         <Grid item sx={5}>
           <Button
             variant="contained"
-            sx={{
-              backgroundColor: "primary", // Set background color to #03930a
-              color: "white", // Set text color to white or any color you prefer
-              "&:hover": {
-                backgroundColor: "#027c08", // Change color on hover if needed
-              },
-            }}
+            color="warning"
             fullWidth
             onClick={() => handleClickOpen("EDIT_BOOKING_STATUS")}
           >
@@ -266,13 +222,7 @@ function P2pBookDetail(props) {
         <Grid item sx={5}>
           <Button
             variant="contained"
-            sx={{
-              backgroundColor: "primary", // Set background color to #03930a
-              color: "white", // Set text color to white or any color you prefer
-              "&:hover": {
-                backgroundColor: "#027c08", // Change color on hover if needed
-              },
-            }}
+            color="warning"
             fullWidth
             onClick={() => handleClickOpen("EDIT_PAYMENT_STATUS")}
           >
@@ -280,7 +230,7 @@ function P2pBookDetail(props) {
           </Button>
         </Grid>
       </Grid>
-      {/* Render the appropriate popup component based on popupType */}
+
       {popupType === "REJECT" && (
         <ReasonPopup
           bookingId={pointToPointBookId}
@@ -307,6 +257,7 @@ function P2pBookDetail(props) {
           handleClose={handleClose}
         />
       )}
+
       <Snackbar
         open={isAccepted}
         autoHideDuration={4000}
