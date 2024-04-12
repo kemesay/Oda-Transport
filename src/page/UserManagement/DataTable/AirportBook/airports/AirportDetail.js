@@ -1,6 +1,7 @@
-import React from "react";
-import { Box, Grid, Typography, Stack } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, FormControlLabel, Switch,Grid, Typography,Button, Stack } from "@mui/material";
 import { useLocation } from "react-router-dom";
+import { BACKEND_API } from "../../../../../store/utils/API";
 function AirportDetail(props) {
   const location = useLocation();
   const {
@@ -9,9 +10,31 @@ function AirportDetail(props) {
     airportAddress,
     airportAddressLongitude,
     airportAddressLatitude,
-    status,
  
   } = location.state?.rowData || {};
+  const [status, setStatus] = useState(false); // Initialize status as false initially
+  useEffect(() => {
+    // Set the status based on the initial value from the API
+    setStatus(location.state?.rowData?.status === "Active");
+  }, [location.state]);
+
+  const handleToggleStatus = async () => {
+    try {
+      // Send PUT request to the API endpoint using axios
+      const response = await BACKEND_API.put(
+        `/api/v1/airports/${airportId}/toggle-status`
+      );
+      if (response.status === 200) {
+        // Toggle the status in the UI
+        setStatus(!status);
+      } else {
+        console.error("Failed to toggle status");
+      }
+    } catch (error) {
+      console.error("Error toggling status:", error);
+    }
+  };
+
   const Field = ({ label, value }) => {
     return (
       <Grid item xs={6}>
@@ -53,9 +76,12 @@ function AirportDetail(props) {
         <Field label="status" value={status}/>
 
       </Grid>
-      {/* <Grid item container xs={12} md={6}>
-        
-      </Grid> */}
+      <Grid item container xs={6} md={5} mt={2}>
+        <FormControlLabel
+          control={<Switch checked={status} onChange={handleToggleStatus} />}
+          label={status ? "Active" : "Inactive"}
+        />
+      </Grid>
     </Grid>
   );
 }
