@@ -75,7 +75,7 @@ const CarDetails = () => {
                 width: "270px",
                 alignItems: "center",
                 // backgroundColor: "green",
-                borderRadius: "100px",
+                // borderRadius: "100px",
               }}
             >
               {carImageUrl === null ? (
@@ -99,7 +99,7 @@ const CarDetails = () => {
                     
                     width: "100%",
                     height: "100%",
-                    borderRadius: "100px",
+                    // borderRadius: "100px",
                   }}
                   src={carImageUrl}
                 />

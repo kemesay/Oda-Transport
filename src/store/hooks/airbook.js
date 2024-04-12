@@ -12,7 +12,7 @@ const fetchData = async (queryParams) => {
 
   try {
     const response = await BACKEND_API.get(endpoint);
-    console.log("book data: ", response.data);
+    // console.log("book data: ", response.data);
     return response.data.data;
   } catch (error) {
     throw new Error(`Failed to fetch data from the ${endpoint}.`);

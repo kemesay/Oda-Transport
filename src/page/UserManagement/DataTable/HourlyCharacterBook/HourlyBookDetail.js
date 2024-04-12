@@ -54,7 +54,6 @@ function ViewHourlyBookDetail(props) {
     setOpen(false);
     setPopupType(null);
   };
-
   const endpoint = `/api/v1/admin/bookings/approve`;
   const handleAcceptBook = async () => {
     try {

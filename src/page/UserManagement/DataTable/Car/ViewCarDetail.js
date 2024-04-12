@@ -48,7 +48,7 @@ function ViewCarDetail(props) {
             style={{
               objectFit: "fill",
               width: "100%",
-              borderRadius: "100%",
+              // borderRadius: "100%",
               border: "5px solid #999",
             }}
           />
