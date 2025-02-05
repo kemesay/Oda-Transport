@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MDataTable1 from "../MDataTable1";
 import useDeleteData from "../../../../store/hooks/useDeleteData";
 
@@ -6,50 +6,273 @@ import usePostData from "../../../../store/hooks/usePostData";
 import usePutData from "../../../../store/hooks/usePutData";
 import { columns } from "./columns";
 import { useNavigate } from "react-router-dom";
-import useGetData12 from "../../../../store/hooks/airbook";
-import { ToastContainer } from "react-toastify";
+import { BACKEND_API } from "../../../../store/utils/API";
+
+
+import { ToastContainer, toast } from "react-toastify";
+import { Box, IconButton, Tooltip, Typography, CircularProgress } from "@mui/material";
+
+import {
+  KeyboardDoubleArrowLeft,
+  KeyboardDoubleArrowRight,
+  KeyboardArrowLeft,
+  KeyboardArrowRight,
+} from "@mui/icons-material";
+
+
 
 function HourlyCharacter() {
   const [hourlyCharterBookId, setHourlyCharterId] = React.useState(null);
   const navigate = useNavigate();
 
 
+    // States
+    const [data, setData] = useState([]);
+    const [isError, setIsError] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isRefetching, setIsRefetching] = useState(false);
+    const [totalElements, setTotalElements] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [errorMessage, setErrorMessage] = useState("");
+  
+
+  // Pagination state
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
-  const [isRefetching, setIsRefetching] = useState(false);
+
+  let endpoint = `/api/v1/hourly-charter-books`;
+
+  // Filtering and sorting states
   const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState([]);
 
-  let endpoint = `/api/v1/hourly-charter-books`;
-  const queryParams = {
-    page: pagination.pageIndex + 1, // API expects 1-based index
-    pageSize: pagination.pageSize,
-    sortDirection: "DESC",
-    filters: JSON.stringify(columnFilters),
-    search: globalFilter,
-    sort: sorting.length ? JSON.stringify(sorting) : undefined
-  };
+ // Enhanced fetchData function
+ const fetchData = async () => {
+  if (!data.length) {
+    setIsLoading(true);
+  } else {
+    setIsRefetching(true);
+  }
 
+  try {
+    const queryParams = new URLSearchParams({
+      page: (pagination.pageIndex + 1).toString(), // Convert to 1-based for API
+      pageSize: pagination.pageSize.toString(),
+      sortDirection: sorting.length > 0 ? sorting[0].desc ? 'DESC' : 'ASC' : 'DESC',
+      ...(sorting.length > 0 && { sortBy: sorting[0].id }),
+      ...(globalFilter && { search: globalFilter }),
+    });
 
+    columnFilters.forEach(filter => {
+      queryParams.append(`filter[${filter.id}]`, filter.value);
+    });
 
-  const getendpoint = `/api/v1/hourly-charter-books?${Object.keys(queryParams)
-    .map((key) => `${key}=${queryParams[key]}`)
-    .join("&")}`;
+    const response = await BACKEND_API.get(
+      `/api/v1/hourly-charter-books?${queryParams.toString()}`
+    );
 
-  const {
-    data: response,
-    isLoading: isLoadingGet,
-    isError: isErrorGet,
-    isFetching: isFetchingTax,
-    error: errorGet,
-  } = useGetData12(getendpoint);
+    if (response.status === 200) {
+      const { data: responseData, totalElements, totalPages, pageNumber } = response.data;
+      
+      // Update state with response data
+      setData(responseData);
+      setTotalElements(totalElements);  
+      setTotalPages(totalPages);
 
-  console.log("object:", response);
+      // Ensure pagination state matches response
+      if (pageNumber !== pagination.pageIndex + 1) {
+        setPagination(prev => ({
+          ...prev,
+          pageIndex: pageNumber - 1 // Convert from 1-based to 0-based
+        }));
+      }   
 
-  const { mutate, isLoading, isError, data, isSuccess } = usePostData(endpoint);
+      setIsError(false);
+      setErrorMessage("");
+    }
+  } catch (error) {
+    setIsError(true);
+    setErrorMessage(error?.response?.data?.message || "Failed to fetch data");  
+    toast.error(error?.response?.data?.message || "Failed to fetch data");
+  } finally {
+    setIsRefetching(false);
+    setIsLoading(false);
+  }
+};          
+// initial data fetch
+useEffect(() => {
+  fetchData();
+}, []);     
+
+// Fetch data when pagination, filters, or sorting change
+useEffect(() => {
+  const debounceTimer = setTimeout(() => {
+    fetchData();
+  }, 300); // Debounce for 300ms    
+
+  return () => clearTimeout(debounceTimer);
+}, [
+  pagination.pageIndex,
+  pagination.pageSize,
+  columnFilters,
+  globalFilter,
+  sorting,
+]);           
+
+// Reset pagination when filters change
+useEffect(() => {
+  setPagination(prev => ({
+    ...prev,
+    pageIndex: 0, // Reset to first page
+  }));
+}, [columnFilters, globalFilter]);      
+
+// Enhanced page change handler
+const handlePageChange = (direction) => {
+  setPagination((prev) => {
+    const newPage = prev.pageIndex + direction;
+    return {
+      ...prev,    
+      pageIndex: Math.min(Math.max(0, newPage), totalPages - 1)
+    };
+  });
+};
+
+// Enhanced jump to page handler
+const handleJumpToPage = (pageIndex) => {
+  setPagination((prev) => ({
+    ...prev,
+    pageIndex: Math.min(Math.max(0, pageIndex), totalPages - 1)
+  }));
+};    
+
+// Handle page size change
+const handlePageSizeChange = (newSize) => {
+  setPagination({
+    pageIndex: 0,
+    pageSize: newSize,
+  });
+};                
+
+// Custom pagination controls component
+const PaginationControls = () => (
+  <Box sx={{ 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap:   2,
+    padding: '8px',
+    backgroundColor: 'white',
+    borderRadius: '4px',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    position: 'relative'
+  }}>
+    {/* Loading overlay */}
+    {(isLoading || isRefetching) && (
+      <Box sx={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        zIndex: 1
+      }}>
+        <CircularProgress size={24} />
+      </Box>
+    )}
+
+    {/* Navigation controls */}
+    <Tooltip title="First Page">
+      <span>
+        <IconButton 
+          onClick={() => handleJumpToPage(0)}
+          disabled={pagination.pageIndex === 0 || isLoading}
+        >                     
+          <KeyboardDoubleArrowLeft />
+        </IconButton>
+      </span>
+    </Tooltip>
+
+    <Tooltip title="Previous Page">
+      <span>
+        <IconButton 
+          onClick={() => handlePageChange(-1)}
+          disabled={pagination.pageIndex === 0 || isLoading}
+        >
+          <KeyboardArrowLeft />
+        </IconButton>
+      </span>
+    </Tooltip>
+
+    <Box sx={{ 
+      minWidth: '100px', 
+      textAlign: 'center',
+      fontWeight: 'medium'
+    }}>
+      Page {pagination.pageIndex + 1} of {totalPages}
+    </Box>
+
+    <Tooltip title="Next Page">
+        <span>
+          <IconButton 
+            onClick={() => handlePageChange(1)}
+            disabled={pagination.pageIndex >= totalPages - 1 || isLoading}
+          >
+            <KeyboardArrowRight />
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      <Tooltip title="Last Page">
+        <span>
+          <IconButton 
+            onClick={() => handleJumpToPage(totalPages - 1)}
+            disabled={pagination.pageIndex >= totalPages - 1 || isLoading}
+          >
+            <KeyboardDoubleArrowRight />
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      {/* Page size selector */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography variant="body2">Items per page:</Typography>
+        <select
+          value={pagination.pageSize}
+          onChange={(e) => {
+            setPagination({
+              pageIndex: 0,
+              pageSize: Number(e.target.value),
+            });
+          }}
+          disabled={isLoading}
+          style={{
+            padding: '4px',
+            borderRadius: '4px',
+            border: '1px solid #ccc'
+          }}
+        >
+          {[10, 20, 30, 50].map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </Box>
+
+      <Typography variant="body2" color="textSecondary">
+        Total: {totalElements} items
+      </Typography>
+    </Box>
+  );
+
+  const { mutate, isLoading: isLoadingPost, isError: isErrorPost, data: postData, isSuccess: isSuccessPost } = usePostData(endpoint);
   const handleNewAdd = async ({ values, table }) => {
     mutate(values);
     table.setCreatingRow(null);
@@ -96,24 +319,27 @@ function HourlyCharacter() {
   return (
     <div>
       <MDataTable1
-        headerTitle="Hourly Charter Booking"
-        add="Hourly Charter Book"
+        headerTitle="Hourly Character Books"
+        add="Hourly Character Book"
         openDeleteConfirmModal={openDeleteConfirmModal}
         handleNewAdd={handleNewAdd}
         handleEdit={handleEdit}
         editable={true}
         columns={columns}
-        data={response?.data || []}
-        isLoading={isLoadingGet}
-        isError={isErrorGet}
+
+        data={data}
+        isLoading={isLoading}
+        isError={isError}
         isRefetching={isRefetching}
-        title={"Hourly Charter Book"}
+        title={"Hourly Character Book"}
         handleViewClick={handleViewClick}
         // Pagination props
         enablePagination={true}
-        rowCount={response?.totalElements || 0}
+        rowCount={totalElements}
         pagination={pagination}
+
         onPaginationChange={setPagination}
+        renderCustomPagination={() => <PaginationControls />}
         // Filtering props
         enableFiltering={true}
         enableColumnFilters={true}
@@ -129,13 +355,17 @@ function HourlyCharacter() {
           columnFilters,
           globalFilter,
           sorting,
-          isLoading: isLoadingGet,
+          isLoading,
           showProgressBars: isRefetching,
-          showAlertBanner: isErrorGet,
+          showAlertBanner: isError,
         }}
       />
-            <ToastContainer />
-
+      {isError && (
+        <Typography color="error" sx={{ mt: 2, textAlign: 'center' }}>
+          {errorMessage}
+        </Typography>
+      )}
+      <ToastContainer />
     </div>
   );
 }

@@ -74,7 +74,8 @@ function Index({
   const pointToPointTripTypes = useMemo(() => ["One-Way", "Round-Trip"]);
   const { airports } = useSelector((state) => state.airportReducer);
   const { isLoaded } = useLoadScript({
-    // googleMapsApiKey: "AIzaSyAgAphjhjllyP6TZBuVxw_8c",
+    // googleMapsApiKey: "AIzaSyAgAp1RwiIqCyZZg63gsmyP6TZBuVxw_8c",
+    googleMapsApiKey: "AIzaSyCvm85RFSLVS4DV7zBb1l0UlOJ1tpSXRPQ",
 
     libraries: libraries,
   });
