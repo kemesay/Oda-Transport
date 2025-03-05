@@ -71,7 +71,7 @@ function ViewHourlyBookDetail(props) {
   const endpoint = `/api/v1/admin/bookings/approve`;
   const paymentendpoint = `/api/v1/admin/bookings/update-payment-status`;
 
-  const detailendpoint = `/api/v1/airport-books/${hourlyCharterBookId}`;
+  const detailendpoint = `/api/v1/hourly-charter-books/${hourlyCharterBookId}`;
 
   const {
     data: response,
@@ -170,6 +170,27 @@ function ViewHourlyBookDetail(props) {
       </Grid>
     );
   };
+
+  const formatDateToPacific = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZoneName: 'short'
+      }).format(date);
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return dateString;
+    }
+  };
+
   return (
     <>
       <Grid
@@ -216,7 +237,10 @@ function ViewHourlyBookDetail(props) {
           <Field label="Occasion" value={occasion} />
           <Field label="special Instructions" value={specialInstructions} />
           <Field label="bookingFor" value={bookingFor} />
-          <Field label="pickup Date Time" value={pickupDateTime} />
+          <Field 
+            label="pickup Date Time" 
+            value={formatDateToPacific(pickupDateTime)} 
+          />
           <Field label="Is GuestBooking" value={isGuestBooking} />
           <Field label="Passenger full name" value={passengerFullName} />
           <Field label="Passenger cell Phone" value={passengerCellPhone} />
@@ -264,20 +288,13 @@ function ViewHourlyBookDetail(props) {
         {/* Check if ExtraOptions is available */}
         {response?.ExtraOptions && response.ExtraOptions.length > 0 && (
           <>
-            {/* Render Extra Options in a Grid */}
-            {/* <Grid item xs={12}>
-              <Typography variant="h6">Extra Options:</Typography>
-            </Grid> */}
+
             {response.ExtraOptions.map((option, index) => (
               <Grid container item xs={10} spacing={2} key={index}>
-                {/* <Grid item xs={6}> */}
                 <Field label="Extra Option Id" value={option.extraOptionId} />
                 <Field label="Description" value={option.description} />
-                {/* </Grid> */}
-                {/* <Grid item xs={6}> */}
                 <Field label="Name" value={option.name} />
                 <Field label="Price" value={option.pricePerItem} />
-                {/* </Grid> */}
               </Grid>
             ))}
           </>
@@ -328,16 +345,6 @@ function ViewHourlyBookDetail(props) {
           </Button>
         </Grid>
 
-        {/* <Grid item sx={5}>
-          <Button
-            variant="contained"
-            color="warning"
-            fullWidth
-            onClick={() => handleClickOpen("EDIT_PAYMENT_STATUS")}
-          >
-            EDIT PAYMENT STATUS
-          </Button>
-        </Grid> */}
 
         <Grid item sx={5}>
           <Button
@@ -387,21 +394,6 @@ function ViewHourlyBookDetail(props) {
       )}
 
       <ToastContainer position="top-center" />
-
-      {/* <Snackbar
-        open={isAccepted}
-        autoHideDuration={4000}
-        onClose={handleSnackbarClose}
-      >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity="success"
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
-          Book Accepted Successfully
-        </Alert>
-      </Snackbar> */}
     </>
   );
 }

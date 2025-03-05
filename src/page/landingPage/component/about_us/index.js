@@ -1,7 +1,6 @@
 import React from "react";
 import { Box, Stack, Grid, useMediaQuery } from "@mui/material";
 import { useTheme } from "@emotion/react";
-// import RSTypography from "../../../../components/RSTypography";
 
 import RSTypography from "../../../../components/RTSABOUT";
 

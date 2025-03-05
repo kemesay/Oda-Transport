@@ -45,7 +45,6 @@ function Index() {
         (state) => state.authReducer
     );
     const { fee } = useSelector((state) => state.bookReducer);
-    // const phoneRegex = /^(09|07|2519|2517|\+2519|\+2517)\d{8}$/;
     const phoneRegex = /^[0-9]{10,15}$/;
     const fullNameRegex = /^[a-zA-Z]+(?: [a-zA-Z]+)$/;
 
@@ -260,19 +259,6 @@ function Index() {
             .matches(phoneRegex, "Invalid phone number format")
             .required("phone num. required"),
         isGuestBooking: yup.boolean(),
-        // guestEmail: yup
-        //   .string("should be string")
-        //   .email("should be valid email")
-        //   .when("isGuestBooking", {
-        //     is: true,
-        //     then: (schema) =>
-        //       yup
-        //         .string("should be string")
-        //         .email("should be valid email")
-        //         .required("guest email is required"),
-        //     otherwise: (schema) =>
-        //       yup.string("should be string").email("should be valid email"),
-        //   }),
     });
     const formikContact = useFormik({
         initialValues: {

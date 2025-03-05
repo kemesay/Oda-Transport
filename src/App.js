@@ -43,6 +43,8 @@ import Admin from "./page/UserManagement/DataTable/Admin/Admin";
 import AdminDetails from "./page/UserManagement/DataTable/Admin/Admindetails";
 import TermAndCondition from "./page/landingPage/component/termCondition";
 import Trust from "./page/landingPage/component/trust";
+import Register from "./page/landingPage/component/auth/register";
+
 import PopularPlaces from "./page/UserManagement/DataTable/PopularPlace/PopularPlace";
 import AddPopularPlace from "./page/UserManagement/DataTable/PopularPlace/AddpopularPlace";
 import ViewPopularPlaceDetail from "./page/UserManagement/DataTable/PopularPlace/PopularPlaceDetail";
@@ -84,6 +86,7 @@ function App() {
 
             <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/forget-password" element={<ForgetPassword />} />
+            <Route path="/register" element={<Register />} />
             <Route
               path="/home/:id"
               element={

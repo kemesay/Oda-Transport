@@ -14,8 +14,8 @@ function StepSummary({
   const location = useLocation();
   const tripType = rideSummaryData.tripType;
   var travelType = location.pathname.split("/").pop();
-  const isPointToPointTravel = travelType == "2";
   const isAirportTravel = travelType == "1";
+  const isPointToPointTravel = travelType == "2";
   const isHourlyTravel = travelType == "3";
   const { fee, totalFee } = useSelector((state) => state.bookReducer);
 

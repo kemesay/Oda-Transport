@@ -176,6 +176,27 @@ function ViewBookDetail(props) {
       </Grid>
     );
   };
+
+  const formatDateToPacific = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZoneName: 'short'
+      }).format(date);
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return dateString;
+    }
+  };
+
   return (
     <>
       <Grid
@@ -220,7 +241,7 @@ function ViewBookDetail(props) {
           <Field label="Return Flight Number" value={returnFlightNumber} />
 
           <Field label="Special Instructions" value={specialInstructions} />
-          <Field label="Pickup DateTime" value={pickupDateTime} />
+          <Field label="Pickup DateTime" value={formatDateToPacific(pickupDateTime)} />
           <Field label="distanceInMiles" value={distanceInMiles} />
           <Field
             label="Additional stop on the way descrption"
@@ -236,7 +257,7 @@ function ViewBookDetail(props) {
           <Field label="additionalStopId" value={additionalStopId} />
           <Field label="pickupPreferenceId" value={pickupPreferenceId} />
 
-          <Field label="returnPickupDateTime" value={returnPickupDateTime} />
+          <Field label="returnPickupDateTime" value={formatDateToPacific(returnPickupDateTime)} />
           <Field label="isGuestBooking" value={isGuestBooking} />
           <Field label="passengerCellPhone" value={passengerCellPhone} />
           <Field label="passengerEmail" value={passengerEmail} />
@@ -283,10 +304,7 @@ function ViewBookDetail(props) {
         {/* Check if ExtraOptions is available */}
         {response?.ExtraOptions && response.ExtraOptions.length > 0 && (
           <>
-            {/* Render Extra Options in a Grid */}
-            {/* <Grid item xs={12}>
-              <Typography variant="h6">Extra Options:</Typography>
-            </Grid> */}
+
             {response.ExtraOptions.map((option, index) => (
               <Grid container item xs={10} spacing={2} key={index}>
                 {/* <Grid item xs={6}> */}
@@ -346,17 +364,6 @@ function ViewBookDetail(props) {
             EDIT BOOKING STATUS
           </Button>
         </Grid>
-
-        {/* <Grid item sx={5}>
-          <Button
-            variant="contained"
-            color="warning"
-            fullWidth
-            onClick={() => handleClickOpen("EDIT_PAYMENT_STATUS")}
-          >
-            EDIT PAYMENT STATUS
-          </Button>
-        </Grid> */}
 
         <Grid item sx={5}>
           <Button

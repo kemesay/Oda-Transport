@@ -170,6 +170,26 @@ function P2pBookDetail(props) {
     );
   };
 
+  const formatDateToPacific = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZoneName: 'short'
+      }).format(date);
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return dateString;
+    }
+  };
+
   return (
     <>
       <Grid
@@ -215,12 +235,12 @@ function P2pBookDetail(props) {
           <Field label="Distance In Miles" value={distanceInMiles} />
           <Field label="Number Of Passengers" value={numberOfPassengers} />
           <Field label="Special Instructions" value={numberOfSuitcases} />
-          <Field label="Return Pickup DateTime" value={returnPickupDateTime} />
+          <Field label="Return Pickup DateTime" value={formatDateToPacific(returnPickupDateTime)} />
           <Field label="Special Instructions" value={specialInstructions} />
           <Field label="Booking For" value={bookingFor} />
           <Field label="Passenger FullName" value={passengerFullName} />
           <Field label="Passenger CellPhone" value={passengerCellPhone} />
-          <Field label="Pickup Date Time" value={pickupDateTime} />
+          <Field label="Pickup Date Time" value={formatDateToPacific(pickupDateTime)} />
           <Field label="TotaTripFee In Dollars" value={totalTripFeeInDollars} />
 
           <Field

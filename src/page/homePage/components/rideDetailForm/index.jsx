@@ -229,17 +229,6 @@ function Index({
         break;
     }
   };
-  // const checkServiceLocation = (addressComponents) => {
-  //   var country = addressComponents.find((component) =>
-  //     component.types.includes("country")
-  //   )?.short_name;
-  //   var administrativeArea = addressComponents.find((component) =>
-  //     component.types.includes("administrative_area_level_1")
-  //   )?.short_name;
-
-  //   var isInCalifornia = country === "US" && administrativeArea === "CA";
-  //   if (!isInCalifornia) navigate("/not-in-california");
-  // };
 
   function onOriginChanged() {
     if (searchOriginResult != null) {

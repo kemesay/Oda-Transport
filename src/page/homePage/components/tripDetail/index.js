@@ -52,9 +52,9 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
       },
     };
   };
-
-  const isPointToPointTravel = travelType === "2";
+  
   const isAirportTravel = travelType === "1";
+  const isPointToPointTravel = travelType === "2";
   const isHourlyTravel = travelType === "3";
 
   const isRoundTrip = () => {
