@@ -2,7 +2,9 @@ import axios from "axios";
 
 // Create an Axios instance with a base URL
 export const BACKEND_API = axios.create({
-  baseURL: "https://api.odatransportation.com",
+  // baseURL: "https://api.odatransportation.com",
+  baseURL: "http://localhost:5100",
+  // timeout: 5000, // Request timeout in milliseconds
 });
 // Add a request interceptor to modify headers before requests are sent
 BACKEND_API.interceptors.request.use((config) => {
