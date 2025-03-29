@@ -1,170 +1,108 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Box, Stack, Grid, Container } from "@mui/material";
-import ServiceCard from "./component/serviceCard/index";
-import car from "../../assets/images/car.png";
-import plane from "../../assets/images/plane.png";
-import clock from "../../assets/images/clock.png";
-import RSTypography from "../../components/RSTypography";
-import RSButton from "../../components/RSButton";
-import { MdOutlineSend } from "react-icons/md";
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
-import Faq from "./component/FAQ";
-import AboutUs from "./component/about_us";
-import Auth from "./component/auth";
+import React, { useEffect, useRef } from "react";
+import { Box, Container } from "@mui/material";
+import { useDispatch } from "react-redux";
 import { setIsAuthenticated } from "../../store/reducers/authReducer";
 import { motion } from "framer-motion";
-import Slider from "./component/slider/index";
-function Index({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
+import Hero from "./component/hero";
+import Services from "./component/Services";
+import Slider from "./component/slider";
+import ServiceCard from "./component/serviceCard";
+import Portfolio from "./component/portfolio";
+import AboutUs from "./component/about_us";
+import Auth from "./component/auth";
+import Fleet from "./component/Fleet";
+import Faq from "./component/FAQ/index";
+function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const serviceCardData = [
-    {
-      id: 1,
-      imgUrl: plane,
-      delay: 0,
-      text: "Airport pickup & drop off Service",
-    },
-    {
-      id: 2,
-      imgUrl: car,
-      delay: 0.3,
-      text: "Ponit to Point Service ",
-    },
-    {
-      id: 3,
-      imgUrl: clock,
-      delay: 0.6,
-      text: "Hourly Charter Service",
-    },
-  ];
+  const authRef = useRef(null);
+
+  const scrollToAuth = () => {
+    authRef.current?.scrollIntoView({ behavior: 'smooth' });
+    handleUsernameFocus();
+  };
 
   useEffect(() => {
     dispatch(setIsAuthenticated());
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      setUsernameFocus(false);
-    };
+    return () => setUsernameFocus(false);
   }, []);
 
   return (
-    <Box paddingBottom={10} id="home">
+    <Box sx={{ overflow: 'hidden' }}>
+      <Hero onLoginClick={scrollToAuth} />
       <Slider />
-        <Grid
-          container
-          alignItems={"center"}
-          justifyContent={"center"}
-          spacing={{ xs: 2, sm: 3, md: 5 }}
+      <Services />
+      <Portfolio />
+      
+      {/* Auth Section with centered styling */}
+      <Container 
+        ref={authRef} 
+        id="auth" 
+        maxWidth="md"
+        component={motion.div}
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '50vh',
+          py: { xs: 4, md: 8 },
+          px: { xs: 2, md: 3 },
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '80%',
+            height: '1px',
+            background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent)',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '80%',
+            height: '1px',
+            background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent)',
+          }
+        }}
+      >
+        <Box
           sx={{
-            mt: { 
-              xs: -4,
-              sm: -1,  // Changed from -1 to -8 for better positioning on tablets
-              md: -25
-            },
+            width: '100%',
+            maxWidth: 700,
+            mx: 'auto',
+            backgroundColor: 'background.paper',
+            borderRadius: 2,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            overflow: 'hidden',
             position: 'relative',
-            zIndex: 1
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #03930A, #04A80B)',
+            }
           }}
         >
-          <Grid 
-            item 
-            xs={12}
-            sm={10}
-            md={6}
-            lg={5}
-            xl={4}
-            sx={{
-              maxHeight: { 
-                xs: '50vh', 
-                sm: '55vh',  // Adjusted for tablets
-                md: '60vh' 
-              },
-              minHeight: {  // Added minimum height
-                xs: '300px',
-                sm: '400px',
-                md: '500px'
-              },
-              overflow: 'auto',
-              mb: { 
-                xs: 4, 
-                sm: 5,  // Adjusted spacing
-                md: 8 
-              },
-              position: 'relative',
-              backdropFilter: 'blur(5px)',  // Added for better visibility
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',  // Semi-transparent background
-              borderRadius: 2,
-              boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                bottom: -20,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '60%',
-                height: '4px',
-                background: 'linear-gradient(90deg, transparent, #888, transparent)',
-                borderRadius: '2px',
-              },
-              '&::-webkit-scrollbar': {
-                width: '6px',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: '#f1f1f1',
-                borderRadius: '10px',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: '#888',
-                borderRadius: '10px',
-                '&:hover': {
-                  background: '#555',
-                },
-              },
-            }}
-          >
-            <Stack 
-              direction={"column"} 
-              spacing={{ xs: 2, sm: 2.5, md: 4 }}  // Adjusted spacing
-              alignItems={"center"}
-              sx={{ 
-                px: { xs: 1, sm: 2, md: 3 },
-                py: { xs: 2, sm: 3, md: 3 },  // Added responsive padding
-                position: 'relative',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
-                  borderRadius: 2,
-                  zIndex: -1,
-                },
-              }}
-            >
-              {serviceCardData.map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  imgUrl={service.imgUrl}
-                  text={service.text}
-                  id={service.id}
-                  delay={service.delay}
-                />
-              ))}
-            </Stack>
-          </Grid>
-          <Grid item container xs={10} justifyContent={"center"} id="auth">
-            <Auth usernameFocus={usernameFocus} />
-          </Grid>
-          <AboutUs />
-          <Grid item container xs={11} justifyContent={"center"}>
-            <Faq />
-          </Grid>
-        </Grid>
+          <Auth usernameFocus={usernameFocus} />
+        </Box>
+      </Container>
+      <Fleet />
+      <AboutUs />
+      <Faq />
     </Box>
   );
 }
 
-export default Index;
+export default LandingPage;
+

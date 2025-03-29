@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, scroller } from "react-scroll";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   AppBar,
   Stack,
@@ -21,42 +24,54 @@ import {
 } from "@mui/material";
 import { TiThMenuOutline } from "react-icons/ti";
 import logo from "../../assets/images/Odaa Transportation - Logo-01.svg";
-import { useDispatch } from "react-redux";
 import RSButton from "../RSButton";
-import { Link, scroller } from "react-scroll";
-import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { logout, setIsAuthenticated } from "../../store/reducers/authReducer";
 import ChangePasswordDrawer from "./ChangePassword";
-import { useLocation } from "react-router-dom";
+import { logout, setIsAuthenticated } from "../../store/reducers/authReducer";
 import { getUserRole } from "../../util/authUtil";
-const publicNavbarMenus = [
-  { title: "Home", link: "/", scrollLink: "home" },
-  { title: "About Us", link: "/about-us", scrollLink: "aboutus" },
-  { title: "Contact Us", link: "/contact-us", scrollLink: "footer" },
-  { title: "FAQ", link: "/faq", scrollLink: "faq" },
-  { title: "Book now", link: "/home/1", scroll: "nowhere" },
-];
-const authNavbarMenus = [
-  { title: "Book now", link: "/home/1" },
-  { title: "My Order", link: "/my-order" },
-];
+import MobileNavigation from './MobileNavigation';
+import DesktopNavigation from './DesktopNavigation';
+import UserSection from './UserSection';
 
+const NAVBAR_MENUS = {
+  public: [
+    { title: "Home", link: "/", scrollLink: "home" },
+    { title: "About Us", link: "/about-us", scrollLink: "aboutus" },
+    { title: "Contact Us", link: "/contact-us", scrollLink: "footer" },
+    { title: "FAQ", link: "/faq", scrollLink: "faq" },
+    { title: "Book now", link: "/home/1", scroll: "nowhere" },
+  ],
+  authenticated: [
+    { title: "Book now", link: "/home/1" },
+    { title: "My Order", link: "/my-order" },
+  ]
+};
+
+/**
+ * @typedef {Object} HeaderProps
+ * @property {() => void} handleUsernameFocus - Callback to focus username input
+ */
+
+/**
+ * Header component that displays the main navigation bar
+ * @param {HeaderProps} props
+ */
 function Header({ handleUsernameFocus }) {
-  const [value, setValue] = useState(0);
-  const [open, setOpen] = React.useState(false);
-  const [openChangePasswordPopup, setOpenChangePasswordPopup] =
-    React.useState(false);
-  const [anchorElUser, setAnchorElUser] = React.useState(null);
-  const { isSigninSuccess, isAuthenticated } = useSelector(
-    (state) => state.authReducer
-  );
+  // State management
+  const [activeTab, setActiveTab] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
 
+  // Hooks
   const dispatch = useDispatch();
   const location = useLocation();
   const theme = useTheme();
   const navigate = useNavigate();
-  const isMatch = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  
+  const { isSigninSuccess, isAuthenticated } = useSelector(
+    (state) => state.authReducer
+  );
 
   const StyledTabs = styled(Tabs)({
     "& .MuiTabs-indicator": {
@@ -82,23 +97,34 @@ function Header({ handleUsernameFocus }) {
       smooth: true,
       duration: 300,
       offset: -100,
+      spy: true,
     });
   };
 
   const getNavbarMenu = () => {
-    return isAuthenticated
-      ? getUserRole() === "user"
-        ? authNavbarMenus
-        : []
-      : publicNavbarMenus;
+    if (!isAuthenticated) return NAVBAR_MENUS.public;
+    return getUserRole() === "user" ? NAVBAR_MENUS.authenticated : [];
+  };
+
+  const handleNavigation = (menu) => {
+    if (isAuthenticated) {
+      navigate(menu.link);
+      return;
+    }
+
+    if (menu.title === "Book now") {
+      navigate(menu.link);
+    } else {
+      scrollToSection(menu.scrollLink);
+    }
   };
 
   const handleOpenUserMenu = (event) => {
-    setAnchorElUser(event.currentTarget);
+    setUserMenuAnchor(event.currentTarget);
   };
 
   const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
+    setUserMenuAnchor(null);
   };
 
   const handleLogout = (e) => {
@@ -108,12 +134,13 @@ function Header({ handleUsernameFocus }) {
   };
 
   const handleClickOpen = () => {
-    setOpenChangePasswordPopup(true);
+    setIsPasswordDialogOpen(true);
   };
 
   const handleChangePassword = () => {
     handleClickOpen();
   };
+
   useEffect(() => {
     dispatch(setIsAuthenticated());
   }, [isSigninSuccess]);
@@ -123,167 +150,94 @@ function Header({ handleUsernameFocus }) {
       case "/home/1":
       case "/home/2":
       case "/home/3":
-        setValue(0);
+        setActiveTab(0);
         break;
       case "/my-order":
-        setValue(1);
+        setActiveTab(1);
         break;
       default:
         break;
     }
   }, [location]);
 
+  // Styled components
+  const StyledAppBar = styled(AppBar)(({ theme }) => ({
+    backgroundColor: theme.palette.background.paper,
+    height: "auto",
+    position: "sticky",
+    justifyContent: "center",
+    alignItems: "space-between",
+    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+  }));
+
+  const StyledToolbar = styled(Toolbar)(({ theme }) => ({
+    padding: theme.spacing(0, 5),
+    [theme.breakpoints.down("sm")]: {
+      padding: theme.spacing(0, 2),
+    },
+  }));
+
+  const LogoImage = styled("img")({
+    width: "100px",
+    height: "70px",
+    cursor: "pointer",
+    transition: "transform 0.2s ease-in-out",
+    "&:hover": {
+      transform: "scale(1.05)",
+    },
+  });
+
   return (
-    <AppBar
-      sx={{
-        backgroundColor: "#FFF",
-        height: "auto",
-        position: "sticky",
-        justifyContent: "center",
-        alignItems: "space-between",
-      }}
-    >
-      <Toolbar
-        disableGutters
-        sx={{
-          paddingX: "42px",
-          marginLeft: 0,
-        }}
-      >
+    <StyledAppBar>
+      <StyledToolbar disableGutters>
         <Stack
-          spacing={"60px"}
-          direction={"row"}
-          alignItems={"center"}
-          sx={{ flexGrow: 1, display: { xs: "flex" } }}
+          spacing={6}
+          direction="row"
+          alignItems="center"
+          sx={{ flexGrow: 1 }}
         >
-          <img
-            style={{
-              width: "100px",
-              height: "70px",
-              left: "0px",
-              cursor: "pointer",
-            }}
-            alt="logo "
+          <LogoImage
+            alt="Odaa Transportation Logo"
             src={logo}
             onClick={() => navigate("/")}
           />
-          {isMatch ? (
-            <IconButton onClick={() => setOpen(true)}>
-              <TiThMenuOutline color={theme.palette.info.main} />
-            </IconButton>
+          
+          {isMobile ? (
+            <MobileNavigation 
+              isOpen={isMobileMenuOpen}
+              onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              menus={getNavbarMenu()}
+              onNavigate={handleNavigation}
+            />
           ) : (
-            <StyledTabs
-              sx={{ marginLeft: "0px" }}
-              value={value}
-              onChange={(e, value) => {
-                setValue(value);
-              }}
-            >
-              {getNavbarMenu().map((menu, index) => (
-                <StyledTab
-                  label={menu.title}
-                  key={menu.title}
-                  onClick={() => {
-                    if (isAuthenticated) {
-                      navigate(menu.link);
-                    } else {
-                      if (menu.title === "Book now") navigate(menu.link);
-                      else scrollToSection(menu.scrollLink);
-                    }
-                  }}
-                />
-              ))}
-            </StyledTabs>
+            <DesktopNavigation
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              menus={getNavbarMenu()}
+              onNavigate={handleNavigation}
+            />
           )}
         </Stack>
 
-        <Box sx={{ flexGrow: 0 }}>
-          {isAuthenticated ? (
-            <Box>
-              <IconButton onClick={handleOpenUserMenu}>
-                <Avatar
-                  alt="Remy Sharp"
-                  // src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSZCldKgmO2Hs0UGk6nRClAjATKoF9x2liYYA&s"
-                  sx={{ width: 56, height: 56 }}
-                />
-              </IconButton>
+        <UserSection
+          isAuthenticated={isAuthenticated}
+          userMenuAnchor={userMenuAnchor}
+          onAvatarClick={handleOpenUserMenu}
+          onMenuClose={handleCloseUserMenu}
+          onChangePassword={() => setIsPasswordDialogOpen(true)}
+          onLogout={handleLogout}
+          onLoginClick={() => {
+            scrollToSection("auth");
+            handleUsernameFocus();
+          }}
+        />
+      </StyledToolbar>
 
-              <Menu
-                sx={{ mt: "45px" }}
-                id="menu-appbar"
-                anchorEl={anchorElUser}
-                anchorOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
-                keepMounted
-                transformOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
-                open={Boolean(anchorElUser)}
-                onClose={handleCloseUserMenu}
-              >
-                <MenuItem key={2} onClick={handleChangePassword}>
-                  <Typography textAlign="center">Change Password</Typography>
-                </MenuItem>
-                <MenuItem key={2} onClick={handleLogout}>
-                  <Typography textAlign="center">Logout</Typography>
-                </MenuItem>
-              </Menu>
-            </Box>
-          ) : (
-            <RSButton
-              borderradius={"5px"}
-              variant="contained"
-              backgroundcolor={"#4D4C4C"}
-              onClick={() => {
-                scrollToSection("auth");
-                handleUsernameFocus();
-              }}
-            >
-              Login/SignUp
-            </RSButton>
-          )}
-        </Box>
-      </Toolbar>
-      <Drawer anchor="left" open={open} onClose={() => setOpen(false)}>
-        <List>
-          {getNavbarMenu().map((menu, key) => (
-            <ListItem key={menu.link}>
-              <ListItemButton>
-                <Link
-                  onClick={() => {
-                    if (isAuthenticated) {
-                      navigate(menu.link);
-                    } else {
-                      scrollToSection(menu.scrollLink);
-                    }
-                  }}
-                  smooth={true}
-                  duration={500}
-                  spy={true}
-                  offset={-50}
-                >
-                  <RSButton
-                    backgroundcolor={"#171414"}
-                    txtcolor={"#FFF"}
-                    fontSize={16}
-                    fontWeight={700}
-                  >
-                    {menu.title}
-                  </RSButton>
-                </Link>
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Drawer>
       <ChangePasswordDrawer
-        setOpenChangePasswordPopup={setOpenChangePasswordPopup}
-        openChangePasswordPopup={openChangePasswordPopup}
+        open={isPasswordDialogOpen}
+        onClose={() => setIsPasswordDialogOpen(false)}
       />
-    </AppBar>
+    </StyledAppBar>
   );
 }
 export default Header;

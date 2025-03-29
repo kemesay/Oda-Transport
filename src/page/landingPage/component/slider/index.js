@@ -1,126 +1,321 @@
 import React, { useState, useEffect } from "react";
 import Carousel from "react-material-ui-carousel";
-import { useNavigate } from "react-router-dom";
-import Grid from "@mui/material/Grid";
-import { Box, Stack } from "@mui/material";
-import RSTypography from "../../../../components/RSTypography";
+import { Box, Grid, Typography, Container } from "@mui/material";
+import { motion } from "framer-motion";
+import styled from "@emotion/styled";
 import axios from "axios";
 import { remote_host } from "../../../../globalVariable";
 import { authHeader } from "../../../../util/authUtil";
 
-export default function Example(props) {
-  const [popularPlaces, setPopularPlaces] = useState();
+const SideTracker = styled(Box)(({ theme, isLeft }) => ({
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  left: isLeft ? 0 : 'auto',
+  right: isLeft ? 'auto' : 0,
+  height: '100px',
+  width: '4px',
+  backgroundColor: 'rgba(3, 147, 10, 0.1)',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 2,
+  [theme.breakpoints.down('sm')]: {
+    display: 'none',
+  },
+}));
 
-  const getPopularPlaces = async () => {
-    try {
-      await axios
-        .get(`${remote_host}/api/v1/popular-places`, authHeader())
-        .then((res) => {
-          console.log("result: ", res.data);
-          setPopularPlaces(res.data);
-        });
-    } catch (e) {
-      console.log("error: ", e);
-    }
-  };
+const TrackerProgress = styled(motion.div)(({ theme }) => ({
+  height: '0%',
+  width: '100%',
+  backgroundColor: '#03930A',
+  borderRadius: '2px',
+}));
+
+const SlideContainer = styled(Container)(({ theme }) => ({
+  height: "100%",
+  display: "flex",
+  alignItems: "center",
+  padding: theme.spacing(3, 2),
+  position: 'relative',
+  [theme.breakpoints.up('md')]: {
+    padding: theme.spacing(4, 6),
+  },
+}));
+
+const ImageWrapper = styled(Box)(({ theme }) => ({
+  position: 'relative',
+  width: '100%',
+  minHeight: '300px',
+  borderRadius: theme.spacing(2),
+  overflow: 'hidden',
+  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+  transition: 'all 0.3s ease-in-out',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: 'rgba(0, 0, 0, 0.02)',
+  padding: theme.spacing(2),
+  '&:hover': {
+    transform: 'scale(1.02)',
+    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
+  },
+  [theme.breakpoints.up('md')]: {
+    minHeight: '400px',
+  },
+}));
+
+const ContentBox = styled(Box)(({ theme, isTop, isEven }) => ({
+  padding: theme.spacing(2),
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: isTop ? 'flex-start' : 'center',
+  height: '100%',
+  order: isTop ? -1 : 0,
+  [theme.breakpoints.up('md')]: {
+    padding: theme.spacing(3),
+    marginLeft: isEven ? theme.spacing(2) : 0,
+    marginRight: !isEven ? theme.spacing(2) : 0,
+  },
+}));
+
+const SlideTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: 500,
+  marginTop: theme.spacing(3),
+  position: 'relative',
+  textTransform: 'uppercase',
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    bottom: '-10px',
+    left: 0,
+    width: '60px',
+    height: '3px',
+    backgroundColor: theme.palette.primary.main,
+  },
+}));
+
+export default function Slider() {
+  const [popularPlaces, setPopularPlaces] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
+    const getPopularPlaces = async () => {
+      try {
+        const res = await axios.get(`${remote_host}/api/v1/popular-places`, authHeader());
+        setPopularPlaces(res.data);
+      } catch (e) {
+        console.error("Error fetching popular places:", e);
+      }
+    };
     getPopularPlaces();
   }, []);
+
+  const handleChange = (index) => {
+    setCurrentIndex(index);
+  };
+
   return (
-    <Carousel
-      animation="fade"
-      swippe={true}
-      duration={1000}
-      stopAutoPlayOnHover={true}
-      interval={5000}
-      indicatorIconButtonProps={{
-        color: "#678",
-      }}
-      sx={{
-        height: { xs: '50vh', md: '100vh' },
-        indicators: {
-          width: "100%",
-          marginTop: "3px",
-          textAlign: "center",
-        },
-        indicator: {
-          cursor: "pointer",
-          transition: "200ms",
-          padding: 0,
-          color: "#0A2",
-          "&:hover": {
-            color: "#678",
-          },
-          "&:active": {
-            color: "#324",
-          },
-        },
-        indicatorIcon: {
-          fontSize: "15px",
-        },
-        active: {
-          color: "#2378a1",
-        },
-      }}
-    >
-      {popularPlaces?.map(({ image, title, description }, i) => (
-        <SlideItem
-          key={i}
-          image={image}
-          title={title}
-          description={description}
+    <Box sx={{ bgcolor: 'background.default', position: 'relative' }}>
+      <SideTracker isLeft>
+        <TrackerProgress
+          animate={{
+            height: `${((currentIndex + 1) / popularPlaces.length) * 100}%`
+          }}
+          transition={{ duration: 0.3 }}
         />
-      ))}
-    </Carousel>
+      </SideTracker>
+
+      <Carousel
+        animation="slide"
+        swipe={true}
+        duration={800}
+        interval={6000}
+        stopAutoPlayOnHover={true}
+        onChange={handleChange}
+        indicators={false}
+        navButtonsProps={{
+          style: {
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            color: '#333',
+            borderRadius: '50%',
+            padding: '12px',
+            margin: '0 20px',
+            display: 'none',
+          }
+        }}
+        sx={{ 
+          minHeight: { xs: '400px', sm: '500px', md: '600px' },
+          backgroundColor: 'background.paper',
+        }}
+      >
+        {popularPlaces.map((place, index) => (
+          <SlideItem 
+            key={index} 
+            data={place} 
+            isEven={index % 2 === 0}
+            totalSlides={popularPlaces.length}
+            currentIndex={currentIndex}
+          />
+        ))}
+      </Carousel>
+
+      <SideTracker>
+        <TrackerProgress
+          animate={{
+            height: `${((currentIndex + 1) / popularPlaces.length) * 100}%`
+          }}
+          transition={{ duration: 0.3 }}
+        />
+      </SideTracker>
+    </Box>
   );
 }
 
-function SlideItem({ image, title, description }) {
-  return (
-    <Box
-      sx={{
-        backgroundImage: `url(${image})`,
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-        height: { xs: '40vh', sm: '42vh', md: '69vh' },
+function SlideItem({ data, isEven }) {
+  const { image, title, description } = data;
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageAspectRatio, setImageAspectRatio] = useState(null);
+
+  const handleImageLoad = (event) => {
+    const img = event.target;
+    setImageAspectRatio(img.naturalWidth / img.naturalHeight);
+    setImageLoaded(true);
+  };
+
+  const getImageStyle = () => {
+    if (!imageAspectRatio) return {};
+
+    const style = {
+      transition: 'all 0.5s ease',
+      padding: '10px',
+    };
+
+    if (imageAspectRatio > 1) {
+      return {
+        ...style,
         width: '100%',
-      }}
-    >
-      <Stack
-        direction={"column"}
-        alignItems={"center"}
-        justifyContent={"flex-end"}
-        sx={{ height: "100%" }}
+        height: 'auto',
+        maxHeight: '100%',
+        objectFit: 'contain',
+      };
+    } else {
+      return {
+        ...style,
+        width: 'auto',
+        height: '100%',
+        maxWidth: '100%',
+        objectFit: 'contain',
+      };
+    }
+  };
+
+  const contentVariants = {
+    hidden: { opacity: 0, x: isEven ? -50 : 50 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
+  const imageVariants = {
+    hidden: { opacity: 0, x: isEven ? 50 : -50 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
+  return (
+    <SlideContainer maxWidth="xl">
+      <Grid 
+        container 
+        spacing={2}
+        alignItems="center"
+        direction={isEven ? 'row' : 'row-reverse'}
       >
-        <Box
-          sx={{
-            backgroundColor: "#000",
-            opacity: 0.7,
-            width: "100%",
-            paddingY: { xs: 2, md: 4 },
-            paddingX: 2,
-          }}
-        >
-          <center>
-            <RSTypography
-              fontsize={{ xs: "24px", sm: "30px", md: "35px" }}
-              fontweight={"500"}
-              txtcolor={"#FFF"}
-            >
-              {title}
-            </RSTypography>
-            <RSTypography
-              fontsize={{ xs: "16px", sm: "18px", md: "20px" }}
-              fontweight={"300"}
-              txtcolor={"#DDD"}
-            >
-              {description}
-            </RSTypography>
-          </center>
-        </Box>
-      </Stack>
-    </Box>
+        <Grid item xs={12} md={7}>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={imageVariants}
+          >
+            <ImageWrapper>
+              <Box
+                component="img"
+                src={image}
+                alt={title}
+                onLoad={handleImageLoad}
+                sx={{
+                  opacity: imageLoaded ? 1 : 0,
+                  ...getImageStyle(),
+                  '&:hover': {
+                    transform: 'scale(1.05)',
+                    transition: 'transform 0.6s ease-in-out',
+                  },
+                }}
+              />
+              {!imageLoaded && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    border: '4px solid #f3f3f3',
+                    borderTop: '4px solid #03930A',
+                    animation: 'spin 1s linear infinite',
+                    '@keyframes spin': {
+                      '0%': { transform: 'translate(-50%, -50%) rotate(0deg)' },
+                      '100%': { transform: 'translate(-50%, -50%) rotate(360deg)' },
+                    },
+                  }}
+                />
+              )}
+            </ImageWrapper>
+          </motion.div>
+        </Grid>
+
+        <Grid item xs={12} md={5}>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={contentVariants}
+          >
+            <ContentBox isTop={isEven} isEven={isEven}>
+              <SlideTitle 
+                variant="h5"
+                sx={{
+                  fontSize: { xs: '1.4rem', sm: '1.6rem', md: '2rem', lg: '2.2rem' },
+                  mb: { xs: 1, md: 2 },
+                }}
+              >
+                {title}
+              </SlideTitle>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                  lineHeight: 1.6,
+                  mt: { xs: 1, md: 2 },
+                  position: 'relative',
+                  textAlign: 'justify',
+                  maxWidth: '95%',
+                }}
+              >
+                {description}
+              </Typography>
+            </ContentBox>
+          </motion.div>
+        </Grid>
+      </Grid>
+    </SlideContainer>
   );
 }

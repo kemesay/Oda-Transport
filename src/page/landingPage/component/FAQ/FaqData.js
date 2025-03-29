@@ -19,11 +19,7 @@ const faqData = [
     data: "Familiarize yourself with our cancellation policy to understand any applicable charges or guidelines. We strive to provide flexibility while ensuring fairness to both riders and drivers.",
     name: "panel4",
   },
-  {
-    summary: "Are the Drivers Background Checked?",
-    data: "Peer-to-peer (P2P) lending is a financial model that allows individuals to lend money directly to other individuals. In a P2P lending system, borrowers apply for loans on online platforms, and investors can choose to fund those loans in exchange for a return on their investment. P2P lending can offer borrowers access to lower interest rates and fees compared to traditional lenders, while investors can earn higher returns on their investments than they would in savings accounts or other low-risk investments.",
-    name: "panel5",
-  },
+ 
   {
     summary: "Can I Contact Customer Support?",
     data: "Need assistance or have a question? Our dedicated customer support team is here to help. Learn how to get in touch with us via phone, email, or live chat for prompt assistance with your ride booking inquiries.",
