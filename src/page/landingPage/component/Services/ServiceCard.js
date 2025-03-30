@@ -73,6 +73,24 @@ const CheckIcon = styled(Check)(({ theme }) => ({
 function ServiceCard({ service, delay }) {
   const navigate = useNavigate();
   
+  const getBookingPath = (serviceId) => {
+    switch (serviceId) {
+      case 'airport':
+        return '/home/1';
+      case 'point-to-point':
+        return '/home/2';
+      case 'hourly':
+        return '/home/3';
+      default:
+        return '/home/1';
+    }
+  };
+
+  const handleBooking = () => {
+    const path = getBookingPath(service.id);
+    navigate(path);
+  };
+
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -123,7 +141,7 @@ function ServiceCard({ service, delay }) {
               fullWidth
               variant="contained"
               backgroundcolor="primary.main"
-              onClick={() => navigate(`/booking${service.path}`)}
+              onClick={handleBooking}
               sx={{
                 py: 1.5,
                 fontSize: "1rem",

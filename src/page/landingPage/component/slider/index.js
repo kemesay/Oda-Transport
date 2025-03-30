@@ -66,13 +66,12 @@ const ImageWrapper = styled(Box)(({ theme }) => ({
   },
 }));
 
-const ContentBox = styled(Box)(({ theme, isTop, isEven }) => ({
+const ContentBox = styled(Box)(({ theme, isEven }) => ({
   padding: theme.spacing(2),
   display: 'flex',
   flexDirection: 'column',
-  justifyContent: isTop ? 'flex-start' : 'center',
+  justifyContent: 'flex-start',
   height: '100%',
-  order: isTop ? -1 : 0,
   [theme.breakpoints.up('md')]: {
     padding: theme.spacing(3),
     marginLeft: isEven ? theme.spacing(2) : 0,
@@ -81,7 +80,7 @@ const ContentBox = styled(Box)(({ theme, isTop, isEven }) => ({
 }));
 
 const SlideTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 500,
+  fontWeight: 200,
   marginTop: theme.spacing(3),
   position: 'relative',
   textTransform: 'uppercase',
@@ -92,7 +91,7 @@ const SlideTitle = styled(Typography)(({ theme }) => ({
     left: 0,
     width: '60px',
     height: '3px',
-    backgroundColor: theme.palette.primary.main,
+    backgroundColor: '#03930A',
   },
 }));
 
@@ -234,7 +233,7 @@ function SlideItem({ data, isEven }) {
       <Grid 
         container 
         spacing={2}
-        alignItems="center"
+        alignItems="flex-start"
         direction={isEven ? 'row' : 'row-reverse'}
       >
         <Grid item xs={12} md={7}>
@@ -288,12 +287,13 @@ function SlideItem({ data, isEven }) {
             animate="visible"
             variants={contentVariants}
           >
-            <ContentBox isTop={isEven} isEven={isEven}>
+            <ContentBox isEven={isEven}>
               <SlideTitle 
-                variant="h5"
+                variant="h6"
                 sx={{
-                  fontSize: { xs: '1.4rem', sm: '1.6rem', md: '2rem', lg: '2.2rem' },
+                  fontSize: { xs: '1.2rem', sm: '1.4rem', md: '1.8rem', lg: '2rem' },
                   mb: { xs: 1, md: 2 },
+                  marginTop: 0,
                 }}
               >
                 {title}

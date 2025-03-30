@@ -101,7 +101,7 @@ export default function FullWidthTabs({ usernameFocus }) {
           },
         }}
       >
-        <Tab label="Signin" sx={styleTab} />
+        <Tab label="Sign in" sx={styleTab} />
         <Tab label="Register" sx={styleTab} />
       </Tabs>
       <SwipeableViews

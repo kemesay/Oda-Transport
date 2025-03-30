@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 import axios from "axios";
 import { Person, Luggage, ChevronLeft, ChevronRight } from "@mui/icons-material";
 import RSButton from "../../../../components/RSButton";
+import { useNavigate } from "react-router-dom";
 
 const FleetContainer = styled(Container)(({ theme }) => ({
   padding: theme.spacing(10, 2),
@@ -112,6 +113,7 @@ export default function Fleet() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  const navigate = useNavigate();
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -229,6 +231,10 @@ export default function Fleet() {
     };
   };
 
+  const handleBooking = () => {
+    navigate('/home/1');
+  };
+
   return (
     <FleetContainer maxWidth="xl" id="fleet">
       <motion.div
@@ -247,8 +253,9 @@ export default function Fleet() {
           </Typography>
           <Typography
             variant="h6"
-            color="text.secondary"
-            sx={{ maxWidth: 800, mx: 'auto' }}
+            color="text.white"
+
+            sx={{ maxWidth: 800, mx: 'auto', color: 'white'}}
           >
             Explore our diverse range of premium vehicles designed to meet your
             transportation needs with style and comfort.
@@ -382,6 +389,7 @@ export default function Fleet() {
                           variant="contained"
                           backgroundcolor="#03930A"
                           fullWidth
+                          onClick={handleBooking}
                           sx={{
                             py: 2,
                             fontSize: '1.1rem',
