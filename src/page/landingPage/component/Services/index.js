@@ -58,7 +58,7 @@ const services = [
     description: "Flexible transportation solutions charged by the hour. Ideal for multiple stops, shopping trips, business meetings, or when your schedule is uncertain.",
     icon: AccessTime,
     features: [
-      "Minimum 2-hour booking",
+      "Minimum 5-hour booking",
       "Multiple stops",
       "Wait time included",
       "Customizable itinerary"

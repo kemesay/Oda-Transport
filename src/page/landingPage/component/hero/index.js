@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import styled from "@emotion/styled";
 import RSButton from "../../../../components/RSButton";
 import logoUrlLowOpacity from "../../../../assets/images/grayLogo-transparent.png";
+import { useNavigate } from "react-router-dom";
 
 const HeroContainer = styled(Box)(({ theme }) => ({
   height: { xs: "60vh", md: "80vh" },
@@ -34,6 +35,8 @@ const ContentWrapper = styled(Stack)(({ theme }) => ({
   padding: theme.spacing(4),
   textAlign: "center",
 }));
+
+
 
 const HighlightText = styled("span")(({ theme }) => ({
   color: theme.palette.success.main,
@@ -73,7 +76,9 @@ function Hero({ onLoginClick }) {
       y: 0,
       transition: { duration: 0.5 }
     }
+
   };
+
 
   return (
     <HeroContainer>
@@ -134,7 +139,7 @@ function Hero({ onLoginClick }) {
                 }
               }}
             >
-              Get Started Now
+              Book Now
             </RSButton>
           </motion.div>
         </ContentWrapper>

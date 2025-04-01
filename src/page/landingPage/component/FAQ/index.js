@@ -35,11 +35,11 @@ const faqCategories = {
   general: [
     {
       summary: "How do I book a ride with ODA Transportation?",
-      data: "You can book a ride through our website by filling out the contact form, calling our 24/7 booking line, or sending us an email. We recommend booking at least 24 hours in advance for guaranteed availability, though we do accommodate last-minute requests when possible.",
+      data: "You can book a ride through our website by filling out the booking form, calling our 24/7 booking line, or sending us an email. We recommend booking at least 24 hours in advance for guaranteed availability, though we do accommodate last-minute requests when possible.",
     },
     {
       summary: "What areas do you serve?",
-      data: "We provide transportation services throughout the metropolitan area and surrounding suburbs. We also offer long-distance transportation to neighboring cities and states. Please contact us for specific service area information.",
+      data: "We provide transportation services throughout the USA, but we are based pickup address in the state of California. We also offer long-distance transportation to neighboring cities and states. Please contact us for specific service area information.",
     },
     {
       summary: "What types of vehicles do you have in your fleet?",
@@ -83,11 +83,11 @@ const faqCategories = {
     },
     {
       summary: "Can I make a quick stop during a Point to Point trip?",
-      data: "Brief stops (under 10 minutes) can usually be accommodated within a Point to Point service. For multiple stops or longer waiting periods, we recommend our Hourly Charter Service for more flexibility.",
+      data: "Brief stops (under 10 minutes) can usually be accommodated within a Point to Point service. For multiple stops or longer waiting periods, we recommend our Hourly Charter Service for more flexibility or we charge for the waiting time.",
     },
     {
       summary: "Is there a minimum distance requirement for Point to Point service?",
-      data: "There is no minimum distance requirement, but there is a minimum fare of $60 for any Point to Point service regardless of distance.",
+      data: "There is no minimum distance requirement, but there is a minimum fare of fee for any Point to Point service regardless of distance.",
     },
     {
       summary: "Can I schedule recurring Point to Point transportation?",
@@ -101,7 +101,7 @@ const faqCategories = {
   hourlyCharter: [
     {
       summary: "What is the minimum booking time for Hourly Charter Service?",
-      data: "Our Hourly Charter Service requires a minimum booking of 2 hours. This ensures we can provide you with dedicated service and flexibility for your transportation needs.",
+      data: "Our Hourly Charter Service requires a minimum booking of any hours. This ensures we can provide you with dedicated service and flexibility for your transportation needs.",
     },
     {
       summary: "How does billing work for Hourly Charter Service?",
@@ -123,7 +123,7 @@ const faqCategories = {
   payment: [
     {
       summary: "What payment methods do you accept?",
-      data: "We accept all major credit cards, corporate checks, and electronic transfers. Cash payments are also accepted for certain services. All payments must be secured with a credit card at the time of booking.",
+      data: "We accept all major credit cards, corporate checks, and electronic transfers. Cash payments are also accepted for certain services. All payments must be secured with a credit card at the time of booking, but for now we only accept credit card or cash payments and we will coming soon with a card management system.",
     },
     {
       summary: "When will I be charged for my reservation?",
@@ -139,7 +139,7 @@ const faqCategories = {
     },
     {
       summary: "What is your cancellation policy?",
-      data: "Cancellations made more than 24 hours before scheduled service receive a full refund. Cancellations within 12-24 hours incur a 50% fee. Cancellations less than 12 hours before service or no-shows are charged the full amount.",
+      data: "Cancellations made more than 12 hours before scheduled service receive a full refund. Cancellations within 12-24 hours incur a 50% fee. Cancellations less than 12 hours before service or no-shows are charged the full amount.",
     },
   ],
 };

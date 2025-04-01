@@ -90,7 +90,7 @@ function AboutUs() {
   ];
 
   const stats = [
-    { value: "5+", label: "Years Experience" },
+    { value: "10+", label: "Years Experience" },
     { value: "10K+", label: "Happy Clients" },
     { value: "24/7", label: "Customer Support" }
   ];

@@ -80,7 +80,7 @@ const ContentBox = styled(Box)(({ theme, isEven }) => ({
 }));
 
 const SlideTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 200,
+  fontWeight: 400,
   marginTop: theme.spacing(3),
   position: 'relative',
   textTransform: 'uppercase',
@@ -144,15 +144,15 @@ export default function Slider() {
             display: 'none',
           }
         }}
-        sx={{ 
+        sx={{
           minHeight: { xs: '400px', sm: '500px', md: '600px' },
           backgroundColor: 'background.paper',
         }}
       >
         {popularPlaces.map((place, index) => (
-          <SlideItem 
-            key={index} 
-            data={place} 
+          <SlideItem
+            key={index}
+            data={place}
             isEven={index % 2 === 0}
             totalSlides={popularPlaces.length}
             currentIndex={currentIndex}
@@ -230,8 +230,8 @@ function SlideItem({ data, isEven }) {
 
   return (
     <SlideContainer maxWidth="xl">
-      <Grid 
-        container 
+      <Grid
+        container
         spacing={2}
         alignItems="flex-start"
         direction={isEven ? 'row' : 'row-reverse'}
@@ -288,28 +288,27 @@ function SlideItem({ data, isEven }) {
             variants={contentVariants}
           >
             <ContentBox isEven={isEven}>
-              <SlideTitle 
-                variant="h6"
+              <SlideTitle
+                variant="h4"
                 sx={{
-                  fontSize: { xs: '1.2rem', sm: '1.4rem', md: '1.8rem', lg: '2rem' },
+                  fontSize: { xs: '1.8rem', sm: '2.3rem', md: '2.8rem', lg: '2.5rem' },
                   mb: { xs: 1, md: 2 },
+                  color: '#03930A',
                   marginTop: 0,
                 }}
               >
                 {title}
               </SlideTitle>
               <Typography
-                variant="body1"
+                variant="h6"
+                fontWeight="300"
                 sx={{
-                  color: 'text.secondary',
-                  fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
-                  lineHeight: 1.6,
-                  mt: { xs: 1, md: 2 },
-                  position: 'relative',
-                  textAlign: 'justify',
-                  maxWidth: '95%',
+                  fontSize: { xs: "1.2rem", sm: "1.5rem", md: "2rem" },
+                  lineHeight: 1.2,
+                  mb: 2
                 }}
               >
+
                 {description}
               </Typography>
             </ContentBox>

@@ -12,7 +12,7 @@ import AboutUs from "./component/about_us";
 import Auth from "./component/auth";
 import Fleet from "./component/Fleet";
 import FAQ from "./component/FAQ";
-
+import { useNavigate } from "react-router-dom";
 // Styled components for section wrappers
 const SectionWrapper = styled(Box)(({ theme, bgcolor, pattern, isSkewed }) => ({
   position: 'relative',
@@ -60,10 +60,13 @@ const SectionWrapper = styled(Box)(({ theme, bgcolor, pattern, isSkewed }) => ({
 function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
   const dispatch = useDispatch();
   const authRef = useRef(null);
-
+  const navigate = useNavigate();
   const scrollToAuth = () => {
     authRef.current?.scrollIntoView({ behavior: 'smooth' });
     handleUsernameFocus();
+  };
+  const handleBooking = () => {
+    navigate('/home/1');
   };
 
   useEffect(() => {
@@ -75,7 +78,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
     <Box sx={{ overflow: 'hidden' }}>
       {/* Hero Section - Dark gradient background */}
       <SectionWrapper>
-        <Hero onLoginClick={scrollToAuth} />
+        <Hero onLoginClick={handleBooking} />
       </SectionWrapper>
 
       {/* Slider Section - Light pattern background */}
