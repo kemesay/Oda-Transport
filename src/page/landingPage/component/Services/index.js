@@ -6,7 +6,7 @@ import ServiceCard from "./ServiceCard";
 import { FlightTakeoff, DirectionsCar, AccessTime } from "@mui/icons-material";
 
 const ServicesContainer = styled(Container)(({ theme }) => ({
-  padding: theme.spacing(8, 2),
+  padding: theme.spacing(0, 0),
   textAlign: "center",
 }));
 
@@ -29,13 +29,13 @@ const services = [
   {
     id: "airport",
     title: "Airport Service",
-    description: "Reliable and punctual airport pickups and drop-offs available 24/7. Our professional chauffeurs track your flight and adjust for any delays, ensuring a stress-free travel experience.",
+    description: "Reliable airport Pickups & Drop-offs services. Our professional chauffeurs track your flight & adjust for any delays, ensuring a stress-free travel experience.",
     icon: FlightTakeoff,
     features: [
       "Flight tracking",
       "Meet & greet service",
       "Luggage assistance",
-      "No waiting charges for delayed flights"
+      // "No waiting charges for delayed flights"
     ],
     path: "/services/airport"
   },
@@ -45,10 +45,11 @@ const services = [
     description: "Efficient transportation between any two locations with our premium vehicles. Perfect for business meetings, special events, or any occasion requiring reliable transportation.",
     icon: DirectionsCar,
     features: [
-      "Direct routes",
-      "Fixed pricing",
       "Multiple vehicle options",
-      "Professional chauffeurs"
+      "Professional chauffeurs",
+      // "Direct routes",
+      "Fixed pricing",
+
     ],
     path: "/services/point-to-point"
   },
@@ -61,7 +62,7 @@ const services = [
       "Minimum 5-hour booking",
       "Multiple stops",
       "Wait time included",
-      "Customizable itinerary"
+      // "Customizable itinerary"
     ],
     path: "/services/hourly"
   }
@@ -97,9 +98,9 @@ function Services() {
         <Grid container spacing={4} justifyContent="center">
           {services.map((service, index) => (
             <Grid item xs={12} md={4} key={service.id}>
-              <ServiceCard 
-                service={service} 
-                delay={index * 0.2} 
+              <ServiceCard
+                service={service}
+                delay={index * 0.2}
               />
             </Grid>
           ))}

@@ -156,13 +156,13 @@ export default function FAQ() {
       component="section" 
       id="faq" 
       sx={{ 
-        py: { xs: 8, md: 12 },
+        py: { xs: 2, md:3 },
         position: 'relative',
         overflow: 'hidden',
       }}
     >
       <Container maxWidth="xl">
-        <Grid container spacing={4}>
+        <Grid container spacing={0}>
           <Grid item lg={2}>
             <motion.div
               initial={{ opacity: 0, x: -50 }}

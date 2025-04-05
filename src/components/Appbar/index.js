@@ -24,6 +24,8 @@ import {
 } from "@mui/material";
 import { TiThMenuOutline } from "react-icons/ti";
 import logo from "../../assets/images/Odaa Transportation - Logo-01.svg";
+import logo1 from "../../assets/images/PNG.png";
+
 import RSButton from "../RSButton";
 import ChangePasswordDrawer from "./ChangePassword";
 import { logout, setIsAuthenticated } from "../../store/reducers/authReducer";
@@ -36,12 +38,12 @@ const NAVBAR_MENUS = {
   public: [
     { title: "Home", link: "/", scrollLink: "home" },
     { title: "About Us", link: "/about-us", scrollLink: "aboutus" },
-    { title: "Contact Us", link: "/contact-us", scrollLink: "footer" },
+    { title: "Contact Us", link: "/contact-us", scrollLink: "contact", offset: -100 },
     { title: "FAQ", link: "/faq", scrollLink: "faq" },
-    { title: "Book now", link: "/home/1", scroll: "nowhere" },
+    { title: "Book Ride Now", link: "/home/1"},
   ],
   authenticated: [
-    { title: "Book now", link: "/home/1" },
+    { title: "Book Ride Now", link: "/home/1" },
     { title: "My Order", link: "/my-order" },
   ]
 };
@@ -91,16 +93,17 @@ function Header({ handleUsernameFocus }) {
     },
   }));
 
-  const scrollToSection = (sectionId) => {
+  const scrollToSection = (sectionId, offset = -100) => {
     navigate("/");
     scroller.scrollTo(sectionId, {
       smooth: true,
-      duration: 300,
-      offset: -100,
+      duration: 500,
+      offset: offset,
       spy: true,
+      activeClass: 'active'
     });
   };
-
+  
   const getNavbarMenu = () => {
     if (!isAuthenticated) return NAVBAR_MENUS.public;
     return getUserRole() === "user" ? NAVBAR_MENUS.authenticated : [];
@@ -112,10 +115,10 @@ function Header({ handleUsernameFocus }) {
       return;
     }
 
-    if (menu.title === "Book now") {
+    if (menu.title === "Book Ride Now") {
       navigate(menu.link);
     } else {
-      scrollToSection(menu.scrollLink);
+      scrollToSection(menu.scrollLink, menu.offset);
     }
   };
 
@@ -198,7 +201,7 @@ function Header({ handleUsernameFocus }) {
         >
           <LogoImage
             alt="Odaa Transportation Logo"
-            src={logo}
+            src={logo1}
             onClick={() => navigate("/")}
           />
           

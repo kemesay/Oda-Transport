@@ -6,30 +6,31 @@ import styled from "@emotion/styled";
 import RSTypography from "../../../../components/RTSABOUT";
 import logoUrl from "../../../../assets/images/newLogo.jpg";
 import { CheckCircle } from "@mui/icons-material";
+import { useSelector } from "react-redux";
 
 // Styled components
 const AboutUsContainer = styled(Container)(({ theme }) => ({
-  padding: theme.spacing(10, 2),
+  padding: theme.spacing(2, 0),
   position: "relative",
 }));
 
 const ImageSection = styled(motion.div)(({ theme }) => ({
   position: "relative",
   width: "100%",
-  minHeight: "500px",
-  borderRadius: theme.spacing(2),
+  minHeight: "400px",
+  borderRadius: theme.spacing(1.5),
   overflow: "hidden",
   boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   backgroundColor: "rgba(0, 0, 0, 0.02)",
-  padding: theme.spacing(2),
+  padding: theme.spacing(0),
   [theme.breakpoints.down('md')]: {
     minHeight: "400px",
   },
   [theme.breakpoints.up('lg')]: {
-    minHeight: "600px",
+    minHeight: "400px",
   },
 }));
 
@@ -80,6 +81,7 @@ const StatBox = styled(motion.div)(({ theme }) => ({
 
 function AboutUs() {
   const theme = useTheme();
+  const { aboutUsDescription } = useSelector((state) => state.footerReducer);
 
   const features = [
     "Professional and experienced chauffeurs",
@@ -199,17 +201,17 @@ function AboutUs() {
           <Grid item xs={12} md={7}>
             <ContentBox>
               <motion.div variants={itemVariants}>
-              <Typography 
-                variant="h5"
-                sx={{
-                  mb: 1,
-                  fontWeight: 600,
-                  color: "#03930A",
-                  textAlign: { xs: 'center', lg: 'left' },
-                }}
-              >
-                About ODA Transportation
-              </Typography>
+                <Typography 
+                  variant="h5"
+                  sx={{
+                    mb: 1,
+                    fontWeight: 600,
+                    color: "#03930A",
+                    textAlign: { xs: 'center', lg: 'left' },
+                  }}
+                >
+                  About ODA Transportation
+                </Typography>
               </motion.div>
 
               <motion.div variants={itemVariants}>
@@ -219,19 +221,15 @@ function AboutUs() {
                     fontSize: "1.1rem",
                     lineHeight: 1.8,
                     color: "text.secondary",
+                    whiteSpace: "pre-line",
+                    wordBreak: "break-word",
+                    [theme.breakpoints.down('sm')]: {
+                      fontSize: "1rem",
+                      lineHeight: 1.6,
+                    }
                   }}
                 >
-                  Welcome to Oda Transportation, your reliable partner in seamless travel solutions. 
-                  At Oda Transportation, we pride ourselves on offering hassle-free online transport 
-                  booking services tailored to meet your needs. With Oda Transportation, convenience 
-                  and efficiency are at the forefront of our mission. Whether you're planning a business trip, 
-                  a weekend getaway, or simply need a ride across town, we've got you covered. Our user-friendly 
-                  platform allows you to book your transportation with ease, providing a range of options to suit
-                   your preferences and budget. What sets us apart is our commitment to exceptional service. 
-                   From our dedicated customer support team to our network of trusted drivers, we go above and 
-                   beyond to ensure your journey is safe, comfortable, and stress-free. Experience the difference 
-                   with Oda Transportation – where every ride is a journey worth remembering. Book your next trip
-                    with us today!.
+                  {aboutUsDescription}
                 </RSTypography>
               </motion.div>
 

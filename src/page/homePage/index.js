@@ -562,6 +562,7 @@ function Index() {
     }, []);
 
     return (
+        
         <Box>
             {entryAsGuestOptionPage &&
                 !isAuthenticated &&
@@ -669,6 +670,7 @@ function Index() {
                 </Box>
             )}
         </Box>
+        
     );
 }
 

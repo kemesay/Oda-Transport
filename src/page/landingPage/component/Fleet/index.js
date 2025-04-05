@@ -10,7 +10,7 @@ import { authHeader } from "../../../../util/authUtil";
 import { useNavigate } from "react-router-dom";
 
 const FleetContainer = styled(Container)(({ theme }) => ({
-  padding: theme.spacing(10, 2),
+  padding: theme.spacing(2, 0),
   position: 'relative',
 }));
 
@@ -237,6 +237,8 @@ export default function Fleet() {
     navigate('/home/1');
   };
 
+  
+
   return (
     <FleetContainer maxWidth="xl" id="fleet">
       <motion.div
@@ -388,20 +390,24 @@ export default function Fleet() {
                         transition={{ delay: 0.4 }}
                       >
                         <RSButton
-                          variant="contained"
-                          backgroundcolor="#03930A"
-                          fullWidth
+                        
                           onClick={handleBooking}
+                          backgroundcolor="success.main"
                           sx={{
-                            py: 2,
-                            fontSize: '1.1rem',
-                            fontWeight: 500,
+                            mt: 4,
+                            px: { xs: 2, sm: 3, md: 4 },
+                            py: { xs: 1.2, sm: 1.7 },
+                            fontSize: { xs: "1rem", sm: "1.2rem", md: "1.6rem" }, // responsive
+                            fontWeight: 100,
+                            // textTransform: "uppercase",
+                            letterSpacing: "1.5px",
                             borderRadius: 2,
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 8px 20px rgba(3, 147, 10, 0.2)',
-                            }
+                            boxShadow: "0 2px 7px rgba(3, 147, 10, 0.2)",
+                            transition: "all 0.3s ease-in-out",
+                            "&:hover": {
+                              transform: "scale(1.05)",
+                              boxShadow: "0 3px 10px rgba(3, 147, 10, 0.3)",
+                            },
                           }}
                         >
                           Book With One Of These Vehicles

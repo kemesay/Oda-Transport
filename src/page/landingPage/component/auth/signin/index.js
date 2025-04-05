@@ -200,7 +200,16 @@ function Index({ usernameFocus }) {
   };
 
   return (
-    <Box sx={{ p: 3, maxWidth: 800, margin: '0 auto' }}>
+    <Box 
+      sx={{ 
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: 'calc(70vh - 140px)', // Account for header and some spacing
+        width: '100%',
+        px: 3, // Keep some padding for mobile
+      }}
+    >
       <Paper
         elevation={3}
         sx={{
@@ -301,10 +310,19 @@ function Index({ usernameFocus }) {
                 variant="contained"
                 disabled={signinLoanding}
                 sx={{
-                  py: 1.5,
-                  bgcolor: '#03930A',
-                  '&:hover': {
-                    bgcolor: '#027c08',
+                  mt: 4,
+                  px: { xs: 2, sm: 3, md: 4 },
+                  py: { xs: 1.2, sm: 1.7 },
+                  fontSize: { xs: "1rem", sm: "1.2rem", md: "1.6rem" }, // responsive
+                  fontWeight: 50,
+                  // textTransform: "uppercase",
+                  letterSpacing: "1.5px",
+                  borderRadius: 2,
+                  boxShadow: "0 2px 7px rgba(3, 147, 10, 0.2)",
+                  transition: "all 0.3s ease-in-out",
+                  "&:hover": {
+                    transform: "scale(1.05)",
+                    boxShadow: "0 3px 10px rgba(3, 147, 10, 0.3)",
                   },
                 }}
               >

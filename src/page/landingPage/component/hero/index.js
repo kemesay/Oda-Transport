@@ -89,34 +89,34 @@ function Hero({ onLoginClick }) {
       >
         <ContentWrapper spacing={4}>
           <motion.div variants={itemVariants}>
-            <Typography 
-              variant="h3" 
-              fontWeight="800"
-              sx={{ 
-                fontSize: { xs: "2rem", sm: "2.5rem", md: "3.5rem" },
+            <Typography
+              variant="h4"
+              fontWeight="600"
+              sx={{
+                fontSize: { xs: "1.5rem", sm: "2rem", md: "3rem" },
                 lineHeight: 1.2,
                 mb: 2
               }}
             >
-              Fast, Easy, and Accurate Transportation with{" "}
+              Fast, Easy, & Accurate Transportation with{" "}
               <HighlightText>Oda Transportation</HighlightText>
             </Typography>
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Typography 
-              variant="h5" 
+            <Typography
+              variant="h5"
               fontWeight="400"
-              sx={{ 
+              sx={{
                 color: "text.secondary",
                 maxWidth: "800px",
                 margin: "0 auto",
                 lineHeight: 1.6
               }}
             >
-              Looking for an easy and fast way to manage your transportation? 
-              Look no further than <strong>Oda Transportation</strong>! 
-              Experience premium service with our professional chauffeurs and 
+              Looking for an easy and fast way to manage your transportation?
+              Look no further than <strong>Oda Transportation</strong>!
+              Experience premium service with our professional chauffeurs and
               modern fleet.
             </Typography>
           </motion.div>
@@ -127,19 +127,22 @@ function Hero({ onLoginClick }) {
               backgroundcolor="success.main"
               sx={{
                 mt: 4,
-                px: 6,
-                py: 2,
-                fontSize: "1.1rem",
-                fontWeight: "600",
+                px: { xs: 4, sm: 6, md: 8 },
+                py: { xs: 1.5, sm: 2 },
+                fontSize: { xs: "1.2rem", sm: "1.6rem", md: "2rem" }, // responsive
+                fontWeight: 500,
+                // textTransform: "uppercase",
+                letterSpacing: "2px",
                 borderRadius: 2,
                 boxShadow: "0 4px 14px rgba(3, 147, 10, 0.2)",
+                transition: "all 0.3s ease-in-out",
                 "&:hover": {
-                  transform: "translateY(-2px)",
+                  transform: "scale(1.05)",
                   boxShadow: "0 6px 20px rgba(3, 147, 10, 0.3)",
-                }
+                },
               }}
             >
-              Book Now
+              Book Ride Now
             </RSButton>
           </motion.div>
         </ContentWrapper>

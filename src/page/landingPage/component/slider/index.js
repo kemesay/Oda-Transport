@@ -37,10 +37,10 @@ const SlideContainer = styled(Container)(({ theme }) => ({
   height: "100%",
   display: "flex",
   alignItems: "center",
-  padding: theme.spacing(3, 2),
+  padding: theme.spacing(2, 0),
   position: 'relative',
   [theme.breakpoints.up('md')]: {
-    padding: theme.spacing(4, 6),
+    padding: theme.spacing(2, 0),
   },
 }));
 
@@ -81,7 +81,7 @@ const ContentBox = styled(Box)(({ theme, isEven }) => ({
 
 const SlideTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 400,
-  marginTop: theme.spacing(3),
+  marginTop: theme.spacing(3, 0),
   position: 'relative',
   textTransform: 'uppercase',
   '&::after': {

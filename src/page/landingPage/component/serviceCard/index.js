@@ -92,24 +92,27 @@ function ServiceCard({ imgUrl, text, id, delay }) {
           </Typography>
           <Stack direction="row" spacing={1}>
             <RSButton
-              backgroundcolor={theme.palette.info.main}
-              radius={5}
-              fullWidth
+              backgroundcolor="success.main"
               sx={{
-                minWidth: { xs: "100%", sm: "auto", md: "100px" },
-                height: { xs: "22px", sm: "28px", md: "34px" },
-                fontSize: { xs: "0.65rem", sm: "0.7rem", md: "0.8rem" },
-                whiteSpace: "nowrap",
-                p: { xs: "2px 4px", sm: "3px 8px", md: "4px 12px" },
-                position: "relative",
-                cursor: "pointer",
+                mt: 4,
+                px: { xs: 2, sm: 3, md: 4 },
+                py: { xs: 1.2, sm: 1.7 },
+                fontSize: { xs: "1rem", sm: "1.2rem", md: "1.6rem" }, // responsive
+                fontWeight: 50,
+                // textTransform: "uppercase",
+                letterSpacing: "1.5px",
+                borderRadius: 2,
+                boxShadow: "0 2px 7px rgba(3, 147, 10, 0.2)",
+                transition: "all 0.3s ease-in-out",
                 "&:hover": {
-                  backgroundColor: "rgba(0, 0, 0, 0.1)",
+                  transform: "scale(1.05)",
+                  boxShadow: "0 3px 10px rgba(3, 147, 10, 0.3)",
                 },
               }}
+
               onClick={() => navigate(`/home/${id}`)}
             >
-              Book Now
+              Book Ride Now
             </RSButton>
           </Stack>
         </Box>

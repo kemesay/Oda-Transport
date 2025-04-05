@@ -50,6 +50,9 @@ import AddPopularPlace from "./page/UserManagement/DataTable/PopularPlace/Addpop
 import ViewPopularPlaceDetail from "./page/UserManagement/DataTable/PopularPlace/PopularPlaceDetail";
 import Gratuity from "./page/UserManagement/DataTable/Gratutity/Gratuity";
 import GratuityDetails from "./page/UserManagement/DataTable/Gratutity/GratuityDetails";
+import Layout from './components/layout/PageWrapper';
+import { Box } from '@mui/material';
+
 function App() {
   const [usernameFocus, setUsernameFocus] = useState(false);
   const queryClient = new QueryClient();
@@ -71,171 +74,177 @@ function App() {
     <ThemeProvider theme={theme}>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <Header handleUsernameFocus={handleUsernameFocus} />
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <LandingPage
-                  usernameFocus={usernameFocus}
-                  setUsernameFocus={setUsernameFocus}
-                  handleUsernameFocus={handleUsernameFocus}
-                />
-              }
-            />
+          <Layout>
+            <Header handleUsernameFocus={handleUsernameFocus} />
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <LandingPage
+                    usernameFocus={usernameFocus}
+                    setUsernameFocus={setUsernameFocus}
+                    handleUsernameFocus={handleUsernameFocus}
+                  />
+                }
+              />
 
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
-            <Route path="/forget-password" element={<ForgetPassword />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/home/:id"
-              element={
-                <PrivateUserRoute>
-                  <HomePage />
-                </PrivateUserRoute>
-              }
-            />
-            <Route
-              path="/map"
-              element={
-                <PrivateUserRoute>
-                  <RideGoogleMap />
-                </PrivateUserRoute>
-              }
-            />
-            <Route
-              path="/not-in-california"
-              element={<NotInCaliforniaError />}
-            />
-            <Route
-              path="/terms-and-conditions"
-              element={<TermAndCondition />}
-            />
-            <Route
-              path="/privacy-policy"
-              element={<Trust />}
-            />
-            <Route
-              path="/my-order"
-              element={
-                <PrivateUserRoute>
-                  <Order />
-                </PrivateUserRoute>
-              }
-            />
-            <Route path="/users" element={<Users />} />
-            <Route
-              path="/dashboard"
-              name="dashboard"
-              element={
-                <PrivateAdminRoute>
-                  <Dashboard />
-                </PrivateAdminRoute>
-              }
-            >
-              <Route index element={<Users />}></Route>
-              <Route path={"cars"} element={<Cars />}></Route>
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
+              <Route path="/forget-password" element={<ForgetPassword />} />
+              <Route path="/register" element={<Register />} />
               <Route
-                path={"car/cardetails"}
-                element={<ViewCarDetail />}
-              ></Route>
-              <Route path={"add-Admin"} element={<Admin />}></Route>
+                path="/home/:id"
+                element={
+                  <PrivateUserRoute>
+                    <HomePage />
+                  </PrivateUserRoute>
+                }
+              />
               <Route
-                path={"admin/admin-detail"}
-                element={<AdminDetails />}
-              ></Route>
+                path="/map"
+                element={
+                  <PrivateUserRoute>
+                    <RideGoogleMap />
+                  </PrivateUserRoute>
+                }
+              />
+              <Route
+                path="/not-in-california"
+                element={<NotInCaliforniaError />}
+              />
+              <Route
+                path="/terms-and-conditions"
+                element={<TermAndCondition />}
+              />
+              <Route
+                path="/privacy-policy"
+                element={<Trust />}
+              />
+              <Route
+                path="/my-order"
+                element={
+                  <PrivateUserRoute>
+                    <Order />
+                  </PrivateUserRoute>
+                }
+              />
+              <Route path="/users" element={<Users />} />
+              <Route
+                path="/dashboard"
+                name="dashboard"
+                element={
+                  <PrivateAdminRoute>
+                    <Dashboard />
+                  </PrivateAdminRoute>
+                }
+              >
+                <Route index element={<Users />}></Route>
+                <Route path={"cars"} element={<Cars />}></Route>
+                <Route
+                  path={"car/cardetails"}
+                  element={<ViewCarDetail />}
+                ></Route>
+                <Route path={"add-Admin"} element={<Admin />}></Route>
+                <Route
+                  path={"admin/admin-detail"}
+                  element={<AdminDetails />}
+                ></Route>
 
-              <Route
-                path={"book/book-detail"}
-                element={<ViewBookDetail />}
-              ></Route>
-              <Route path={"popular/popular-place"} element={<PopularPlaces />}></Route>
-              <Route
-                path={"book/hourlybook-detail"}
-                element={<ViewHourlyBookDetail />}
-              ></Route>
-              <Route
-                path={"book/p2pbook-detail"}
-                element={<P2pBookDetail />}
-              ></Route>
-              <Route path={"user/user-detail"} element={<UserDetail />}></Route>
-              <Route
-                path={"extra/extra-detail"}
-                element={<ExtraOptionDetail />}
-              ></Route>
+                <Route
+                  path={"book/book-detail"}
+                  element={<ViewBookDetail />}
+                ></Route>
+                <Route path={"popular/popular-place"} element={<PopularPlaces />}></Route>
+                <Route
+                  path={"book/hourlybook-detail"}
+                  element={<ViewHourlyBookDetail />}
+                ></Route>
+                <Route
+                  path={"book/p2pbook-detail"}
+                  element={<P2pBookDetail />}
+                ></Route>
+                <Route path={"user/user-detail"} element={<UserDetail />}></Route>
+                <Route
+                  path={"extra/extra-detail"}
+                  element={<ExtraOptionDetail />}
+                ></Route>
 
-              <Route
-                path={"additionalstop/additional-stop-detail"}
-                element={<AdditionalStopDetail />}
-              ></Route>
-              <Route path={"add-airport"} element={<AddAirPort />}></Route>
-              <Route path={"add-car"} element={<AddCar />}></Route>
-              <Route path={"add-popular-place"} element={<AddPopularPlace />}></Route>
-              <Route path={"popular-places"} element={<ViewPopularPlaceDetail />}></Route>
-
-
-              <Route path={"extraOptions"} element={<ExtraOptions />} />
-              <Route
-                path={"pointToPointBookss"}
-                element={<PointToPointBooks />}
-              ></Route>
-              <Route path={"users"} element={<Users />}></Route>
-              <Route
-                path={"additionalstop"}
-                element={<AddtionalStop />}
-              ></Route>
-              <Route
-                path={"hourlycharacter"}
-                element={<HourlyCharacter />}
-              ></Route>
-              <Route
-                path={"Content/ContentDetails"}
-                element={<ContentDetail />}
-              ></Route>
-              <Route path={"add-Content"} element={<AddContent />}></Route>
-
-              <Route path={"airportbooking"} element={<Airports />}></Route>
-              <Route path={"airports"} element={<Airports />}></Route>
-              <Route
-                path={"airportPickupPreference"}
-                element={<AirportpickupPreference />}
-              ></Route>
-
-              <Route
-                path={"airport/pickup-prference"}
-                element={<AirportPickupPreferenceDetail />}
-              ></Route>
-
-              <Route
-                path={"airport/airport-detail"}
-                element={<AirportDetail />}
-              ></Route>
-
-              <Route
-                path={"social/social-media"}
-                element={<SocialMedia />}
-              ></Route>
-
-              <Route
-                path={"social/social-detail"}
-                element={<SocialMediaDetail />}
-              ></Route>
+                <Route
+                  path={"additionalstop/additional-stop-detail"}
+                  element={<AdditionalStopDetail />}
+                ></Route>
+                <Route path={"add-airport"} element={<AddAirPort />}></Route>
+                <Route path={"add-car"} element={<AddCar />}></Route>
+                <Route path={"add-popular-place"} element={<AddPopularPlace />}></Route>
+                <Route path={"popular-places"} element={<ViewPopularPlaceDetail />}></Route>
 
 
-              <Route
-                path={"gratuity"}
-                element={<Gratuity />}
-              ></Route>
+                <Route path={"extraOptions"} element={<ExtraOptions />} />
+                <Route
+                  path={"pointToPointBookss"}
+                  element={<PointToPointBooks />}
+                ></Route>
+                <Route path={"users"} element={<Users />}></Route>
+                <Route
+                  path={"additionalstop"}
+                  element={<AddtionalStop />}
+                ></Route>
+                <Route
+                  path={"hourlycharacter"}
+                  element={<HourlyCharacter />}
+                ></Route>
+                <Route
+                  path={"Content/ContentDetails"}
+                  element={<ContentDetail />}
+                ></Route>
+                <Route path={"add-Content"} element={<AddContent />}></Route>
 
-              <Route
-                path={"gratuity/gratuity-details"}
-                element={<GratuityDetails />}
-              ></Route>
-              <Route path={"airportbook"} element={<AirportBooks />}></Route>
-            </Route>
-            <Route path="*" element={<ErrorMessage />} />
-          </Routes>
-          <Footer />
+                <Route path={"airportbooking"} element={<Airports />}></Route>
+                <Route path={"airports"} element={<Airports />}></Route>
+                <Route
+                  path={"airportPickupPreference"}
+                  element={<AirportpickupPreference />}
+                ></Route>
+
+                <Route
+                  path={"airport/pickup-prference"}
+                  element={<AirportPickupPreferenceDetail />}
+                ></Route>
+
+                <Route
+                  path={"airport/airport-detail"}
+                  element={<AirportDetail />}
+                ></Route>
+
+                <Route
+                  path={"social/social-media"}
+                  element={<SocialMedia />}
+                ></Route>
+
+                <Route
+                  path={"social/social-detail"}
+                  element={<SocialMediaDetail />}
+                ></Route>
+
+
+                <Route
+                  path={"gratuity"}
+                  element={<Gratuity />}
+                ></Route>
+
+                <Route
+                  path={"gratuity/gratuity-details"}
+                  element={<GratuityDetails />}
+                ></Route>
+                <Route path={"airportbook"} element={<AirportBooks />}></Route>
+              </Route>
+              <Route path="*" element={<ErrorMessage />} />
+            </Routes>
+            <Box sx={{ 
+              height: theme => theme.spacing(4),
+              backgroundColor: 'transparent',
+            }} />
+            <Footer />
+          </Layout>
         </QueryClientProvider>
       </BrowserRouter>
     </ThemeProvider>
