@@ -115,7 +115,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
           pt: 4,
         }}
       >
-        <Slider />
+      <Slider />
       </SectionWrapper>
 
       {/* Services Section - Always show */}
@@ -161,7 +161,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
             }}
           >
             <Box
-              sx={{
+              sx={{ 
                 backgroundColor: 'background.paper',
                 borderRadius: 2,
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
@@ -178,7 +178,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
                 }
               }}
             >
-              <Auth usernameFocus={usernameFocus} />
+            <Auth usernameFocus={usernameFocus} />
             </Box>
           </motion.div>
         </SectionWrapper>
@@ -214,7 +214,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
           }
         }}
       >
-        <AboutUs />
+          <AboutUs />
       </SectionWrapper>
 
       {/* Wrap Contact section with Element for better scroll handling */}

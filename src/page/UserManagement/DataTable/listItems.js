@@ -72,7 +72,7 @@ const menus = [
   {
     index: 7,
     link: "/dashboard/add-Content",
-    title: "Add  Content",
+    title: "Add Content",
     icon: <UpdateIcon />,
   },
   {

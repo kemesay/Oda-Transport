@@ -52,6 +52,16 @@ import Gratuity from "./page/UserManagement/DataTable/Gratutity/Gratuity";
 import GratuityDetails from "./page/UserManagement/DataTable/Gratutity/GratuityDetails";
 import Layout from './components/layout/PageWrapper';
 import { Box } from '@mui/material';
+import UpdateBooking from './page/updateBooking';
+import UserSidebar from "./components/UserSidebar";
+import UserProfile from './components/UserSidebar/UserProfile';
+import PaymentCards from './components/UserSidebar/PaymentCards';
+import PaymentHistory from './components/UserSidebar/PaymentHistory';
+import SavedAddresses from './components/UserSidebar/SavedAddresses';
+import FavoriteRoutes from './components/UserSidebar/FavoriteRoutes';
+import PromoCodes from './components/UserSidebar/PromoCodes';
+import Notifications from './components/UserSidebar/Notifications';
+import UserSettings from './components/UserSidebar/UserSettings';
 
 function App() {
   const [usernameFocus, setUsernameFocus] = useState(false);
@@ -119,14 +129,8 @@ function App() {
                 path="/privacy-policy"
                 element={<Trust />}
               />
-              <Route
-                path="/my-order"
-                element={
-                  <PrivateUserRoute>
-                    <Order />
-                  </PrivateUserRoute>
-                }
-              />
+
+
               <Route path="/users" element={<Users />} />
               <Route
                 path="/dashboard"
@@ -237,9 +241,38 @@ function App() {
                 ></Route>
                 <Route path={"airportbook"} element={<AirportBooks />}></Route>
               </Route>
+              <Route path="/update-booking" element={<UpdateBooking />} />
+              <Route path="/user/*" element={
+                <PrivateUserRoute>
+                  <Box sx={{ display: 'flex' }}>
+                    <UserSidebar />
+                    <Box
+                      component="main"
+                      sx={{
+                        flexGrow: 1,
+                        p: 3,
+                        backgroundColor: '#f5f5f5',
+                        minHeight: '100vh',
+                      }}
+                    >
+                      <Routes>
+                        <Route path="/profile" element={<UserProfile />} />
+                        <Route path="/my-order" element={<Order />} />
+                        <Route path="/payment/cards" element={<PaymentCards />} />
+                        <Route path="/payment/history" element={<PaymentHistory />} />
+                        <Route path="/addresses" element={<SavedAddresses />} />
+                        <Route path="/favorites" element={<FavoriteRoutes />} />
+                        <Route path="/promo-codes" element={<PromoCodes />} />
+                        <Route path="/notifications" element={<Notifications />} />
+                        <Route path="/settings" element={<UserSettings />} />
+                      </Routes>
+                    </Box>
+                  </Box>
+                </PrivateUserRoute>
+              } />
               <Route path="*" element={<ErrorMessage />} />
             </Routes>
-            <Box sx={{ 
+            <Box sx={{
               height: theme => theme.spacing(4),
               backgroundColor: 'transparent',
             }} />

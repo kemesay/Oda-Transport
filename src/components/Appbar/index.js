@@ -10,23 +10,9 @@ import {
   Tab,
   useMediaQuery,
   useTheme,
-  Drawer,
-  Box,
-  List,
-  ListItem,
-  Avatar,
-  ListItemButton,
-  IconButton,
-  Menu,
-  Typography,
-  MenuItem,
   Toolbar,
 } from "@mui/material";
-import { TiThMenuOutline } from "react-icons/ti";
-import logo from "../../assets/images/Odaa Transportation - Logo-01.svg";
-import logo1 from "../../assets/images/PNG.png";
-
-import RSButton from "../RSButton";
+import logo1 from "../../assets/images/ODA_Primary Logo.png";
 import ChangePasswordDrawer from "./ChangePassword";
 import { logout, setIsAuthenticated } from "../../store/reducers/authReducer";
 import { getUserRole } from "../../util/authUtil";
@@ -37,34 +23,24 @@ import UserSection from './UserSection';
 const NAVBAR_MENUS = {
   public: [
     { title: "Home", link: "/", scrollLink: "home" },
+    { title: "Book Ride Now", link: "/home/1"},
     { title: "About Us", link: "/about-us", scrollLink: "aboutus" },
     { title: "Contact Us", link: "/contact-us", scrollLink: "contact", offset: -100 },
     { title: "FAQ", link: "/faq", scrollLink: "faq" },
-    { title: "Book Ride Now", link: "/home/1"},
   ],
   authenticated: [
-    { title: "Book Ride Now", link: "/home/1" },
-    { title: "My Order", link: "/my-order" },
+    { title: "My Account", link: "/user/my-order", index: 0 },
+    { title: "Book Ride Now", link: "/home/1", index: 1 },
   ]
 };
 
-/**
- * @typedef {Object} HeaderProps
- * @property {() => void} handleUsernameFocus - Callback to focus username input
- */
-
-/**
- * Header component that displays the main navigation bar
- * @param {HeaderProps} props
- */
 function Header({ handleUsernameFocus }) {
-  // State management
   const [activeTab, setActiveTab] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [initialAuthCheck, setInitialAuthCheck] = useState(false);
 
-  // Hooks
   const dispatch = useDispatch();
   const location = useLocation();
   const theme = useTheme();
@@ -109,7 +85,8 @@ function Header({ handleUsernameFocus }) {
     return getUserRole() === "user" ? NAVBAR_MENUS.authenticated : [];
   };
 
-  const handleNavigation = (menu) => {
+  const handleNavigation = (menu, index) => {
+    setActiveTab(index);
     if (isAuthenticated) {
       navigate(menu.link);
       return;
@@ -134,6 +111,7 @@ function Header({ handleUsernameFocus }) {
     handleCloseUserMenu(e);
     dispatch(logout());
     navigate("/");
+    setActiveTab(0); // Reset to home after logout
   };
 
   const handleClickOpen = () => {
@@ -144,24 +122,42 @@ function Header({ handleUsernameFocus }) {
     handleClickOpen();
   };
 
+  // Enhanced tab selection logic
+  const determineActiveTab = () => {
+    const menus = getNavbarMenu();
+    
+    // For authenticated users, default to "My Account" on initial load
+    if (isAuthenticated && !initialAuthCheck) {
+      const myAccountTab = menus.find(menu => menu.title === "My Account");
+      if (myAccountTab) {
+        return myAccountTab.index;
+      }
+    }
+
+    // Fallback to path-based detection
+    switch (location.pathname) {
+      case "/home/1":
+      case "/home/2":
+      case "/home/3":
+        return menus.findIndex(menu => menu.title === "Book Ride Now");
+      case "/user/my-order":
+        return menus.findIndex(menu => menu.title === "My Account");
+      default:
+        return 0;
+    }
+  };
+
   useEffect(() => {
     dispatch(setIsAuthenticated());
   }, [isSigninSuccess]);
 
   useEffect(() => {
-    switch (location.pathname) {
-      case "/home/1":
-      case "/home/2":
-      case "/home/3":
-        setActiveTab(0);
-        break;
-      case "/my-order":
-        setActiveTab(1);
-        break;
-      default:
-        break;
+    if (isAuthenticated !== undefined) {
+      const newActiveTab = determineActiveTab();
+      setActiveTab(newActiveTab);
+      setInitialAuthCheck(true);
     }
-  }, [location]);
+  }, [location.pathname, isAuthenticated]);
 
   // Styled components
   const StyledAppBar = styled(AppBar)(({ theme }) => ({
@@ -202,7 +198,10 @@ function Header({ handleUsernameFocus }) {
           <LogoImage
             alt="Odaa Transportation Logo"
             src={logo1}
-            onClick={() => navigate("/")}
+            onClick={() => {
+              navigate("/");
+              setActiveTab(0);
+            }}
           />
           
           {isMobile ? (
@@ -211,11 +210,12 @@ function Header({ handleUsernameFocus }) {
               onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               menus={getNavbarMenu()}
               onNavigate={handleNavigation}
+              activeTab={activeTab}
             />
           ) : (
             <DesktopNavigation
               activeTab={activeTab}
-              onTabChange={setActiveTab}
+              onTabChange={(e, newValue) => setActiveTab(newValue)}
               menus={getNavbarMenu()}
               onNavigate={handleNavigation}
             />
@@ -243,4 +243,5 @@ function Header({ handleUsernameFocus }) {
     </StyledAppBar>
   );
 }
+
 export default Header;

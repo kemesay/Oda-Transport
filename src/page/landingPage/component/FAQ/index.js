@@ -152,10 +152,10 @@ export default function FAQ() {
   };
 
   return (
-    <Box 
+      <Box
       component="section" 
       id="faq" 
-      sx={{ 
+        sx={{
         py: { xs: 2, md:3 },
         position: 'relative',
         overflow: 'hidden',
@@ -192,16 +192,16 @@ export default function FAQ() {
               >
                 Frequently Asked Questions
               </Typography>
-              <Typography
+            <Typography
                 variant="h6"
                 color="text.secondary"
-                sx={{
+              sx={{
                   mb: 6,
                   textAlign: { xs: 'center', lg: 'left' },
                 }}
               >
                 Find answers to common questions about our transportation services.
-              </Typography>
+            </Typography>
 
               <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
                 <Tabs

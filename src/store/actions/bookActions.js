@@ -220,3 +220,27 @@ export const getPassengerBooks = createAsyncThunk(
     }
   }
 );
+
+export const updateBooking = (bookingId, updateData) => async (dispatch) => {
+  try {
+    dispatch({ type: 'UPDATE_BOOKING_REQUEST' });
+    
+    const response = await axios.put(
+      `${remote_host}/api/v1/bookings/${bookingId}`,
+      updateData
+    );
+
+    dispatch({
+      type: 'UPDATE_BOOKING_SUCCESS',
+      payload: response.data,
+    });
+
+    return response.data;
+  } catch (error) {
+    dispatch({
+      type: 'UPDATE_BOOKING_FAILURE',
+      payload: error.response?.data?.message || 'Update failed',
+    });
+    throw error;
+  }
+};

@@ -4,7 +4,9 @@ import { useTheme } from "@emotion/react";
 import { motion } from "framer-motion";
 import styled from "@emotion/styled";
 import RSTypography from "../../../../components/RTSABOUT";
-import logoUrl from "../../../../assets/images/newLogo.jpg";
+// import logoUrl from "../../../../assets/images/newLogo.jpg";
+import logoUrl from "../../../../assets/images/WebsiteSocialMediaOpenGraph_Businesscard-Back.jpeg"
+
 import { CheckCircle } from "@mui/icons-material";
 import { useSelector } from "react-redux";
 

@@ -83,7 +83,7 @@ const SlideTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 400,
   marginTop: theme.spacing(3, 0),
   position: 'relative',
-  textTransform: 'uppercase',
+  textTransform: 'initial',
   '&::after': {
     content: '""',
     position: 'absolute',
