@@ -10,7 +10,7 @@ import {
 } from "@mui/icons-material";
 
 const FeatureCard = styled(motion.div)(({ theme }) => ({
-  padding: theme.spacing(4),
+  padding: theme.spacing(2),
   backgroundColor: theme.palette.background.paper,
   borderRadius: theme.spacing(2),
   boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
@@ -105,6 +105,8 @@ function Portfolio() {
                     {feature.title}
                   </Typography>
                   <Typography
+                    fontWeight="200"
+                    fontSize="1rem"
                     color="text.secondary"
                     sx={{ lineHeight: 1.7 }}
                   >

@@ -34,11 +34,9 @@ export const book = createAsyncThunk(
       passengerCellPhone: contact?.passengerCellPhone,
       carId: vehicle?.vehicle,
       extraOptions: vehicle.extraOptions,
-      creditCardNumber: contact.creditCardNumber,
-      cardOwnerName: contact.cardOwnerName,
-      expirationDate: contact.expirationDate,
-      securityCode: contact.securityCode,
-      zipCode: contact.zipCode,
+      paymentMethod: contact.paymentMethod,
+      paymentDetailId: contact.paymentDetailId,
+      cardDetails: contact.cardDetails,
     };
     if (rideInfo?.tripType == "Round-Trip") {
       body.returnPickupDateTime =

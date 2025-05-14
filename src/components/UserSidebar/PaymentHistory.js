@@ -194,7 +194,7 @@ function PaymentHistory() {
 
   if (loading) {
     return (
-      <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+      <Box sx={{ p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'auto' }}>
         <CircularProgress />
       </Box>
     );
@@ -202,7 +202,7 @@ function PaymentHistory() {
 
   if (error && payments.length === 0) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: 2 }}>
         <Alert severity="error">
           {error} - Please try again later or contact support.
         </Alert>
@@ -211,19 +211,19 @@ function PaymentHistory() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom fontWeight="600">
         Payment History
       </Typography>
 
       {payments.length === 0 && !loading && !error ? (
-        <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Box sx={{ p: 2, textAlign: 'center' }}>
           <Typography variant="body1" color="text.secondary">
             No payment history found. Your bookings will appear here once created.
           </Typography>
         </Box>
       ) : (
-        <TableContainer component={Paper} sx={{ mt: 3 }}>
+        <TableContainer component={Paper} sx={{ mt: 2 }}>
           <Table>
             <TableHead>
               <TableRow>

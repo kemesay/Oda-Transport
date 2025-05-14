@@ -65,33 +65,33 @@ const userMenus = [
       },
     ],
   },
-  {
-    index: 3,
-    link: "/user/addresses",
-    title: "Saved Addresses",
-    icon: <AddressIcon />,
-  },
-  {
-    index: 4,
-    link: "/user/favorites",
-    title: "Favorite Routes",
-    icon: <FavoriteIcon />,
-    badge: "3",
-  },
-  {
-    index: 5,
-    link: "/user/promo-codes",
-    title: "Promo Codes",
-    icon: <PromoIcon />,
-    badge: "2",
-  },
+  // {
+  //   index: 3,
+  //   link: "/user/addresses",
+  //   title: "Saved Addresses",
+  //   icon: <AddressIcon />,
+  // },
+  // {
+  //   index: 4,
+  //   link: "/user/favorites",
+  //   title: "Favorite Routes",
+  //   icon: <FavoriteIcon />,
+  //   badge: "3",
+  // },
+  // {
+  //   index: 5,
+  //   link: "/user/promo-codes",
+  //   title: "Promo Codes",
+  //   icon: <PromoIcon />,
+  //   badge: "2",
+  // },
 
-  {
-    index: 7,
-    link: "/user/settings",
-    title: "Settings",
-    icon: <SettingsIcon />,
-  },
+  // {
+  //   index: 7,
+  //   link: "/user/settings",
+  //   title: "Settings",
+  //   icon: <SettingsIcon />,
+  // },
 
 ];
 
@@ -99,11 +99,13 @@ function UserListItems({ isOpen }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedSubIndex, setSelectedSubIndex] = useState(null);
   const [openMenus, setOpenMenus] = useState({});
+
   const navigate = useNavigate();
   const location = useLocation();
+  const path = location.pathname;
+
 
   useEffect(() => {
-    const path = location.pathname;
     userMenus.forEach((menu, index) => {
       if (menu.link === path) {
         setSelectedIndex(index);
@@ -139,8 +141,9 @@ function UserListItems({ isOpen }) {
   };
 
   return (
+    <>
     <List sx={{ width: "100%", p: 0 }}>
-      {userMenus.map((menu) => (
+      {userMenus.map((menu, key) => (
         <React.Fragment key={menu.index}>
           {menu.divider ? (
             <Divider sx={{ my: 1 }} />
@@ -148,8 +151,9 @@ function UserListItems({ isOpen }) {
             <>
               <ListItemButton
                 sx={{
-                  borderRadius: "8px",
-                  mb: 0.5,
+                  borderRadius: "21.5px",
+                  paddingRight: "6px",
+                  mb: 1.5,
                   "&.Mui-selected": {
                     color: menu.color === "error" ? "#CA0F0D" : "#03930A",
                     bgcolor: menu.color === "error" 
@@ -205,11 +209,12 @@ function UserListItems({ isOpen }) {
                       <ListItemButton
                         key={subItem.index}
                         sx={{
-                          pl: 4,
+                          pl: 6,
                           py: 0.5,
-                          borderRadius: "8px",
                           ml: 2,
                           "&.Mui-selected": {
+                            borderRadius: "21.5px",
+                            PaddingRight: "6px",
                             color: "#03930A",
                             bgcolor: "rgba(3, 147, 10, 0.08)",
                           },
@@ -245,6 +250,7 @@ function UserListItems({ isOpen }) {
         </React.Fragment>
       ))}
     </List>
+    </>
   );
 }
 

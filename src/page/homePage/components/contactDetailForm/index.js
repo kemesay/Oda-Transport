@@ -4,14 +4,13 @@ import RSRadio from "../../../../components/RSRadio";
 import "bootstrap/dist/css/bootstrap.min.css";
 import RSTextField from "../../../../components/RSTextField";
 import StepSummary from "../StepSummary";
-import CreditCardForm from "./CreditCardForm";
 import { remote_host } from "../../../../globalVariable";
 import axios from "axios";
 import { authHeader } from "../../../../util/authUtil";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  adGratitudeFee
-} from "../../../../store/reducers/bookReducers";
+import { adGratitudeFee } from "../../../../store/reducers/bookReducers";
+import PaymentMethodSelector from '../paymentMethodSelector';
+
 function Index({
   formik,
   vehicleSummaryData,
@@ -22,20 +21,27 @@ function Index({
     formik.values.bookingFor == "SomeoneElse"
   );
   const [gratuities, setGratuity] = useState([]);
+  const [userCards, setUserCards] = useState([]); // State for user's payment cards
   const { fee, totalFee } = useSelector((state) => state.bookReducer);
   const dispatch = useDispatch();
 
   const { isAuthenticated } = useSelector((state) => state.authReducer);
+
+  // Function to fetch user's payment cards
+  const fetchUserPaymentCards = async () => {
+    try {
+      const response = await axios.get(
+        `${remote_host}/api/v1/users/payment-detail/paymentCards`,
+        authHeader()
+      );
+      setUserCards(response.data);
+    } catch (error) {
+      console.error("Error fetching payment cards:", error);
+    }
+  };
+
   const handleBookForPassenger = (e) => {
     setBookForPassenger(e.target.checked);
-    // if (formik.values.isGuestBooking) {
-    //   formik.setFieldValue("bookingFor", "SomeoneElse");
-    // } else {
-    //   formik.setFieldValue(
-    //     "bookingFor",
-    //     e.target.checked ? "SomeoneElse" : "Myself"
-    //   );
-    // }
     formik.setFieldValue(
       "bookingFor",
       e.target.checked ? "SomeoneElse" : "Myself"
@@ -48,6 +54,7 @@ function Index({
       formik.setFieldValue("email", "");
     }
   };
+
   const getUserInfo = async () => {
     try {
       await axios
@@ -62,36 +69,36 @@ function Index({
   };
 
   const handleChangeGratitude = (e) => {
-    const calculatedFee = totalFee + parseInt(e.target.value) - parseInt(formik.values.prevGratuityFee)
-    formik.setFieldValue("gratuityId", e.target.name)
-    formik.setFieldValue("prevGratuityFee", e.target.value)
-    formik.setFieldValue("gratuityFee", parseInt(e.target.value))
-    dispatch(adGratitudeFee(calculatedFee))
-  }
+    const calculatedFee = totalFee + parseInt(e.target.value) - parseInt(formik.values.prevGratuityFee);
+    formik.setFieldValue("gratuityId", e.target.name);
+    formik.setFieldValue("prevGratuityFee", e.target.value);
+    formik.setFieldValue("gratuityFee", parseInt(e.target.value));
+    dispatch(adGratitudeFee(calculatedFee));
+  };
 
   const getGratitude = async () => {
     try {
       axios.get(`${remote_host}/api/v1/gratuities`).then((res) => {
-        var gratuityData = [];
-        var index = 0
-        res.data.forEach(gratuity => {
-          index = index + 1;
-          gratuityData.splice(index, 0, {
-            ...gratuity,
-            gratuityFee: (totalFee * gratuity.percentage / 100).toFixed(2)
-          });
-        });
-        console.log("gratuityData: ", gratuityData)
+        const gratuityData = res.data.map((gratuity, index) => ({
+          ...gratuity,
+          gratuityFee: (totalFee * gratuity.percentage / 100).toFixed(2)
+        }));
         setGratuity(gratuityData);
       });
     } catch (error) {
       console.log("unable to load gratitudes: ", error);
     }
   };
+
   useEffect(() => {
     getUserInfo();
     getGratitude();
-  }, []);
+    
+    // Fetch payment cards if user is authenticated
+    if (isAuthenticated) {
+      fetchUserPaymentCards();
+    }
+  }, [isAuthenticated]); // Add isAuthenticated to dependency array
 
   const isFieldDisabled = () => {
     if (isAuthenticated) {
@@ -100,6 +107,7 @@ function Index({
       return false;
     }
   };
+
   return (
     <Grid
       container
@@ -182,14 +190,13 @@ function Index({
             >
               <FormLabel id="gratitude_label" sx={{ fontSize: 20 }}>Gratuity</FormLabel>
               {gratuities.map((gratuity) => {
-                const { gratuityId, description, gratuityFee } = gratuity
+                const { gratuityId, description, gratuityFee } = gratuity;
                 return (
                   <FormControlLabel
                     key={gratuityId}
                     value={gratuityFee}
                     name={gratuityId}
                     control={<RSRadio />}
-                    // label={`${description} ($${gratuityFee > 0 && gratuityFee})`}
                     label={`${description} ${gratuityFee > 0 ? `$(${gratuityFee})` : ""}`}
                   />
                 );
@@ -199,7 +206,11 @@ function Index({
         </Grid>
         <Grid item xs={12} mt={2}>
           <Box>
-            <CreditCardForm formik={formik} />
+            <PaymentMethodSelector 
+              formik={formik}
+              authToken={isAuthenticated ? sessionStorage.getItem('access_token') : null}
+              userCards={userCards} // Pass the userCards to PaymentMethodSelector
+            />
           </Box>
         </Grid>
       </Grid>

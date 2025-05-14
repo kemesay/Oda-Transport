@@ -144,8 +144,17 @@ function ListItems() {
       if (menu.link === currentPath) {
         setSelectedIndex(index);
       }
+      if (menu.subItems) {
+        menu.subItems.forEach((subItem) => {
+          if (subItem.link === currentPath) {
+            setSelectedIndex(menu.index);
+            setSelectedSubIndex(subItem.index);
+            setOpen((prev) => ({ ...prev, [menu.index]: true }));
+          }
+        });
+      }
     });
-  }, []);
+  }, [location.currentPath]);
 
   const handleClick = (event, index) => {
     setSelectedIndex(index);
@@ -183,7 +192,7 @@ function ListItems() {
             }}
           >
             <ListItemIcon
-              sx={{ color: selectedIndex === menu.index && "#488550" }}
+              sx={{ color: selectedIndex === menu.index && "#488550", minWidth: 40}}
             >
               {menu.icon}
             </ListItemIcon>

@@ -86,6 +86,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <Layout>
             <Header handleUsernameFocus={handleUsernameFocus} />
+            {/* <div style={{maxWidth: "100%", backgroundClor: "red"}}> */}
             <Routes>
               <Route
                 path="/"
@@ -244,37 +245,70 @@ function App() {
               <Route path="/update-booking" element={<UpdateBooking />} />
               <Route path="/user/*" element={
                 <PrivateUserRoute>
-                  <Box sx={{ display: 'flex' }}>
+                  <Box 
+                    sx={{ 
+                      display: 'flex',
+                      minHeight: '100vh',
+                      position: 'relative',
+                      backgroundColor: '#f5f5f5',
+                    }}
+                  >
                     <UserSidebar />
                     <Box
                       component="main"
                       sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
                         flexGrow: 1,
-                        p: 3,
-                        backgroundColor: '#f5f5f5',
-                        minHeight: '100vh',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease',
+                        '& > *': { // Apply to all direct children
+                          minWidth: 0, // Prevents content from overflowing
+                        }
                       }}
                     >
-                      <Routes>
-                        <Route path="/profile" element={<UserProfile />} />
-                        <Route path="/my-order" element={<Order />} />
-                        <Route path="/payment/cards" element={<PaymentCards />} />
-                        <Route path="/payment/history" element={<PaymentHistory />} />
-                        <Route path="/addresses" element={<SavedAddresses />} />
-                        <Route path="/favorites" element={<FavoriteRoutes />} />
-                        <Route path="/promo-codes" element={<PromoCodes />} />
-                        <Route path="/notifications" element={<Notifications />} />
-                        <Route path="/settings" element={<UserSettings />} />
-                      </Routes>
+                      <Box
+                        sx={{
+                          flexGrow: 1,
+                          p: { xs: 2, md: 3 },
+                          overflow: 'auto',
+                          height: '100vh',
+                          '&::-webkit-scrollbar': {
+                            width: '8px',
+                            backgroundColor: '#f5f5f5',
+                          },
+                          '&::-webkit-scrollbar-thumb': {
+                            borderRadius: '8px',
+                            backgroundColor: '#c1c1c1',
+                            '&:hover': {
+                              backgroundColor: '#a8a8a8',
+                            }
+                          },
+                        }}
+                      >
+                        <Routes>
+                          <Route path="/profile" element={<UserProfile />} />
+                          <Route path="/my-order" element={<Order />} />
+                          <Route path="/payment/cards" element={<PaymentCards />} />
+                          <Route path="/payment/history" element={<PaymentHistory />} />
+                          <Route path="/addresses" element={<SavedAddresses />} />
+                          <Route path="/favorites" element={<FavoriteRoutes />} />
+                          <Route path="/promo-codes" element={<PromoCodes />} />
+                          <Route path="/notifications" element={<Notifications />} />
+                          <Route path="/settings" element={<UserSettings />} />
+                        </Routes>
+                      </Box>
                     </Box>
                   </Box>
                 </PrivateUserRoute>
               } />
               <Route path="*" element={<ErrorMessage />} />
             </Routes>
+            {/* </div> */}
             <Box sx={{
               height: theme => theme.spacing(4),
-              backgroundColor: 'transparent',
+              backgroundColor: "#f5f5f5",
             }} />
             <Footer />
           </Layout>

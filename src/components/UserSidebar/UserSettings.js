@@ -86,12 +86,12 @@ function UserSettings() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 1 }}>
       <Typography variant="h5" gutterBottom fontWeight="600">
         Settings
       </Typography>
 
-      <Box sx={{ mt: 3 }}>
+      <Box sx={{ mt: 3, color: 'red' }}>
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>

@@ -32,7 +32,7 @@ const HeroContainer = styled(Box)(({ theme }) => ({
 const ContentWrapper = styled(Stack)(({ theme }) => ({
   zIndex: 2,
   maxWidth: "1000px",
-  padding: theme.spacing(4),
+  padding: theme.spacing(3),
   textAlign: "center",
 }));
 
@@ -87,15 +87,16 @@ function Hero({ onLoginClick }) {
         animate="visible"
         variants={containerVariants}
       >
-        <ContentWrapper spacing={4}>
+        <ContentWrapper spacing={3}>
           <motion.div variants={itemVariants}>
             <Typography
               variant="h4"
               fontWeight="600"
               sx={{
-                fontSize: { xs: "1.5rem", sm: "2rem", md: "3rem" },
+                mt: 1.2,
+                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
                 lineHeight: 1.2,
-                mb: 2
+                mb: 0.5
               }}
             >
               Fast, Easy, & Accurate Transportation with{" "}
@@ -108,10 +109,12 @@ function Hero({ onLoginClick }) {
               variant="h5"
               fontWeight="400"
               sx={{
+                mt: 1.2,
+                fontSize: { xs: "1.2rem", sm: "1.5rem", md: "1.8rem" },
                 color: "text.secondary",
                 maxWidth: "800px",
                 margin: "0 auto",
-                lineHeight: 1.6
+                lineHeight: 1.2
               }}
             >
               Looking for an easy and fast way to manage your transportation?
@@ -126,7 +129,7 @@ function Hero({ onLoginClick }) {
               onClick={onLoginClick}
               backgroundcolor="success.main"
               sx={{
-                mt: 4,
+                mt: 1.2,
                 px: { xs: 4, sm: 6, md: 8 },
                 py: { xs: 1.5, sm: 2 },
                 fontSize: { xs: "1.2rem", sm: "1.6rem", md: "2rem" }, // responsive

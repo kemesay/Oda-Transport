@@ -24,9 +24,27 @@ import {
   Route as RouteIcon,
 } from '@mui/icons-material';
 
-// Add this new styled component
+const ResponsiveGrid = styled(Grid)(({ theme }) => ({
+  [theme.breakpoints.down('sm')]: {
+    '& .MuiGrid-item': {
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1),
+    },
+  },
+}));
+
+const ResponsiveCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(2),
+  },
+}));
+
 const StatsCard = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(1.5),
+  },
   backgroundColor: 'rgba(3, 147, 10, 0.02)',
   border: '1px solid rgba(3, 147, 10, 0.08)',
   borderRadius: '12px',
@@ -34,7 +52,6 @@ const StatsCard = styled(Paper)(({ theme }) => ({
   '&:hover': {
     transform: 'translateY(-4px)',
     boxShadow: '0 4px 20px rgba(3, 147, 10, 0.1)',
-    backgroundColor: 'rgba(3, 147, 10, 0.05)',
   },
 }));
 
@@ -291,48 +308,48 @@ function UserProfile() {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 800, margin: '0 auto' }}>
+    <Box sx={{ 
+      p: { xs: 1, sm: 2, md: 3 }, 
+      maxWidth: '100%',
+      margin: '0 auto'
+    }}>
       {showAlert.show && (
         <Alert severity={showAlert.severity} sx={{ mb: 2 }}>
           {showAlert.message}
         </Alert>
       )}
 
-      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+      <ResponsiveCard elevation={3}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'center', sm: 'flex-start' },
+          gap: 2,
+          mb: 3 
+        }}>
           <Avatar
             sx={{
-              width: 100,
-              height: 100,
+              width: { xs: 80, sm: 100 },
+              height: { xs: 80, sm: 100 },
               bgcolor: '#03930A',
-              fontSize: '2.5rem',
-              mr: 3
+              fontSize: { xs: '2rem', sm: '2.5rem' },
             }}
           >
             {userData?.name?.charAt(0)}
           </Avatar>
-          <Box>
-            <Typography variant="h4" gutterBottom>
+          <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+            <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
               {userData?.name}
             </Typography>
             <Typography variant="body1" color="text.secondary">
               Member since {defaultValues.joinDate}
             </Typography>
           </Box>
-          {!editing && (
-            <IconButton
-              sx={{ ml: 'auto' }}
-              onClick={handleEdit}
-              color="primary"
-            >
-              <EditIcon />
-            </IconButton>
-          )}
         </Box>
 
         <Divider sx={{ my: 3 }} />
 
-        <Grid container spacing={3}>
+        <ResponsiveGrid container spacing={{ xs: 2, sm: 3 }}>
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -380,7 +397,7 @@ function UserProfile() {
               </Typography>
             </Box>
           </Grid>
-        </Grid>
+        </ResponsiveGrid>
 
         <Divider sx={{ my: 3 }} />
 
@@ -409,7 +426,7 @@ function UserProfile() {
             </Button>
           </Box>
         )}
-      </Paper>
+      </ResponsiveCard>
     </Box>
   );
 }

@@ -38,7 +38,7 @@ function Users() {
     isError: isErrorUpdate,
     isSuccess: setSuccessUpdate,
     error: errorupdate,
-  } = usePutData(putendpoint,userId, data);
+  } = usePutData(putendpoint, userId, data);
 
   const handleEdit = async ({ row, values, table }) => {
     update({
@@ -76,7 +76,7 @@ function Users() {
         title={"User"}
         handleViewClick={handleViewClick}
       />
-            <ToastContainer/>
+      <ToastContainer />
 
     </div>
   );

@@ -150,10 +150,10 @@ const UserSection = ({
       {isAuthenticated ? (
         <Stack direction="row" spacing={2} alignItems="center">
           {/* Replace the old notification icon with the new component */}
-          <NotificationIcon
+          {/* <NotificationIcon
             unreadCount={unreadCount}
             onClick={handleNotificationClick}
-          />
+          /> */}
 
           {/* User Profile Section */}
           <Stack

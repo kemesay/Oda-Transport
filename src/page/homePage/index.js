@@ -40,6 +40,56 @@ function Index() {
         isUnsupportedLocation: false,
         errorMessage: "",
     });
+
+    // Add these at the top of your file, right after the imports
+    const PAYMENT_METHODS = {
+        PRIMARY: 'PRIMARY_CARD',
+        EXISTING: 'EXISTING_CARD',
+        NEW: 'NEW_CARD'
+    };
+
+    // Card validation helper functions
+    const isValidCardNumber = (number) => {
+        // Simple Luhn check for card validation
+        let sum = 0;
+        let shouldDouble = false;
+
+        // Remove all non-digit characters
+        const cleaned = number.replace(/\D/g, '');
+
+        if (cleaned.length < 13 || cleaned.length > 19) return false;
+
+        for (let i = cleaned.length - 1; i >= 0; i--) {
+            let digit = parseInt(cleaned.charAt(i), 10);
+
+            if (shouldDouble) {
+                digit *= 2;
+                if (digit > 9) digit -= 9;
+            }
+
+            sum += digit;
+            shouldDouble = !shouldDouble;
+        }
+
+        return (sum % 10) === 0;
+    };
+
+    const isValidExpiration = (exp) => {
+        if (!exp) return false;
+
+        const [month, year] = exp.split('/').map(Number);
+        if (!month || !year || month < 1 || month > 12) return false;
+
+        const currentYear = new Date().getFullYear() % 100;
+        const currentMonth = new Date().getMonth() + 1;
+
+        if (year < currentYear) return false;
+        if (year === currentYear && month < currentMonth) return false;
+
+        return true;
+    };
+
+
     const dispatch = useDispatch();
     const { isAuthenticated } = useSelector(
         (state) => state.authReducer
@@ -248,8 +298,8 @@ function Index() {
         // .string()
         // .oneOf([yup.ref("email"), null], "Emails must match"),
         cellPhone: yup.string(),
-    /* .matches(phoneRegex, "Invalid phone number format") */ 
-    passengerFullName:
+        /* .matches(phoneRegex, "Invalid phone number format") */
+        passengerFullName:
             yup.string()
                 .matches(fullNameRegex, "invalid full name")
                 .required("full name required"),
@@ -259,6 +309,37 @@ function Index() {
             .matches(phoneRegex, "Invalid phone number format")
             .required("phone num. required"),
         isGuestBooking: yup.boolean(),
+
+        paymentMethod: yup.string().required('Payment method is required'),
+
+        paymentDetailId: yup.number().when('paymentMethod', {
+            is: PAYMENT_METHODS.EXISTING,
+            then: (schema) => schema.required('Please select a card'),
+            otherwise: (schema) => schema.nullable()
+        }),
+        cardDetails: yup.object().when('paymentMethod', {
+            is: PAYMENT_METHODS.NEW,
+            then: (schema) => schema.shape({
+                cardOwnerName: yup.string().required('Cardholder name is required'),
+                creditCardNumber: yup.string()
+                    .required('Card number is required')
+                    .test('is-valid-card', 'Invalid card number', value => isValidCardNumber(value)),
+                expirationDate: yup.string()
+                    .required('Expiration date is required')
+                    .test('is-valid-expiration', 'Invalid expiration date', value => isValidExpiration(value)),
+                securityCode: yup.string()
+                    .required('Security code is required')
+                    .min(3, 'Security code must be at least 3 digits')
+                    .max(4, 'Security code must be at most 4 digits'),
+                zipCode: yup.string().required('Zip code is required')
+            }),
+            otherwise: (schema) => schema.nullable()
+        }),
+        isValidCardInfo: yup.boolean().when('paymentMethod', {
+            is: PAYMENT_METHODS.NEW,
+            then: (schema) => schema.oneOf([true], 'Please validate your card information'),
+            otherwise: (schema) => schema
+        })
     });
     const formikContact = useFormik({
         initialValues: {
@@ -266,11 +347,16 @@ function Index() {
             lastName: "",
             email: "",
             confirmEmail: "",
-            number: "",
-            expiry: "",
-            zipCode: "",
-            cvc: "",
-            name: "",
+            paymentMethod: "",
+            paymentDetailId: 0,
+            cardDetails: {
+                cardOwnerName: "",
+                creditCardNumber: "",
+                expirationDate: "",
+                securityCode: "",
+                zipCode: "",
+                // "isPrimary": false
+            },
             isValidCardInfo: false,
             cellPhone: "",
             bookingFor: "Myself",
@@ -278,10 +364,6 @@ function Index() {
             passengerCellPhone: "",
             isGuestBooking: false,
             entryOptionSelected: false,
-            creditCardNumber: "",
-            cardOwnerName:"",
-            expirationDate: "",
-            securityCode: "",
             gratuityId: 1,
             gratuityFee: 0,
             prevGratuityFee: 0,
@@ -384,14 +466,118 @@ function Index() {
         }
     }
 
+
+    // const handleFinish = () => {
+
+
+
+    //     const contactValues = formikContact.values;
+
+    //     // Create a deep copy of contactValues and remove isPrimary from cardDetails
+    //     const cleanedContact = {
+    //         ...contactValues,
+    //         cardDetails: {
+    //             ...contactValues.cardDetails,
+    //         },
+    //     };
+    //     delete cleanedContact.cardDetails.isPrimary;
+
+
+    //     // Prepare the payment data based on selected method
+    //     let paymentData = {};
+
+    //     switch (contactValues.paymentMethod) {
+    //         case PAYMENT_METHODS.PRIMARY:
+    //             paymentData = {
+    //                 paymentMethod: PAYMENT_METHODS.PRIMARY
+    //             };
+    //             break;
+    //         case PAYMENT_METHODS.EXISTING:
+    //             paymentData = {
+    //                 paymentMethod: PAYMENT_METHODS.EXISTING,
+    //                 paymentDetailId: contactValues.paymentDetailId
+    //             };
+    //             break;
+    //         case PAYMENT_METHODS.NEW:
+    //             paymentData = {
+    //                 paymentMethod: PAYMENT_METHODS.NEW,
+    //                 cardDetails: {
+    //                     ...contactValues.cardDetails
+    //                 }
+    //             };
+    //             break;
+    //         default:
+    //             break;
+    //     }
+
+    //     const values = {
+    //         rideInfo: formikRideInfo.values,
+    //         vehicle: formikChooseVehicle.values,
+    //         tripDetail: formikTripDetail.values,
+    //         contact: {
+    //             ...cleanedContact,
+    //             ...paymentData
+    //         },
+    //         travelType: location.pathname.split("/").pop(),
+    //     };
+
+    //     console.log("values11: ", values);
+    //     dispatch(book(values));
+    // };
+
+
     const handleFinish = () => {
+        const contactValues = formikContact.values;
+    
+        // Prepare the payment data based on selected method
+        let paymentData = {};
+    
+        switch (contactValues.paymentMethod) {
+            case PAYMENT_METHODS.PRIMARY:
+                paymentData = {
+                    paymentMethod: PAYMENT_METHODS.PRIMARY
+                };
+                break;
+            case PAYMENT_METHODS.EXISTING:
+                paymentData = {
+                    paymentMethod: PAYMENT_METHODS.EXISTING,
+                    paymentDetailId: contactValues.paymentDetailId
+                };
+                break;
+            case PAYMENT_METHODS.NEW:
+                // Create a copy of cardDetails without isPrimary if it exists
+                const { isPrimary, ...cardDetails } = contactValues.cardDetails;
+                paymentData = {
+                    paymentMethod: PAYMENT_METHODS.NEW,
+                    cardDetails: cardDetails
+                };
+                break;
+            default:
+                break;
+        }
+    
+        // Create the contact object without cardDetails if they're not needed
+        const cleanedContact = {
+            ...contactValues,
+        };
+        
+        // Remove cardDetails from cleanedContact if not using NEW payment method
+        if (contactValues.paymentMethod !== PAYMENT_METHODS.NEW) {
+            delete cleanedContact.cardDetails;
+        }
+    
         const values = {
             rideInfo: formikRideInfo.values,
             vehicle: formikChooseVehicle.values,
             tripDetail: formikTripDetail.values,
-            contact: formikContact.values,
+            contact: {
+                ...cleanedContact,
+                ...paymentData
+            },
             travelType: location.pathname.split("/").pop(),
         };
+        
+        console.log("values11: ", values);
         dispatch(book(values));
     };
 
@@ -562,7 +748,7 @@ function Index() {
     }, []);
 
     return (
-        
+
         <Box>
             {entryAsGuestOptionPage &&
                 !isAuthenticated &&
@@ -670,7 +856,7 @@ function Index() {
                 </Box>
             )}
         </Box>
-        
+
     );
 }
 

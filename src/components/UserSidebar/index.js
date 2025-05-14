@@ -1,24 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { styled } from "@mui/material/styles";
+import { styled, createTheme, ThemeProvider  } from "@mui/material/styles";
 import {
-  Drawer,
+  // Drawer,
   List,
   Divider,
   IconButton,
   Toolbar,
 } from "@mui/material";
+import Box from "@mui/material/Box"; 
+import CssBaseline from "@mui/material/CssBaseline";
+import MuiDrawer from "@mui/material/Drawer";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import UserListItems from "./UserListItems";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
+import { Stack } from "@mui/material";
+import Container from "@mui/material/Container";
 
 const drawerWidth = 240;
 
-const UserDrawer = styled(Drawer, {
-  shouldComponentUpdate: (props, nextProps) => props.isOpen !== nextProps.isOpen,
-})(({ theme, isOpen }) => ({
-  width: drawerWidth,
-  flexShrink: 0,
-  "& .MuiDrawer-paper": {
+const Drawer = styled(MuiDrawer, {
+  shouldComponentUpdate: (prop) => prop !== "open",
+})(({ theme, open }) => ({
+ "& .MuiDrawer-paper": {
     position: "relative",
     whiteSpace: "nowrap",
     width: drawerWidth,
@@ -27,9 +31,7 @@ const UserDrawer = styled(Drawer, {
       duration: theme.transitions.duration.enteringScreen,
     }),
     boxSizing: "border-box",
-    backgroundColor: "#F2F2F2",
-    borderRight: "1px solid rgba(0, 0, 0, 0.08)",
-    ...(!isOpen && {
+    ...(!open && {
       overflowX: "hidden",
       transition: theme.transitions.create("width", {
         easing: theme.transitions.easing.sharp,
@@ -42,87 +44,98 @@ const UserDrawer = styled(Drawer, {
     }),
   },
 }));
-
+const defaultTheme = createTheme();
+const drawerStyle = {
+  ".MuiDrawer-paper": {
+    zIndex: 0,
+    backgroundColor: "#F2F2F2",
+    marginTop: "5px",
+    paddingX: 0,
+  },
+};
 
 function UserSidebar() {
   const [isOpen, setIsOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
-  // Redirect to profile page if at root user path
-  useEffect(() => {
-    if (location.pathname === '/user') {
-      navigate('/user/profile');
-    }
-  }, [location.pathname, navigate]);
-
   const toggleDrawer = () => {
     setIsOpen(!isOpen);
   };
+  // Redirect to profile page if at root user path
+  // useEffect(() => {
+  //   if (location.pathname === '/user') {
+  //     navigate('/user/profile');
+  //   }
+  // }, [location.pathname, navigate]);
+
+
 
   return (
-    <UserDrawer 
-      variant="permanent" 
-      isOpen={isOpen}
-      sx={(theme) => ({
-        '& .MuiDrawer-paper': {
-          position: 'relative',
-          whiteSpace: 'nowrap',
-          width: drawerWidth,
-          transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          boxSizing: 'border-box',
-          ...(!isOpen && {
-            overflowX: 'hidden',
-            transition: theme.transitions.create('width', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.leavingScreen,
-            }),
-            width: theme.spacing(7),
-            [theme.breakpoints.up('sm')]: {
-              width: theme.spacing(9),
-            },
-          }),
-        },
-      })}
-    >
-      <Toolbar
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          px: [1],
-          backgroundColor: "#fff",
-        }}
-      >
-        <IconButton onClick={toggleDrawer}>
-          <ChevronLeftIcon
+    <ThemeProvider theme={defaultTheme}>
+      <Box sx={{ display: "flex" }}>
+        <CssBaseline />
+
+        <Drawer variant="permanent" open={isOpen} sx={drawerStyle}>
+          <Toolbar
             sx={{
-              transform: isOpen ? "rotate(0deg)" : "rotate(180deg)",
-              transition: "0.3s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              px: [0],
             }}
-          />
-        </IconButton>
-      </Toolbar>
-      
-      <Divider sx={{ mb: 2 }} />
-      
-      <List 
-        component="nav" 
-        sx={{ 
-          px: isOpen ? 2 : 1, 
-          height: "calc(100% - 64px)",
-          '& .MuiListItemIcon-root': {
-            minWidth: isOpen ? 40 : 36,
-          },
-        }}
-      >
-        <UserListItems isOpen={isOpen} />
-      </List>
-    </UserDrawer>
+          >
+            <IconButton onClick={toggleDrawer}>
+              <ChevronLeftIcon
+                sx={{
+                  rotate: isOpen ? "0deg" : "180deg",
+                  transition: "0.4s ease-in-out",
+                }}
+              />
+            </IconButton>
+          </Toolbar>
+          <Divider sx={{ border: "2px solid #FFF" }} />
+          <List component="nav" sx={{ height: "100%" }}>
+            <Stack
+              sx={{ height: "100%", paddingBottom: "24px" }}
+              direction="column"
+              justifyContent="space-between"
+              alignItems="stretch"
+            >
+              <Box>
+                <UserListItems />
+              </Box>
+            </Stack>
+          </List>
+        </Drawer>
+
+        <Box
+          sx={{
+            backgroundColor: "#FFF",
+            flexGrow: 1,
+            height: "100vh",
+            overflow: "auto",
+            pl: 0,
+            ml: 1,
+          }}
+        >
+          <Container 
+            maxWidth={false} 
+            disableGutters
+            sx={{ 
+              p: 0,
+              m: 0,
+              width: '100%',
+              maxWidth: 'none'
+            }}
+          >
+            <Outlet />
+          </Container>
+        </Box>
+      </Box>
+    </ThemeProvider>
   );
 }
+
 
 export default UserSidebar;
 

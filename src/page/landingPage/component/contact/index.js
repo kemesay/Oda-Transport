@@ -21,16 +21,16 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // Styled components
 const ContactContainer = styled(Container)(({ theme }) => ({
-  padding: theme.spacing(8, 2),
+  padding: theme.spacing(4, 2),
   [theme.breakpoints.up('sm')]: {
-    padding: theme.spacing(10, 3),
+    padding: theme.spacing(3, 2),
   },
 }));
 
 const InfoCard = styled(Box)(({ theme }) => ({
   backgroundColor: '#fff',
   borderRadius: theme.spacing(2),
-  padding: theme.spacing(4),
+  padding: theme.spacing(2),
   height: '100%',
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
   transition: 'transform 0.3s ease',
@@ -52,7 +52,7 @@ const ServicesDescription = styled(Typography)(({ theme }) => ({
 const ContactForm = styled(Box)(({ theme }) => ({
   backgroundColor: '#fff',
   borderRadius: theme.spacing(2),
-  padding: theme.spacing(4),
+  padding: theme.spacing(2),
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
 }));
 
