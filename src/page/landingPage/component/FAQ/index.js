@@ -101,11 +101,11 @@ const faqCategories = {
   hourlyCharter: [
     {
       summary: "What is the minimum booking time for Hourly Charter Service?",
-      data: "Our Hourly Charter Service requires a minimum booking of any hours. This ensures we can provide you with dedicated service and flexibility for your transportation needs.",
+      data: "Our Hourly Charter Service requires a minimum 5 hours. This ensures we can provide you with dedicated service and flexibility for your transportation needs.",
     },
     {
       summary: "How does billing work for Hourly Charter Service?",
-      data: "Billing begins at your scheduled pickup time and continues until you release the vehicle. Time is billed in 30-minute increments after the minimum 2-hour period.",
+      data: "Billing end at  you release the vehicle.",
     },
     {
       summary: "Can I extend my Hourly Charter Service during the trip?",
@@ -127,19 +127,19 @@ const faqCategories = {
     },
     {
       summary: "When will I be charged for my reservation?",
-      data: "For standard bookings, a 25% deposit is charged at the time of reservation, with the remaining balance charged after service completion. For special events and peak season bookings, full payment may be required in advance.",
+      data: "For standard bookings,  charged after service completion. For special events and peak season bookings.",
     },
     {
       summary: "Is gratuity included in the price?",
-      data: "Gratuity is not included in our base rates. The industry standard is 18-20% of the total fare, but gratuity is always at your discretion based on the service received.",
+      data: "Gratuity is not included in our base rates. The industry standard is 15-25% of the total fare, but gratuity is always at your discretion based on the service received.",
     },
     {
       summary: "Do you offer any discounts?",
-      data: "We offer discounts for corporate accounts, frequent clients, round-trip bookings, and off-peak travel times. Special rates are also available for military personnel, seniors, and group bookings.",
+      data: "We offer discounts for corporate accounts, frequent clients, round-trip bookings, and off-peak travel times.",
     },
     {
       summary: "What is your cancellation policy?",
-      data: "Cancellations made more than 12 hours before scheduled service receive a full refund. Cancellations within 12-24 hours incur a 50% fee. Cancellations less than 12 hours before service or no-shows are charged the full amount.",
+      data: "Cancellations made more than 6 hours before scheduled service receive a full refund.",
     },
   ],
 };
