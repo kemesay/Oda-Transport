@@ -189,7 +189,7 @@ function Index({ usernameFocus }) {
       
       const role = getUserRole();
       setTimeout(() => {
-        navigate(role === "user" ? "/user/my-order" : role === "admin" ? "/dashboard" : "/");
+        navigate(role === "user" ? "/home/1" : role === "admin" ? "/dashboard" : "/");
       }, 1500);
     }
     return () => dispatch(disableIsSigninSuccess());

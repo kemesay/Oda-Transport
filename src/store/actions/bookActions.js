@@ -10,6 +10,8 @@ export const book = createAsyncThunk(
     var res = null;
 
     const headers = contact.isGuestBooking ? null : authHeader();
+
+    // console.log('cardDetails:', contact?.cardDetails, contact?.paymentMethod)
     const body = {
       pickupPhysicalAddress: rideInfo?.pickupPhysicalAddress,
       pickupLongitude: rideInfo?.pickupLongitude,
@@ -105,11 +107,14 @@ export const book = createAsyncThunk(
           passengerFullName: contact?.passengerFullName,
           passengerCellPhone: contact?.passengerCellPhone,
           passengerEmail: contact?.email,
-          creditCardNumber: contact.creditCardNumber,
-          cardOwnerName: contact.cardOwnerName,
-          expirationDate: contact.expirationDate,
-          securityCode: contact.securityCode,
-          zipCode: contact.zipCode,
+          // creditCardNumber: contact.creditCardNumber,
+          // cardOwnerName: contact.cardOwnerName,
+          // expirationDate: contact.expirationDate,
+          // securityCode: contact.securityCode,
+          // zipCode: contact.zipCode,
+          paymentMethod: contact.paymentMethod,
+          paymentDetailId: contact.paymentDetailId,
+          cardDetails: contact.cardDetails,
         };
         if (body.extraOptions.length === 0) {
           delete body.extraOptions;

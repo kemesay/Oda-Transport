@@ -112,7 +112,66 @@ const PrimaryBadge = styled(Box)(({ theme }) => ({
 const cardValidationSchema = Yup.object().shape({
   creditCardNumber: Yup.string()
     .required('Card number is required')
-    .matches(/^[0-9]{16}$/, 'Must be a valid 16-digit card number'),
+    .test('is-valid-card', 'Invalid card number', (value) => {
+      if (!value) return false;
+      
+      // Remove all non-digit characters
+      const cleaned = value.replace(/\D/g, '');
+      
+      // Card type validation rules
+      const cardRules = {
+        visa: {
+          pattern: /^4[0-9]{12}(?:[0-9]{3})?$/,
+          length: [13, 16, 19]
+        },
+        mastercard: {
+          pattern: /^5[1-5][0-9]{14}$/,
+          length: [16]
+        },
+        amex: {
+          pattern: /^3[47][0-9]{13}$/,
+          length: [15]
+        },
+        discover: {
+          pattern: /^6(?:011|5[0-9]{2})[0-9]{12}$/,
+          length: [16]
+        },
+        diners: {
+          pattern: /^3(?:0[0-5]|[68][0-9])[0-9]{11}$/,
+          length: [14]
+        },
+        jcb: {
+          pattern: /^(?:2131|1800|35\d{3})\d{11}$/,
+          length: [16]
+        }
+      };
+
+      // Check if the number matches any card type pattern
+      const cardType = Object.keys(cardRules).find(type => 
+        cardRules[type].pattern.test(cleaned) && 
+        cardRules[type].length.includes(cleaned.length)
+      );
+
+      if (!cardType) return false;
+
+      // Luhn algorithm check
+      let sum = 0;
+      let shouldDouble = false;
+
+      for (let i = cleaned.length - 1; i >= 0; i--) {
+        let digit = parseInt(cleaned.charAt(i), 10);
+
+        if (shouldDouble) {
+          digit *= 2;
+          if (digit > 9) digit -= 9;
+        }
+
+        sum += digit;
+        shouldDouble = !shouldDouble;
+      }
+
+      return (sum % 10) === 0;
+    }),
   cardOwnerName: Yup.string()
     .required('Cardholder name is required')
     .matches(/^[a-zA-Z\s]+$/, 'Only letters and spaces allowed'),
@@ -129,7 +188,19 @@ const cardValidationSchema = Yup.object().shape({
     }),
   securityCode: Yup.string()
     .required('Security code is required')
-    .matches(/^[0-9]{3,4}$/, 'Must be 3 or 4 digits'),
+    .test('valid-cvv', 'Invalid security code', (value) => {
+      if (!value) return false;
+      // American Express cards have 4-digit CVV, others have 3
+      const cardNumber = this.parent.creditCardNumber;
+      if (!cardNumber) return false;
+      
+      const cleaned = cardNumber.replace(/\D/g, '');
+      const isAmex = /^3[47]/.test(cleaned);
+      
+      return isAmex ? 
+        /^[0-9]{4}$/.test(value) : 
+        /^[0-9]{3}$/.test(value);
+    }),
   zipCode: Yup.string()
     .required('ZIP code is required')
     .matches(/^[0-9]{5}(?:-[0-9]{4})?$/, 'Must be a valid ZIP code'),
@@ -688,7 +759,7 @@ function PaymentCards() {
                 value={formik.values.creditCardNumber}
                 onChange={(e) => {
                   // Only allow numbers and limit to 16 digits
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 16);
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 19);
                   formik.setFieldValue('creditCardNumber', value);
                 }}
                 onBlur={formik.handleBlur}

@@ -75,8 +75,8 @@ function Index({
   const pointToPointTripTypes = useMemo(() => ["One-Way", "Round-Trip"]);
   const { airports } = useSelector((state) => state.airportReducer);
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: "AIzaSyAgAp1RwiIqCyZZg63gsmyP6TZBuVxw_8c",
-    // googleMapsApiKey: "AIzaSyCvm85RFSLVS4DV7zBb1l0UlOJ1tpSXRPQ",
+    // googleMapsApiKey: "AIzaSyAgAp1RwiIqCyZZg63gsmyP6TZBuVxw_8c",
+    googleMapsApiKey: "AIzaSyCvm85RFSLVS4DV7zBb1l0UlOJ1tpSXRPQ",
 
     libraries: libraries,
   });
@@ -372,11 +372,13 @@ function Index({
   }
   function handleAirportChange(e) {
     formik.handleChange(e);
-    const lat = e.target.value.airportAddressLatitude;
-    const lng = e.target.value.airportAddressLongitude;
-    formik.setFieldValue("airPortId", e.target.value.airportId);
-    formik.setFieldValue("airportAddressLatitude", lat);
-    formik.setFieldValue("airportAddressLongitude", lng);
+    const selectedAirport = airports.find(airport => airport.airportName === e.target.value);
+    if (selectedAirport) {
+      formik.setFieldValue("airPortId", selectedAirport.airportId);
+      formik.setFieldValue("airportName", selectedAirport.airportName);
+      formik.setFieldValue("airportAddressLatitude", selectedAirport.airportAddressLatitude);
+      formik.setFieldValue("airportAddressLongitude", selectedAirport.airportAddressLongitude);
+    }
   }
 
   if (!isLoaded) {
@@ -472,8 +474,8 @@ function Index({
                     formik.touched.airportName && formik.errors.airportName
                   }
                 >
-                  {airports?.map((airport, key) => (
-                    <MenuItem value={airport} key={airport.airportName}>
+                  {airports?.map((airport) => (
+                    <MenuItem value={airport.airportName} key={airport.airportName}>
                       {airport.airportName}
                     </MenuItem>
                   ))}

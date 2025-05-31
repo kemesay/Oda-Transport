@@ -50,14 +50,48 @@ function Index() {
 
     // Card validation helper functions
     const isValidCardNumber = (number) => {
-        // Simple Luhn check for card validation
-        let sum = 0;
-        let shouldDouble = false;
-
         // Remove all non-digit characters
         const cleaned = number.replace(/\D/g, '');
+        
+        // Card type validation rules
+        const cardRules = {
+            visa: {
+                pattern: /^4[0-9]{12}(?:[0-9]{3})?$/,
+                length: [13, 16, 19]
+            },
+            mastercard: {
+                pattern: /^5[1-5][0-9]{14}$/,
+                length: [16]
+            },
+            amex: {
+                pattern: /^3[47][0-9]{13}$/,
+                length: [15]
+            },
+            discover: {
+                pattern: /^6(?:011|5[0-9]{2})[0-9]{12}$/,
+                length: [16]
+            },
+            diners: {
+                pattern: /^3(?:0[0-5]|[68][0-9])[0-9]{11}$/,
+                length: [14]
+            },
+            jcb: {
+                pattern: /^(?:2131|1800|35\d{3})\d{11}$/,
+                length: [16]
+            }
+        };
 
-        if (cleaned.length < 13 || cleaned.length > 19) return false;
+        // Check if the number matches any card type pattern
+        const cardType = Object.keys(cardRules).find(type => 
+            cardRules[type].pattern.test(cleaned) && 
+            cardRules[type].length.includes(cleaned.length)
+        );
+
+        if (!cardType) return false;
+
+        // Luhn algorithm check
+        let sum = 0;
+        let shouldDouble = false;
 
         for (let i = cleaned.length - 1; i >= 0; i--) {
             let digit = parseInt(cleaned.charAt(i), 10);
@@ -146,7 +180,7 @@ function Index() {
             dropoffLatitude: 0,
             distanceInMiles: 0,
             duration: null,
-            hour: 1,
+            hour: 5,
             airPortId: null,
             airportName: "",
             airportAddressLongitude: 0,
@@ -555,7 +589,6 @@ function Index() {
             default:
                 break;
         }
-    
         // Create the contact object without cardDetails if they're not needed
         const cleanedContact = {
             ...contactValues,
@@ -688,18 +721,18 @@ function Index() {
         }
         if (isError) setOpen((prev) => !prev);
     }, [isBookSuccess, errorMessage, isError]);
-    const addMinFee = async () => {
-        try {
-            await axios.get(`${remote_host}/api/v1/minimum-start-fee`).then((res) => {
-                const minimumFee = parseFloat(res.data.fee);
-                console.log("min fee: ", minimumFee);
+    // const addMinFee = async () => {
+    //     try {
+    //         await axios.get(`${remote_host}/api/v1/minimum-start-fee`).then((res) => {
+    //             const minimumFee = parseFloat(res.data.fee);
+    //             console.log("min fee: ", minimumFee);
 
-                dispatch(addMinimumInitialFee(minimumFee));
-            });
-        } catch (error) {
-            console.log("error: ", error);
-        }
-    };
+    //             dispatch(addMinimumInitialFee(minimumFee));
+    //         });
+    //     } catch (error) {
+    //         console.log("error: ", error);
+    //     }
+    // };
 
     const feeCalculator = () => {
 
@@ -744,7 +777,7 @@ function Index() {
         dispatch(getAllCars());
         dispatch(getAirports());
         dispatch(getExtraOptions());
-        addMinFee();
+        // addMinFee();
     }, []);
 
     return (

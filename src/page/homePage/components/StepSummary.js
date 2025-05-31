@@ -48,7 +48,7 @@ function StepSummary({
           tripType == "Ride to the airport(round trip)" ||
           "Ride to the airport(one way)";
         pickupAddr = isFromAirport
-          ? rideSummaryData.airPortId
+          ? rideSummaryData.airportName
           : isToAirport
             ? rideSummaryData.hotel
             : null;
@@ -75,7 +75,7 @@ function StepSummary({
         dropoffAddr = isFromAirport
           ? rideSummaryData.hotel
           : isToAirport
-            ? rideSummaryData.airPortId
+            ? rideSummaryData.airportName
             : null;
       default:
         break;
@@ -113,7 +113,7 @@ function StepSummary({
       },
       {
         label: "Airport",
-        value: rideSummaryData?.airPortId,
+        value: rideSummaryData?.airportName,
         isVisible: isAirportTravel,
       },
       {

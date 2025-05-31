@@ -70,8 +70,10 @@ function CarComponent({ carDetail, formik, handleCarSelect, hour, distanceInMile
 
     } else if (travelType == "3") {
       const carPricePerHour = parseFloat(carDetail.pricePerHour);
-      calculatedFee = (carPricePerHour * hour) + baseMinimumFee;
+      calculatedFee = (carPricePerHour * hour);
+
     }
+            // calculatedFee = (carPricePerHour * hour) + baseMinimumFee;
 
     return calculatedFee.toFixed(0);
   };

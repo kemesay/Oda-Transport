@@ -1002,18 +1002,18 @@ function Index() {
         }
         if (isError) setOpen((prev) => !prev);
     }, [isBookSuccess, errorMessage, isError]);
-    const addMinFee = async () => {
-        try {
-            await axios.get(`${remote_host}/api/v1/minimum-start-fee`).then((res) => {
-                const minimumFee = parseFloat(res.data.fee);
-                console.log("min fee: ", minimumFee);
+    // const addMinFee = async () => {
+    //     try {
+    //         await axios.get(`${remote_host}/api/v1/minimum-start-fee`).then((res) => {
+    //             const minimumFee = parseFloat(res.data.fee);
+    //             console.log("min fee: ", minimumFee);
 
-                dispatch(addMinimumInitialFee(minimumFee));
-            });
-        } catch (error) {
-            console.log("error: ", error);
-        }
-    };
+    //             dispatch(addMinimumInitialFee(minimumFee));
+    //         });
+    //     } catch (error) {
+    //         console.log("error: ", error);
+    //     }
+    // };
 
     const feeCalculator = () => {
 
@@ -1058,7 +1058,7 @@ function Index() {
         dispatch(getAllCars());
         dispatch(getAirports());
         dispatch(getExtraOptions());
-        addMinFee();
+        // addMinFee();
     }, []);
 
     return (

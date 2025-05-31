@@ -25,56 +25,56 @@ export default function MinimumFees() {
     fee: yup.string().required("Minimum Fee required"),
   });
 
-  const formikContent = useFormik({
-    initialValues: {
-      fee: 0,
-    }, // Set initial values from local state
-    validationSchema: contentValidationSchema,
-    onSubmit: async (values) => {
-      setLoading(true);
-      try {
-        const response = await BACKEND_API.post(
-          `/api/v1/minimum-start-fee`,
-          values
-        );
-        if (response.status === 200 || response.status === 201) {
-          toast.success(response?.data?.message || `Successfully Updated!`, {
-            // position: toast.POSITION.TOP_CENTER
-          });
-          // return response.data;
-        }
+  // const formikContent = useFormik({
+  //   initialValues: {
+  //     fee: 0,
+  //   }, // Set initial values from local state
+  //   validationSchema: contentValidationSchema,
+  //   onSubmit: async (values) => {
+  //     setLoading(true);
+  //     try {
+  //       const response = await BACKEND_API.post(
+  //         `/api/v1/minimum-start-fee`,
+  //         values
+  //       );
+  //       if (response.status === 200 || response.status === 201) {
+  //         toast.success(response?.data?.message || `Successfully Updated!`, {
+  //           // position: toast.POSITION.TOP_CENTER
+  //         });
+  //         // return response.data;
+  //       }
        
-        // Update local state with form data
-        // setFormData(values);
-      }catch (error) {
-        toast.error(error?.response?.data?.message || " Network error...", {
-          // position: toast.POSITION.TOP_CENTER
-        });
-        // throw error?.response?.data;
-      } finally {
-        setLoading(false);
-      }
-    },
-  });
+  //       // Update local state with form data
+  //       // setFormData(values);
+  //     }catch (error) {
+  //       toast.error(error?.response?.data?.message || " Network error...", {
+  //         // position: toast.POSITION.TOP_CENTER
+  //       });
+  //       // throw error?.response?.data;
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   },
+  // });
 
-  useEffect(() => {
-    // Load form data from backend when component mounts
-    const loadFormData = async () => {
-      try {
-        // Make API call to fetch existing data
-        const response = await BACKEND_API.get(`/api/v1/minimum-start-fee`);
-        const existingData = response.data; // Assuming the response contains existing data
-        formikContent.setFieldValue("fee", existingData.fee);
-      } catch (error) {
-        toast.error(error?.response?.data?.message ||" Network error...", {
-          // position: toast.POSITION.TOP_CENTER
-        });
-        // throw error?.response?.data;
-      }
-    };
+  // useEffect(() => {
+  //   // Load form data from backend when component mounts
+  //   const loadFormData = async () => {
+  //     try {
+  //       // Make API call to fetch existing data
+  //       const response = await BACKEND_API.get(`/api/v1/minimum-start-fee`);
+  //       const existingData = response.data; // Assuming the response contains existing data
+  //       formikContent.setFieldValue("fee", existingData.fee);
+  //     } catch (error) {
+  //       toast.error(error?.response?.data?.message ||" Network error...", {
+  //         // position: toast.POSITION.TOP_CENTER
+  //       });
+  //       // throw error?.response?.data;
+  //     }
+  //   };
 
-    loadFormData(); // Call the function to load form data when component mounts
-  }, []); // Empty dependency array ensures this effect runs only once when component mounts
+  //   loadFormData(); // Call the function to load form data when component mounts
+  // }, []); // Empty dependency array ensures this effect runs only once when component mounts
 
   return (
     <Box>

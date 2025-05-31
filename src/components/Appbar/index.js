@@ -29,8 +29,9 @@ const NAVBAR_MENUS = {
     { title: "FAQ", link: "/faq", scrollLink: "faq" },
   ],
   authenticated: [
-    { title: "My Account", link: "/user/my-order", index: 0 },
-    { title: "Book Ride Now", link: "/home/1", index: 1 },
+    { title: "Book Ride Now", link: "/home/1", index: 0 },
+    { title: "My Account", link: "/user/my-order", index: 1 },
+    
   ]
 };
 
