@@ -34,7 +34,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 const faqCategories = {
   general: [
     {
-      summary: "How do I book a ride with ODA Transportation?",
+      summary: "How do I book a ride with ODA Black Car Service?",
       data: "You can book a ride through our website by filling out the booking form, calling our 24/7 booking line, or sending us an email. We recommend booking at least 24 hours in advance for guaranteed availability, though we do accommodate last-minute requests when possible.",
     },
     {

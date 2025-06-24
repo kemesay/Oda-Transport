@@ -12,7 +12,7 @@ import {
   useTheme,
   Toolbar,
 } from "@mui/material";
-import logo1 from "../../assets/images/ODA_Primary Logo.png";
+import logo1 from "../../assets/images/Odaa Transportation - Logo_Primary Logo.png";
 import ChangePasswordDrawer from "./ChangePassword";
 import { logout, setIsAuthenticated } from "../../store/reducers/authReducer";
 import { getUserRole } from "../../util/authUtil";

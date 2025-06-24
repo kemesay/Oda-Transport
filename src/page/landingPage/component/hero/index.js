@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import styled from "@emotion/styled";
 import RSButton from "../../../../components/RSButton";
 import logoUrlLowOpacity from "../../../../assets/images/grayLogo-transparent.png";
+// import logoUrlLowOpacity from "../../../../assets/images/Odaa Transportation - Logo_Primary Logo.png";
 import { useNavigate } from "react-router-dom";
 
 const HeroContainer = styled(Box)(({ theme }) => ({
@@ -100,7 +101,7 @@ function Hero({ onLoginClick }) {
               }}
             >
               Fast, Easy, & Accurate Transportation with{" "}
-              <HighlightText>Oda Transportation</HighlightText>
+              <HighlightText>ODA Black Car Service</HighlightText>
             </Typography>
           </motion.div>
 
@@ -118,7 +119,7 @@ function Hero({ onLoginClick }) {
               }}
             >
               Looking for an easy and fast way to manage your transportation?
-              Look no further than <strong>Oda Transportation</strong>!
+              Look no further than <strong>ODA Black Car Service</strong>!
               Experience premium service with our professional chauffeurs and
               modern fleet.
             </Typography>

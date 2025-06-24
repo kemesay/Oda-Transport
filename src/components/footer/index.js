@@ -178,7 +178,7 @@ function Footer() {
             fontsize="14px"
             sx={{ opacity: 0.9 }}
           >
-            Copyright © {new Date().getFullYear()} Oda Transportation service. All rights reserved!
+            Copyright © {new Date().getFullYear()} ODA Black Car Service. All rights reserved!
           </RSTypography>
         </Box>
       </FooterContainer>

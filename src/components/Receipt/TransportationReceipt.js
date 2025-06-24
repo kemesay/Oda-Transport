@@ -83,7 +83,7 @@ const TransportationReceipt = ({ open, onClose, payment }) => {
               style={{ height: 60, marginBottom: 8 }}
             />
             <Typography variant="h6" sx={{ color: '#161F36', fontWeight: 600 }}>
-              ODA Transportation
+              ODA Black Car Service
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Your Trusted Transportation Partner
@@ -216,7 +216,7 @@ const TransportationReceipt = ({ open, onClose, payment }) => {
           {/* Footer */}
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              Thank you for choosing ODA Transportation
+              Thank you for choosing ODA Black Car Service
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block">
               For support: info@odatransportation.com

@@ -263,8 +263,8 @@ function App() {
                         position: 'relative',
                         overflow: 'hidden',
                         transition: 'all 0.3s ease',
-                        '& > *': { // Apply to all direct children
-                          minWidth: 0, // Prevents content from overflowing
+                        '& > *': {
+                          minWidth: 0,
                         }
                       }}
                     >
@@ -297,13 +297,14 @@ function App() {
                           <Route path="/promo-codes" element={<PromoCodes />} />
                           <Route path="/notifications" element={<Notifications />} />
                           <Route path="/settings" element={<UserSettings />} />
+                          <Route path="*" element={<Navigate to="/user/profile" replace />} />
                         </Routes>
                       </Box>
                     </Box>
                   </Box>
                 </PrivateUserRoute>
               } />
-              <Route path="*" element={<ErrorMessage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             {/* </div> */}
             <Box sx={{

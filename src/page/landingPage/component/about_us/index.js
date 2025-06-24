@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import styled from "@emotion/styled";
 import RSTypography from "../../../../components/RTSABOUT";
 // import logoUrl from "../../../../assets/images/newLogo.jpg";
-import logoUrl from "../../../../assets/images/WebsiteSocialMediaOpenGraph_Businesscard-Back.jpeg"
+import logoUrl from "../../../../assets/images/Website Social Media Open Graph_Business card - Back_black_car.jpg"
 
 import { CheckCircle } from "@mui/icons-material";
 import { useSelector } from "react-redux";
@@ -167,7 +167,7 @@ function AboutUs() {
                 >
                   <StyledImage
                     src={logoUrl}
-                    alt="About ODA Transportation"
+                    alt="About ODA Black Car Service"
                     onLoad={handleImageLoad}
                     style={{
                       ...getImageStyle(),
@@ -212,7 +212,7 @@ function AboutUs() {
                     textAlign: { xs: 'center', lg: 'left' },
                   }}
                 >
-                  About ODA Transportation
+                  About ODA Black Car Service
                 </Typography>
               </motion.div>
 

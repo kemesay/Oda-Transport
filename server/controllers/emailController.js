@@ -36,7 +36,7 @@ const sendEmail = async (req, res) => {
           <p style="white-space: pre-wrap;">${message}</p>
         </div>
         <div style="margin-top: 20px; font-size: 12px; color: #666;">
-          <p>This email was sent from the Oda Transportation contact form.</p>
+          <p>This email was sent from the ODA Black Car Service contact form.</p>
         </div>
       </div>
     `;
@@ -44,7 +44,7 @@ const sendEmail = async (req, res) => {
         // Configure email options
         const mailOptions = {
             from: {
-                name: 'Oda Transportation Contact Form',
+                name: 'ODA Black Car Service Contact Form',
                 address: 'info@odatransportation.com'
             },
             to: to_email,
@@ -64,21 +64,21 @@ const sendEmail = async (req, res) => {
         // Send auto-reply to customer
         const autoReplyOptions = {
             from: {
-                name: 'Oda Transportation',
+                name: 'ODA Black Car Service',
                 address: 'info@odatransportation.com'
             },
             to: from_email,
-            subject: 'Thank you for contacting Oda Transportation',
+            subject: 'Thank you for contacting ODA Black Car Service',
             html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #03930A;">Thank You for Contacting Us</h2>
           <p>Dear ${from_name},</p>
-          <p>Thank you for reaching out to Oda Transportation. We have received your message regarding ${service.toLowerCase()} services.</p>
+          <p>Thank you for reaching out to ODA Black Car Service. We have received your message regarding ${service.toLowerCase()} services.</p>
           <p>Our team will review your request and get back to you within 24 hours.</p>
           <p>For urgent matters, please call us at (714) 313-4269.</p>
           <div style="margin-top: 20px;">
             <p><strong>Best regards,</strong></p>
-            <p>Oda Transportation Team</p>
+            <p>ODA Black Car Service Team</p>
           </div>
         </div>
       `

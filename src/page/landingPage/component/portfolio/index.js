@@ -80,7 +80,7 @@ function Portfolio() {
             fontWeight="600"
             sx={{ mb: 6 }}
           >
-            Why Choose <span style={{ color: "#03930A" }}>Oda Transportation</span>
+            Why Choose <span style={{ color: "#03930A" }}>ODA Black Car Service</span>
           </Typography>
         </motion.div>
 

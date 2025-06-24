@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import OdaaLogo from '../../assets/images/Odaa Transportation - Logo-01.svg';
+import OdaaLogo from '../../assets/images/Odaa Transportation - Logo_Primary Logo.png';
 
 // Logo component with size variants
 const Logo = ({ variant = 'default', sx }) => {
