@@ -51,7 +51,7 @@
       {
         "name": "Book a Ride",
         "short_name": "Book",
-        "description": "Book a transportation service",
+        "description": "Book a transportation service with ODA Black Car Service",
         "url": "/home/1",
         "icons": [{ "src": "favicon-96x96.png", "sizes": "96x96" }]
       }
