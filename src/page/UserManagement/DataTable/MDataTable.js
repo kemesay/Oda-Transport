@@ -178,9 +178,10 @@ const MDataTable = (props) => {
             <Box
               sx={{
                 display: "flex",
-                gap: "96px",
+                gap: { xs: 1, sm: 2, md: 3 }, // Responsive gap using theme spacing
                 padding: "8px",
                 flexWrap: "wrap",
+                justifyContent: { xs: "center", sm: "flex-start" }, // Center buttons on small screens
               }}
             >
               {props.title === "Air ports" ? (
@@ -278,9 +279,9 @@ const MDataTable = (props) => {
     renderBottomToolbar: () => {
       return (
         <Typography
-          style={{
+          sx={{
             color: "green",
-            fontSize: "20px",
+            fontSize: { xs: "14px", md: "20px" }, // Responsive font size
             fontFamily: "Roboto",
             padding: "10px",
             textAlign: "right",
@@ -314,12 +315,12 @@ const MDataTable = (props) => {
   return (
     <div>
       <Typography
-        style={{
+        sx={{
           color: "green",
           fontFamily: "Roboto",
           background: "white",
           padding: "10px 20px",
-          fontSize: "16px",
+          fontSize: { xs: "14px", md: "16px" }, // Responsive font size
           fontWeight: "530",
           fontStyle: "normal",
           background: "whiteSmoke",

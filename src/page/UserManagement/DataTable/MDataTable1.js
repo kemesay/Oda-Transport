@@ -55,8 +55,9 @@ const MDataTable = (props) => {
   const CustomPaginationControls = () => (
     <Box sx={{
       display: 'flex',
+      flexDirection: { xs: 'column', sm: 'row' }, // Stack vertically on xs, row on sm and up
       alignItems: 'center',
-      gap: 2,
+      gap: { xs: 1, sm: 2 }, // Responsive gap
       p: 2,
       backgroundColor: 'white',
       borderRadius: '4px',
@@ -89,8 +90,9 @@ const MDataTable = (props) => {
             <IconButton
               onClick={() => props.onPaginationChange({ pageIndex: 0, pageSize: props.pagination.pageSize })}
               disabled={props.pagination.pageIndex === 0 || props.isLoading}
+              size="small" // Make icons smaller on small screens
             >
-              <KeyboardDoubleArrowLeft />
+              <KeyboardDoubleArrowLeft fontSize="small" />
             </IconButton>
           </span>
         </Tooltip>
@@ -104,22 +106,23 @@ const MDataTable = (props) => {
                 pageSize: props.pagination.pageSize
               })}
               disabled={props.pagination.pageIndex === 0 || props.isLoading}
+              size="small" // Make icons smaller on small screens
             >
-              <KeyboardArrowLeft />
+              <KeyboardArrowLeft fontSize="small" />
             </IconButton>
           </span>
         </Tooltip>
 
         {/* Page info */}
         <Box sx={{
-          minWidth: '120px',
+          minWidth: '100px',
           textAlign: 'center',
           fontWeight: 'medium',
           display: 'flex',
           alignItems: 'center',
           gap: 1
         }}>
-          <Typography variant="body2">
+          <Typography variant="body2" sx={{ fontSize: { xs: '12px', sm: '14px' } }}>
             Page {props.pagination.pageIndex + 1} of {Math.ceil(props.rowCount / props.pagination.pageSize)}
           </Typography>
         </Box>
@@ -139,8 +142,9 @@ const MDataTable = (props) => {
                 props.pagination.pageIndex >= Math.ceil(props.rowCount / props.pagination.pageSize) - 1 ||
                 props.isLoading
               }
+              size="small" // Make icons smaller on small screens
             >
-              <KeyboardArrowRight />
+              <KeyboardArrowRight fontSize="small" />
             </IconButton>
           </span>
         </Tooltip>
@@ -157,8 +161,9 @@ const MDataTable = (props) => {
                 props.pagination.pageIndex >= Math.ceil(props.rowCount / props.pagination.pageSize) - 1 ||
                 props.isLoading
               }
+              size="small" // Make icons smaller on small screens
             >
-              <KeyboardDoubleArrowRight />
+              <KeyboardDoubleArrowRight fontSize="small" />
             </IconButton>
           </span>
         </Tooltip>
@@ -166,7 +171,7 @@ const MDataTable = (props) => {
 
       {/* Page size selector */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography variant="body2">Rows per page:</Typography>
+        <Typography variant="body2" sx={{ fontSize: { xs: '12px', sm: '14px' } }}>Rows per page:</Typography>
         <Select
           value={props.pagination.pageSize}
           onChange={(e) => props.onPaginationChange({
@@ -175,7 +180,7 @@ const MDataTable = (props) => {
           })}
           size="small"
           disabled={props.isLoading}
-          sx={{ minWidth: 80 }}
+          sx={{ minWidth: { xs: 70, sm: 80 } }} // Responsive minWidth
         >
           {[10, 20, 30, 50].map((size) => (
             <MenuItem key={size} value={size}>
@@ -186,7 +191,7 @@ const MDataTable = (props) => {
       </Box>
 
       {/* Total count */}
-      <Typography variant="body2" color="textSecondary">
+      <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '12px', sm: '14px' } }}>
         Total: {props.rowCount} items
       </Typography>
     </Box>
@@ -226,7 +231,7 @@ const MDataTable = (props) => {
       sx: {
         fontFamily: "Roboto",
         fontWeight: "bold",
-        fontSize: "14px",
+        fontSize: { xs: "12px", md: "14px" }, // Responsive font size
         color: "black",
         textAlign: "center",
       },
@@ -240,7 +245,7 @@ const MDataTable = (props) => {
     },
     muiTableBodyCellProps: {
       sx: {
-        fontSize: "13px",
+        fontSize: { xs: "11px", md: "13px" }, // Responsive font size
         padding: "2px",
         fontFamily: "Roboto",
         borderRight: "1.5px solid #EDE7E7",
@@ -329,9 +334,10 @@ const MDataTable = (props) => {
             <Box
               sx={{
                 display: "flex",
-                gap: "96px",
+                gap: { xs: 1, sm: 2, md: 3 }, // Responsive gap
                 padding: "8px",
                 flexWrap: "wrap",
+                justifyContent: { xs: "center", sm: "flex-start" }, // Center buttons on small screens
               }}
             >
               {props.title === "Air ports" ? (
@@ -429,9 +435,9 @@ const MDataTable = (props) => {
     renderBottomToolbar: () => {
       return (
         <Typography
-          style={{
+          sx={{
             color: "green",
-            fontSize: "20px",
+            fontSize: { xs: "14px", md: "20px" }, // Responsive font size
             fontFamily: "Roboto",
             padding: "10px",
             textAlign: "right",
@@ -497,7 +503,6 @@ const MDataTable = (props) => {
     //   const { pageSize, pageIndex } = table.getState().pagination;
     //   const start = pageIndex * pageSize + 1;
     //   const end = Math.min((pageIndex + 1) * pageSize, props.rowCount);
-
     //   return (
     //     <Box sx={{ display: 'flex', gap: '1rem', alignItems: 'center', p: 2 }}>
     //       <Typography variant="body2">
@@ -521,12 +526,12 @@ const MDataTable = (props) => {
   return (
     <div>
       <Typography
-        style={{
+        sx={{
           color: "green",
           fontFamily: "Roboto",
           background: "white",
           padding: "10px 20px",
-          fontSize: "16px",
+          fontSize: { xs: "14px", md: "16px" }, // Responsive font size
           fontWeight: "530",
           fontStyle: "normal",
           background: "whiteSmoke",

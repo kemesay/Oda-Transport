@@ -53,6 +53,50 @@ const faqCategories = {
       summary: "Do you offer corporate accounts?",
       data: "Yes, we offer corporate accounts with specialized services including dedicated account managers, customized billing options, priority booking, and volume discounts. Please contact our corporate services department for more information.",
     },
+    {
+      summary: "What airports do you serve?",
+      data: "We provide black car service to all major Southern California airports, including LAX, John Wayne Airport (SNA), Long Beach (LGB), Burbank (BUR), and Ontario (ONT).",
+    },
+
+    {
+      summary: "Do you offer rides to Disneyland and theme parks?",
+      data: "Yes! We specialize in private rides to Disneyland, Universal Studios, Knott’s Berry Farm, and the Anaheim Convention Center.",
+    },
+    {
+      summary: "How far in advance should I book my ride?",
+      data: "We recommend booking at least 24 hours in advance, but we also accept last-minute and same-day reservations when available.",
+    },
+    {
+      summary: "Do you provide child car seats?",
+      data: "Yes, we can provide infant, toddler, or booster seats upon request. Please let us know at the time of booking.",
+    },
+    {
+      summary: "Are your drivers professional and licensed?",
+      data: "Absolutely. All our chauffeurs are fully licensed, insured, background-checked, and trained for safety and professionalism."
+    },
+    {
+      summary: "What types of vehicles do you offer?",
+      data: "We offer luxury sedans, executive SUVs, and premium vehicles, perfect for families, executives, and groups.",
+    },
+    {
+      summary: "Do you provide corporate and event transportation?",
+      data: "Yes, we offer chauffeur service for corporate travel, weddings, concerts, sporting events, and private parties.",
+    },
+    
+    {
+      summary: "How can I pay for my ride?",
+      data:"We accept all major credit cards, debit cards, and digital payments. Prepayment and invoicing options are available for corporate clients.",
+    },
+
+    {
+      summary: "Do you operate 24/7?",
+      data: "Yes. ODA Black Car Service operates 24 hours a day, 7 days a week for your convenience.",
+    },
+    {
+      summary: "Which areas do you serve besides Anaheim?",
+      data: "We proudly serve all of Orange County, including Irvine, Newport Beach, Huntington Beach, Costa Mesa, Santa Ana, Garden Grove, Buena Park, and Fullerton, as well as Los Angeles and surrounding areas.",
+    },
+    
   ],
   airport: [
     {

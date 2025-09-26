@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/static/css/main.dc48c16d.css",
+    "main.js": "/static/js/main.9845461e.js",
+    "static/js/206.9ade1071.chunk.js": "/static/js/206.9ade1071.chunk.js",
+    "static/media/Website Social Media Open Graph_Business card - Back_black_car.jpg": "/static/media/Website Social Media Open Graph_Business card - Back_black_car.1031a250da2d804ca221.jpg",
+    "static/media/Odaa Transportation - Logo_Primary Logo.png": "/static/media/Odaa Transportation - Logo_Primary Logo.e469b1881deec71b91e1.png",
+    "static/media/grayLogo-transparent.png": "/static/media/grayLogo-transparent.c55b9893e93c15c18b01.png",
+    "index.html": "/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.dc48c16d.css",
+    "static/js/main.9845461e.js"
+  ]
+}

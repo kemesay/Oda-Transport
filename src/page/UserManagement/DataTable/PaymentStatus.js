@@ -57,7 +57,7 @@ export default function PaymentStatusPopup({
       // Handle navigation if needed
       // navigate("/dashboard/airportbook")
     } catch (error) {
-      toast.error(error?.response?.data?.message ||" Network error...", {
+      toast.error(error?.response?.data?.error ||" Network error...", {
         // position: toast.POSITION.TOP_CENTER
       });
       // handleClose();

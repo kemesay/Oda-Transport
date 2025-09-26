@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   Alert,
@@ -8,16 +8,22 @@ import {
   Stack,
   Button,
   Snackbar,
+  Paper,
+  Box,
+  Chip,
 } from "@mui/material";
 import ReasonPopup from "../ReasonPopup";
 import PaymentStatusPopup from "../PaymentStatus";
 import BookingStatusPoup from "../BookingStatus";
+import DiscountPopup from "../discountpopup"; // Import DiscountPopup
 import { BACKEND_API } from "../../../../store/utils/API";
 import { ToastContainer, toast } from "react-toastify";
 import useGetData from "../../../../store/hooks/useGetData";
+
 function P2pBookDetail(props) {
   const location = useLocation();
-  // const [pointToPointBookId, setPointToPointBookId] = React.useState(null);
+  const navigate = useNavigate();
+  
   const {
     tripType,
     pickupPhysicalAddress,
@@ -48,13 +54,14 @@ function P2pBookDetail(props) {
     AdditionalStopOnTheWay,
   } = location.state?.rowData || {};
 
-  const pointToPointBookId = location.state?.rowData?.pointToPointBookId; // Provide a default value if Car is undefined
+  const pointToPointBookId = location.state?.rowData?.pointToPointBookId;
 
   const [open, setOpen] = useState(false);
   const [isUpdated, setIsUpdated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [popupType, setPopupType] = useState(null);
+  const [discountOpen, setDiscountOpen] = useState(false); // State for discount popup
 
   const handleClickOpen = (type) => {
     setOpen(true);
@@ -70,6 +77,15 @@ function P2pBookDetail(props) {
     setPopupType(null);
   };
 
+  // Discount popup handlers
+  const handleDiscountOpen = () => {
+    setDiscountOpen(true);
+  };
+
+  const handleDiscountClose = () => {
+    setDiscountOpen(false);
+  };
+
   const endpoint = `/api/v1/admin/bookings/approve`;
   const paymentendpoint = `/api/v1/admin/bookings/update-payment-status`;
   const detailendpoint = `/api/v1/point-to-point-books/${pointToPointBookId}`;
@@ -80,9 +96,12 @@ function P2pBookDetail(props) {
     isError: isErrorGet,
     isFetching: isFetchingTax,
     error: errorGet,
-  } = useGetData(detailendpoint);
+  } = useGetData(detailendpoint, { enabled: !!pointToPointBookId });
 
-  // console.log("object", response?.PaymentDetail?.creditCardNumber);
+  if (!pointToPointBookId) {
+    navigate('/dashboard/point-to-point-books', { state: { error: 'Point to Point booking ID not provided.' } });
+    return null;
+  }
 
   const handleAcceptBook = async () => {
     try {
@@ -96,7 +115,6 @@ function P2pBookDetail(props) {
         toast.success(response?.data?.message || `Book Updated successfully!`, {
           autoClose: 6000,
         });
-        //
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || " Network error...", {});
@@ -116,7 +134,6 @@ function P2pBookDetail(props) {
         toast.success(response?.data?.message || `Payment Taken successfully!`, {
           autoClose: 6000,
         });
-        //
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || " Network error...", {});
@@ -124,7 +141,6 @@ function P2pBookDetail(props) {
       setLoading(false);
     }
   };
-
 
   const getBackgroundColorforpayment = (paymentStatus) => {
     switch (paymentStatus) {
@@ -152,21 +168,54 @@ function P2pBookDetail(props) {
     }
   };
 
-  const Field = ({ label, value }) => {
+  const Field = ({ label, value, direction = { xs: "column", sm: "row" } }) => {
     return (
-      <Grid item xs={6}>
+      <Grid item xs={12} md={6}>
         <Stack
-          direction={"row"}
-          justifyContent={"space-between"}
-          alignItems={"center"}
-          sx={{ backgroundColor: "#EEE", padding: 2, borderRadius: 2 }}
+          direction={direction}
+          justifyContent={{ xs: "center", sm: "space-between" }}
+          alignItems={{ xs: "flex-start", sm: "center" }}
+          sx={{ backgroundColor: "#EEE", padding: 2, borderRadius: 2, flexGrow: 1 }}
         >
-          <Typography sx={{ fontWeight: "bold", fontSize: "20px" }}>
+          <Typography
+            sx={{
+              fontWeight: "bold",
+              fontSize: { xs: "16px", md: "20px" },
+              marginBottom: { xs: 1, sm: 0 },
+            }}
+          >
             {label}
           </Typography>
-          <Typography sx={{ fontSize: "20px" }}>{value}</Typography>
+          <Typography
+            sx={{
+              fontSize: { xs: "16px", md: "20px" },
+              wordBreak: "break-word",
+              textAlign: { xs: "left", sm: "right" },
+            }}
+          >
+            {value}
+          </Typography>
         </Stack>
       </Grid>
+    );
+  };
+
+  // Function to format description text with newlines
+  const formatDescription = (description) => {
+    if (!description) return 'N/A';
+    
+    // Replace newlines with spaces and trim extra whitespace
+    return description.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  };
+
+  // Function to render description with proper formatting
+  const renderDescription = (description) => {
+    if (!description) return 'N/A';
+    
+    return (
+      <Box sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+        {description}
+      </Box>
     );
   };
 
@@ -191,201 +240,282 @@ function P2pBookDetail(props) {
   };
 
   return (
-    <>
-      <Grid
-        container
-        justifyContent={"center"}
-        alignItems={"center"}
-        spacing={2}
-      >
-        <Grid item container xs={11} lg={10} spacing={2} mt={2}>
-          <Grid item xs={6}>
-            <Typography
-              sx={{
-                color: "white",
-                backgroundColor: getBackgroundColorforpayment(paymentStatus),
-                border: "1px solid",
-                paddingX: "3px",
-              }}
-            >
-              Payment Status: {paymentStatus}
-            </Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography
-              sx={{
-                color: "white",
-                backgroundColor: getBackgroundColorforbooking(bookingStatus),
-                border: "1px solid",
-                paddingX: "3px",
-              }}
-            >
-              Booking Status: {bookingStatus}
-            </Typography>
-          </Grid>
-          <Field label="Trip Type" value={tripType} />
-          <Field
-            label="pickup Physical Address"
-            value={pickupPhysicalAddress}
-          />
-          <Field
-            label="dropoff Physical Address"
-            value={dropoffPhysicalAddress}
-          />
-          <Field label="Distance In Miles" value={distanceInMiles} />
-          <Field label="Number Of Passengers" value={numberOfPassengers} />
-          <Field label="Special Instructions" value={numberOfSuitcases} />
-          <Field label="Return Pickup DateTime" value={formatDateToPacific(returnPickupDateTime)} />
-          <Field label="Special Instructions" value={specialInstructions} />
-          <Field label="Booking For" value={bookingFor} />
-          <Field label="Passenger FullName" value={passengerFullName} />
-          <Field label="Passenger CellPhone" value={passengerCellPhone} />
-          <Field label="Pickup Date Time" value={formatDateToPacific(pickupDateTime)} />
-          <Field label="TotaTripFee In Dollars" value={totalTripFeeInDollars} />
+    <Grid
+      container
+      justifyContent={"center"}
+      alignItems={"center"}
+      spacing={3}
+      sx={{ p: { xs: 2, md: 3 } }}
+    >
+      <Grid item xs={12} md={10} lg={9}>
+        <Paper elevation={3} sx={{ p: { xs: 2, md: 4 }, borderRadius: 2 }}>
+          <Typography
+            variant="h5"
+            component="h2"
+            gutterBottom
+            sx={{ mb: 3, textAlign: "center", fontWeight: "bold" }}
+          >
+            Point to Point Booking Details
+          </Typography>
 
-          <Field
-            label="Additional Stop On The Way Description"
-            value={additionalStopOnTheWayDescription}
-          />
-          <Field label="Is GuestBooking" value={isGuestBooking} />
-          <Field label="Passenger Email" value={passengerEmail} />
-          <Field label="Payment DetailId" value={paymentDetailId} />
-          <Field label="User Id" value={userId} />
-          <Field label="Car Id" value={carId} />
-          <Field label="Additional Stop Id" value={additionalStopId} />
-          <Field
-            label="Additional Stop On the Way"
-            value={AdditionalStopOnTheWay}
-          />
-          <Field
-            label="Credit Car-Number"
-            value={response?.PaymentDetail?.creditCardNumber}
-          />
-          <Field
-            label="Expiration date"
-            value={response?.PaymentDetail?.expirationDate}
-          />
-          <Field
-            label="Security code"
-            value={response?.PaymentDetail?.securityCode}/>
-
-          <Field
-            label="Zip code"
-            value={response?.PaymentDetail?.zipCode}/>
-          <Field label="Car Id" value={response?.Car?.carId} />
-          <Field label="Car Name" value={response?.Car?.carName} />
-          <Field label="Price Per-Mile" value={response?.Car?.pricePerMile} />
-          <Field label="Price Per-Hour" value={response?.Car?.pricePerHour} />
-
-        </Grid>
-
-        <Grid item container lg={8} spacing={2} mt={2}>
-          <Typography variant="h6"> Extra Options:</Typography>
-        </Grid>
-
-        {/* Check if ExtraOptions is available */}
-        {response?.ExtraOptions && response.ExtraOptions.length > 0 && (
-          <>
-            {/* Render Extra Options in a Grid */}
-            {/* <Grid item xs={12}>
-              <Typography variant="h6">Extra Options:</Typography>
-            </Grid> */}
-            {response.ExtraOptions.map((option, index) => (
-              <Grid container item xs={10} spacing={2} key={index}>
-                {/* <Grid item xs={6}> */}
-                <Field label="Extra Option Id" value={option.extraOptionId} />
-                <Field label="Description" value={option.description} />
-                {/* </Grid> */}
-                {/* <Grid item xs={6}> */}
-                <Field label="Name" value={option.name} />
-                <Field label="Price" value={option.pricePerItem} />
-                {/* </Grid> */}
+          {response?.hasDiscountApplied && (
+            <Grid container spacing={2} mb={2}>
+              <Grid item xs={12}>
+                <Paper 
+                  elevation={2} 
+                  sx={{ 
+                    p: 2, 
+                    backgroundColor: '#e3f2fd', 
+                    border: '2px solid #1976d2',
+                    borderRadius: 2
+                  }}
+                >
+                  <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                    💰 Discount Applied
+                  </Typography>
+                  <Typography variant="body1">
+                    Discount Amount: <strong>${response?.discountAmountInDollars}</strong>
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+                    Original Total: ${(parseFloat(response?.totalTripFeeInDollars || 0) + parseFloat(response?.discountAmountInDollars || 0)).toFixed(2)}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    New Total: <strong>${response?.totalTripFeeInDollars}</strong>
+                  </Typography>
+                </Paper>
               </Grid>
-            ))}
-          </>
-        )}
+            </Grid>
+          )}
 
+          <Grid container spacing={2} mb={3}>
+          <Grid item xs={12} sm={6}>
+              <Box
+                sx={{
+                  color: "white",
+                  backgroundColor: getBackgroundColorforpayment(response?.paymentStatus || paymentStatus),
+                  border: "1px solid",
+                  padding: "8px 12px",
+                  borderRadius: "4px",
+                  textAlign: "center",
+                  fontSize: { xs: "16px", md: "18px" },
+                  fontWeight: "bold",
+                }}
+              >
+                Payment Status: {response?.paymentStatus || paymentStatus}
+                {response?.hasDiscountApplied && " (Discount Applied)"}
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Box
+                sx={{
+                  color: "white",
+                  backgroundColor: getBackgroundColorforbooking(bookingStatus),
+                  border: "1px solid",
+                  padding: "8px 12px",
+                  borderRadius: "4px",
+                  textAlign: "center",
+                  fontSize: { xs: "16px", md: "18px" },
+                  fontWeight: "bold",
+                }}
+              >
+                Booking Status: {bookingStatus}
+              </Box>
+            </Grid>
+          </Grid>
 
-        <Grid item lg={5}>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: "#03930a", // Set background color to #03930a
-              color: "white", // Set text color to white or any color you prefer
-              "&:hover": {
-                backgroundColor: "#027c08", // Change color on hover if needed
-              },
-            }}
-            fullWidth
-            onClick={handleAcceptBook}
-          >
-            ACCEPT BOOKING
-          </Button>
-        </Grid>
+          <Grid container spacing={2} mt={2}>
+            <Field label="Trip Type" value={tripType} />
+            <Field label="Pickup Physical Address" value={pickupPhysicalAddress} />
+            <Field label="Dropoff Physical Address" value={dropoffPhysicalAddress} />
+            <Field label="Distance In Miles" value={distanceInMiles} />
+            <Field label="Number Of Passengers" value={numberOfPassengers} />
+            <Field label="Number Of Suitcases" value={numberOfSuitcases} />
+            <Field label="Return Pickup DateTime" value={formatDateToPacific(returnPickupDateTime)} />
+            <Field label="Special Instructions" value={specialInstructions} />
+            <Field label="Booking For" value={bookingFor} />
+            <Field label="Passenger FullName" value={passengerFullName} />
+            <Field label="Passenger CellPhone" value={passengerCellPhone} />
+            <Field label="Pickup Date Time" value={formatDateToPacific(pickupDateTime)} />
+            <Field label="Total Trip Fee In Dollars" value={totalTripFeeInDollars} />
+            <Field label="Additional Stop On The Way Description" value={additionalStopOnTheWayDescription} />
+            <Field label="Is Guest Booking" value={isGuestBooking} />
+            <Field label="Passenger Email" value={passengerEmail} />
+            <Field label="Payment Detail Id" value={paymentDetailId} />
+            <Field label="User Id" value={userId} />
+            <Field label="Car Id" value={carId} />
+            <Field label="Additional Stop Id" value={additionalStopId} />
+            <Field label="Additional Stop On the Way" value={AdditionalStopOnTheWay} />
+            <Field label="Credit Card Number" value={response?.PaymentDetail?.creditCardNumber} />
+            <Field label="Expiration Date" value={response?.PaymentDetail?.expirationDate} />
+            <Field label="Security Code" value={response?.PaymentDetail?.securityCode} />
+            <Field label="Zip Code" value={response?.PaymentDetail?.zipCode} />
+            <Field label="Car Id" value={response?.Car?.carId} />
+            <Field label="Car Name" value={response?.Car?.carName} />
+            <Field label="Price Per Mile" value={response?.Car?.pricePerMile} />
+            <Field label="Price Per Hour" value={response?.Car?.pricePerHour} />
+          </Grid>
 
-        <Grid item sx={5}>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: "red", // Set background color to #03930a
-              color: "white", // Set text color to white or any color you prefer
-              "&:hover": {
-                backgroundColor: "#027c08", // Change color on hover if needed
-              },
-            }}
-            fullWidth
-            onClick={() => handleClickOpen("REJECT")}
-          >
-            REJECT BOOKING
-          </Button>
-        </Grid>
+          {/* Enhanced Extra Options Section */}
+          <Grid container item xs={12} spacing={2} mt={4}>
+            <Typography variant="h6" sx={{ ml: 2, mb: 2, fontWeight: 'bold' }}>
+              Extra Options:
+            </Typography>
+          </Grid>
 
-        <Grid item sx={5}>
-          <Button
-            variant="contained"
-            color="warning"
-            fullWidth
-            onClick={() => handleClickOpen("EDIT_BOOKING_STATUS")}
-          >
-            EDIT BOOKING STATUS
-          </Button>
-        </Grid>
+          {response?.ExtraOptions && response.ExtraOptions.length > 0 ? (
+            <Grid container spacing={3} mb={3}>
+              {response.ExtraOptions.map((option, index) => (
+                <Grid item xs={12} md={6} key={option.extraOptionId || index}>
+                  <Paper 
+                    elevation={2} 
+                    sx={{ 
+                      p: 3, 
+                      height: '100%',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 2,
+                      backgroundColor: '#fafafa'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                        {option.name || `Extra Option ${index + 1}`}
+                      </Typography>
+                      <Chip 
+                        label={`ID: ${option.extraOptionId}`} 
+                        size="small" 
+                        color="secondary" 
+                        variant="outlined"
+                      />
+                    </Box>
+                    
+                    <Grid container spacing={2}>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+                          Description:
+                        </Typography>
+                        <Box 
+                          sx={{ 
+                            mt: 1,
+                            p: 1.5,
+                            backgroundColor: 'white',
+                            borderRadius: 1,
+                            border: '1px solid #e0e0e0',
+                            minHeight: '60px'
+                          }}
+                        >
+                          {renderDescription(option.description)}
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={6}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+                          Price:
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                          ${option.pricePerItem || '0.00'}
+                        </Typography>
+                      </Grid>
+                      
+                      <Grid item xs={6}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+                          Quantity:
+                        </Typography>
+                        <Typography variant="body1">
+                          {option.quantity || 1}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Paper elevation={1} sx={{ p: 3, textAlign: 'center', backgroundColor: '#f5f5f5' }}>
+              <Typography variant="body1" color="text.secondary">
+                No extra options selected for this booking.
+              </Typography>
+            </Paper>
+          )}
 
-        {/* <Grid item sx={5}>
-          <Button
-            variant="contained"
-            color="warning"
-            fullWidth
-            onClick={() => handleClickOpen("EDIT_PAYMENT_STATUS")}
-          >
-            EDIT PAYMENT STATUS
-          </Button>
+          <Grid container justifyContent="center" spacing={2} mt={4}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: "#03930a",
+                  color: "white",
+                  "&:hover": { backgroundColor: "#027c08" },
+                }}
+                fullWidth
+                onClick={handleAcceptBook}
+              >
+                ACCEPT BOOKING
+              </Button>
+            </Grid>
 
+            <Grid item xs={12} sm={6} md={3}>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: "red",
+                  color: "white",
+                  "&:hover": { backgroundColor: "#d32f2f" },
+                }}
+                fullWidth
+                onClick={() => handleClickOpen("REJECT")}
+              >
+                REJECT BOOKING
+              </Button>
+            </Grid>
 
+            <Grid item xs={12} sm={6} md={3}>
+              <Button
+                variant="contained"
+                color="warning"
+                fullWidth
+                onClick={() => handleClickOpen("EDIT_BOOKING_STATUS")}
+              >
+                EDIT BOOKING STATUS
+              </Button>
+            </Grid>
 
+            <Grid item xs={12} sm={6} md={3}>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: "#03930a",
+                  color: "white",
+                  "&:hover": { backgroundColor: "#027c08" },
+                }}
+                fullWidth
+                onClick={handleAcceptPayment}
+              >
+                TAKE PAYMENT
+              </Button>
+            </Grid>
 
-        </Grid> */}
-
-
-        <Grid item sx={5}>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: "#03930a", // Set background color to #03930a
-              color: "white", // Set text color to white or any color you prefer
-              "&:hover": {
-                backgroundColor: "#027c08", // Change color on hover if needed
-              },
-            }}
-            fullWidth
-            onClick={handleAcceptPayment}
-          >
-            TAKE PAYMENT
-          </Button>
-        </Grid>
-
-
+          {/* New Discount Button */}
+          <Grid item xs={12} sm={6} md={3}>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: response?.hasDiscountApplied ? "#6a1b9a" : "#1976d2",
+                  color: "white",
+                  "&:hover": { 
+                    backgroundColor: response?.hasDiscountApplied ? "#4a148c" : "#1565c0" 
+                  },
+                }}
+                fullWidth
+                onClick={handleDiscountOpen}
+                disabled={response?.paymentStatus === "PAID"}
+              >
+                {response?.hasDiscountApplied ? "UPDATE DISCOUNT" : "APPLY DISCOUNT"}
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
       </Grid>
+
       {popupType === "REJECT" && (
         <ReasonPopup
           bookingId={pointToPointBookId}
@@ -413,8 +543,17 @@ function P2pBookDetail(props) {
         />
       )}
 
+      {/* Discount Popup */}
+      <DiscountPopup
+        bookingId={pointToPointBookId}
+        bookingType="P2P"
+        open={discountOpen}
+        handleClose={handleDiscountClose}
+      />
+
       <ToastContainer position="top-center" />
-    </>
+    </Grid>
   );
 }
+
 export default P2pBookDetail;
