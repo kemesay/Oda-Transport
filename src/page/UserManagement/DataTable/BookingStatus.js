@@ -1,14 +1,11 @@
 import React, { useState } from "react";
 import Button from "@mui/material/Button";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { BACKEND_API } from "../../../store/utils/API";
-import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 
 export default function BookingStatusPoup({
@@ -18,7 +15,6 @@ export default function BookingStatusPoup({
   bookingType,
 }) {
   const [status, setStatus] = useState("PENDING_APPROVAL"); // Default value
-  const [isUpdated, setIsUpdated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -38,8 +34,7 @@ export default function BookingStatusPoup({
     "DISPUTED",
     "COMPLETED",
   ];
-  const navigate = useNavigate();
-
+  
   const endpoint = `/api/v1/`;
   const handleBook = async () => {
     // setLoading(true);
@@ -55,34 +50,19 @@ export default function BookingStatusPoup({
       if (response.status === 200 || response.status === 201) {
         toast.success(response?.data?.message || `Book Updated successfully!`, {
           autoClose: 6000,
-          // position: toast.POSITION.TOP_CENTER
         });
-        //    handleClose();
-        // setIsUpdated(true);
-        // return response.data;
+        handleClose();
+        
       }
-      // setSuccessMessage(response.data.message || "Admin created successfully!");
 
-      // Handle response
-      // if (response.status === 200) {
-      //   handleClose();
-      //   setIsUpdated(true);
-      // }
-      // Handle navigation if needed
-      // navigate("/dashboard/airportbook")
     } catch (error) {
       toast.error(error?.response?.data?.error || " Network error...", {
-        // position: toast.POSITION.TOP_CENTER
+        
       });
-      //  handleClose();
-      //   setIsUpdated(true);
+      
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSnackbarClose = () => {
-    setIsUpdated(false);
   };
 
   const getEndpoint = () => {
@@ -161,10 +141,8 @@ export default function BookingStatusPoup({
             Summit
           </Button>
         </DialogActions>
-        <ToastContainer />
       </Dialog>
 
-      <ToastContainer position="top-center" />
     </React.Fragment>
   );
 }

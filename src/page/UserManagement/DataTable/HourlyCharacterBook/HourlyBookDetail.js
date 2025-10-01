@@ -170,14 +170,14 @@ function ViewHourlyBookDetail(props) {
     }
   };
 
-  const Field = ({ label, value, direction = { xs: "column", sm: "row" } }) => {
+  const Field = ({ label, value, direction = { xs: "column", sm: "row" }, sx }) => {
     return (
       <Grid item xs={12} md={6}>
         <Stack
           direction={direction}
           justifyContent={{ xs: "center", sm: "space-between" }}
           alignItems={{ xs: "flex-start", sm: "center" }}
-          sx={{ backgroundColor: "#EEE", padding: 2, borderRadius: 2, flexGrow: 1 }}
+          sx={{ backgroundColor: "#EEE", padding: 2, borderRadius: 2, flexGrow: 1, ...sx }}
         >
           <Typography
             sx={{
@@ -318,121 +318,200 @@ function ViewHourlyBookDetail(props) {
             </Grid>
           </Grid>
 
-          <Grid container spacing={2} mt={2}>
-            <Field label="Hourly Charter Book Id" value={hourlyCharterBookId} />
-            <Field label="Pickup Physical Address" value={response?.pickupPhysicalAddress || pickupPhysicalAddress} />
-            <Field label="Dropoff Physical Address" value={response?.dropoffPhysicalAddress || dropoffPhysicalAddress} />
-            <Field label="Selected Hours" value={response?.selectedHours || selectedHours} />
-            <Field label="Occasion" value={response?.occasion || occasion} />
-            <Field label="Special Instructions" value={response?.specialInstructions || specialInstructions} />
-            <Field label="Booking For" value={response?.bookingFor || bookingFor} />
-            <Field label="Pickup Date Time" value={formatDateToPacific(response?.pickupDateTime || pickupDateTime)} />
-            <Field label="Is Guest Booking" value={response?.isGuestBooking !== undefined ? response.isGuestBooking.toString() : isGuestBooking?.toString()} />
-            <Field label="Passenger Full Name" value={response?.passengerFullName || passengerFullName} />
-            <Field label="Passenger Cell Phone" value={response?.passengerCellPhone || passengerCellPhone} />
-            <Field label="Passenger Email" value={response?.passengerEmail || passengerEmail} />
-            <Field label="Number Of Passengers" value={response?.numberOfPassengers || numberOfPassengers} />
-            <Field label="Number Of Suitcases" value={response?.numberOfSuitcases || numberOfSuitcases} />
-            <Field label="Total Trip Fee In Dollars" value={response?.totalTripFeeInDollars || totalTripFeeInDollars} />
-            {response?.discountAmountInDollars && (
-              <Field label="Discount Amount" value={`$${response.discountAmountInDollars}`} />
-            )}
-            <Field label="Payment Detail Id" value={response?.paymentDetailId || paymentDetailId} />
-            <Field label="User Id" value={response?.userId || userId} />
-            <Field label="Car Id" value={response?.carId || carId} />
-            <Field label="Credit Card Number" value={response?.PaymentDetail?.creditCardNumber} />
-            <Field label="Expiration Date" value={response?.PaymentDetail?.expirationDate} />
-            <Field label="Security Code" value={response?.PaymentDetail?.securityCode} />
-            <Field label="Zip Code" value={response?.PaymentDetail?.zipCode} />
-            
-            <Field label="Additional Stop On the Way" value={response?.AdditionalStopOnTheWay?.stopType || AdditionalStopOnTheWay} />
-            <Field label="Car Id" value={response?.Car?.carId} />
-            <Field label="Car Name" value={response?.Car?.carName} />
-            <Field label="Price Per Mile" value={response?.Car?.pricePerMile} />
-            <Field label="Price Per Hour" value={response?.Car?.pricePerHour} />
+          {/* General Booking Details Section */}
+          <Grid container spacing={2} mt={4} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, p: 3, backgroundColor: '#f9f9f9' }}>
+            <Typography variant="h6" sx={{ ml: 2, mb: 1, fontWeight: 'bold', width: '100%' }}>
+              General Booking Information:
+            </Typography>
+            <Grid container spacing={2} mt={1} pl={2} pr={2}>
+              <Field label="Hourly Charter Book Id" value={hourlyCharterBookId} />
+              {(response?.pickupPhysicalAddress || pickupPhysicalAddress) && <Field label="Pickup Physical Address" value={response?.pickupPhysicalAddress || pickupPhysicalAddress} />}
+              {(response?.dropoffPhysicalAddress || dropoffPhysicalAddress) && <Field label="Dropoff Physical Address" value={response?.dropoffPhysicalAddress || dropoffPhysicalAddress} />}
+              {response?.selectedHours && <Field label="Selected Hours" value={response?.selectedHours} />}
+              {response?.occasion && <Field label="Occasion" value={response?.occasion} />}
+              {response?.specialInstructions && <Field label="Special Instructions" value={response?.specialInstructions} />}
+              {response?.bookingFor && <Field label="Booking For" value={response?.bookingFor} />}
+              {(response?.pickupDateTime || pickupDateTime) && <Field label="Pickup Date Time" value={formatDateToPacific(response?.pickupDateTime || pickupDateTime)} />}
+              {response?.isGuestBooking !== undefined && <Field label="Is Guest Booking" value={response.isGuestBooking.toString()} />}
+              {(response?.passengerFullName || passengerFullName) && <Field label="Passenger Full Name" value={response?.passengerFullName || passengerFullName} />}
+              {(response?.passengerCellPhone || passengerCellPhone) && <Field label="Passenger Cell Phone" value={response?.passengerCellPhone || passengerCellPhone} />}
+              {(response?.passengerEmail || passengerEmail) && <Field label="Passenger Email" value={response?.passengerEmail || passengerEmail} />}
+              {response?.numberOfPassengers && <Field label="Number Of Passengers" value={response?.numberOfPassengers} />}
+              {response?.numberOfSuitcases !== undefined && <Field label="Number Of Suitcases" value={response?.numberOfSuitcases} />}
+            </Grid>
           </Grid>
+
+          {/* Financial Summary Section */}
+          <Grid container spacing={2} mt={4} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, p: 3, backgroundColor: '#f9f9f9' }}>
+          <Typography variant="h6" sx={{ ml: 2, mb: 1, fontWeight: 'bold', width: '100%', backgroundColor: 'black', color: 'white', padding: 2, borderRadius: 2 }}>
+                  Fare Detail
+            </Typography>
+            <Grid container spacing={2} mt={1} pl={2} pr={2}>
+              {/* Calculate values */}
+              {(() => {
+                const initialBaseFare = parseFloat(response?.totalTripFeeInDollars || totalTripFeeInDollars || 0);
+                const discount = parseFloat(response?.discountAmountInDollars || 0);
+                const childCarSeatFee = 0.00; // Constant value
+
+                let originalFare = 0;
+                let calculatedGratuity = 0;
+                if (response?.Gratuity?.percentage !== undefined) {
+                  const gratuityPercentage = parseFloat(response.Gratuity.percentage) / 100;
+                  // Assuming initialBaseFare includes gratuity, back it out to get the fare before gratuity
+                  // Assuming initialBaseFare includes gratuity, back it out to get the fare before gratuity
+                  originalFare = initialBaseFare / (1 + gratuityPercentage);
+                  calculatedGratuity = originalFare * gratuityPercentage;
+                }
+
+                const fareAfterDiscount = originalFare;
+                const totalFare = initialBaseFare;
+
+                return (
+                  <>
+                    <Field label="Fare" value={`$${fareAfterDiscount.toFixed(2)}`} />
+                    <Field label="Child Car Seat Fee" value={`$${childCarSeatFee.toFixed(2)}`} />
+                    {response?.discountAmountInDollars && <Field label="Discount Amount" value={`$${discount.toFixed(2)}`} />}
+                    {response?.Gratuity && response.Gratuity.percentage !== undefined && (
+                      <Field label="Gratuity" value={`$${calculatedGratuity.toFixed(2)} (${response.Gratuity.percentage}%)`} />
+                    )}
+                    <Field
+                      label="Total Fare"
+                      value={`$${totalFare.toFixed(2)}`}
+                      sx={{
+                        backgroundColor: '#6a6a6a',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        padding: 2,
+                        borderRadius: 2,
+                      }}
+                    />
+                  </>
+                );
+              })()}
+            </Grid>
+          </Grid>
+
+          {/* Payment Details Section */}
+          {response?.PaymentDetail && (
+            <Grid container spacing={2} mt={4} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, p: 3, backgroundColor: '#f9f9f9' }}>
+              <Typography variant="h6" sx={{ ml: 2, mb: 1, fontWeight: 'bold', width: '100%' }}>
+                Payment Details:
+              </Typography>
+              <Grid container spacing={2} mt={1} pl={2} pr={2}>
+                {response.PaymentDetail.creditCardNumber && <Field label="Credit Card Number" value={response.PaymentDetail.creditCardNumber} />}
+                {response.PaymentDetail.expirationDate && <Field label="Expiration Date" value={response.PaymentDetail.expirationDate} />}
+                {response.PaymentDetail.securityCode && <Field label="Security Code" value={response.PaymentDetail.securityCode} />}
+                {response.PaymentDetail.zipCode && <Field label="Zip Code" value={response.PaymentDetail.zipCode} />}
+                {response.PaymentDetail.cardOwnerName && <Field label="Card Owner Name" value={response.PaymentDetail.cardOwnerName} />}
+              </Grid>
+            </Grid>
+          )}
+
+          {/* Car Details Section */}
+          {response?.Car && (
+            <Grid container spacing={2} mt={4} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, p: 3, backgroundColor: '#f9f9f9' }}>
+              <Typography variant="h6" sx={{ ml: 2, mb: 1, fontWeight: 'bold', width: '100%' }}>
+                Car Details:
+              </Typography>
+              <Grid container spacing={2} mt={1} pl={2} pr={2}>
+                {response.Car.carId && <Field label="Car Id" value={response.Car.carId} />}
+                {response.Car.carName && <Field label="Car Name" value={response.Car.carName} />}
+                {response.Car.pricePerMile && <Field label="Price Per Mile" value={`$${response.Car.pricePerMile}`} />}
+                {response.Car.pricePerHour && <Field label="Price Per Hour" value={`$${response.Car.pricePerHour}`} />}
+                {response.Car.minimumStartFee && <Field label="Minimum Start Fee" value={`$${response.Car.minimumStartFee}`} />}
+                {response.Car.currency && <Field label="Currency" value={response.Car.currency} />}
+                {response.Car.engineType && <Field label="Engine Type" value={response.Car.engineType} />}
+                {response.Car.length && <Field label="Length" value={response.Car.length} />}
+                {response.Car.interiorColor && <Field label="Interior Color" value={response.Car.interiorColor} />}
+                {response.Car.exteriorColor && <Field label="Exterior Color" value={response.Car.exteriorColor} />}
+                {response.Car.power && <Field label="Power" value={response.Car.power} />}
+                {response.Car.transmissionType && <Field label="Transmission Type" value={response.Car.transmissionType} />}
+                {response.Car.fuelType && <Field label="Fuel Type" value={response.Car.fuelType} />}
+              </Grid>
+            </Grid>
+          )}
 
           {/* Enhanced Extra Options Section */}
-          <Grid container item xs={12} spacing={2} mt={4}>
-            <Typography variant="h6" sx={{ ml: 2, mb: 2, fontWeight: 'bold' }}>
+          <Grid container item xs={12} spacing={2} mt={4} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, p: 3, backgroundColor: '#f9f9f9' }}>
+            <Typography variant="h6" sx={{ ml: 2, mb: 2, fontWeight: 'bold', width: '100%' }}>
               Extra Options:
             </Typography>
+            {response?.ExtraOptions && response.ExtraOptions.length > 0 ? (
+              <Grid container spacing={3} mb={3}>
+                {response.ExtraOptions.map((option, index) => (
+                  <Grid item xs={12} md={6} key={option.extraOptionId || index}>
+                    <Paper 
+                      elevation={2} 
+                      sx={{ 
+                        p: 3, 
+                        height: '100%',
+                        border: '1px solid #d0d0d0',
+                        borderRadius: 2,
+                        backgroundColor: '#ffffff',
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                          {option.name || `Extra Option ${index + 1}`}
+                        </Typography>
+                        <Chip 
+                          label={`ID: ${option.extraOptionId}`} 
+                          size="small" 
+                          color="secondary" 
+                          variant="outlined"
+                        />
+                      </Box>
+                      
+                      <Grid container spacing={2}>
+                        <Grid item xs={12}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+                            Description:
+                          </Typography>
+                          <Box 
+                            sx={{ 
+                              mt: 1,
+                              p: 1.5,
+                              backgroundColor: '#f5f5f5',
+                              borderRadius: 1,
+                              border: '1px solid #e0e0e0',
+                              minHeight: '60px'
+                            }}
+                          >
+                            {renderDescription(option.description)}
+                          </Box>
+                        </Grid>
+                        
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+                            Price:
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                            ${option.pricePerItem || '0.00'}
+                          </Typography>
+                        </Grid>
+                        
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+                            Quantity:
+                          </Typography>
+                          <Typography variant="body1">
+                            {option.HourlyCharterBookExtraOption?.quantity || option.quantity || 1}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            ) : (
+              <Paper elevation={1} sx={{ p: 3, textAlign: 'center', backgroundColor: '#e8e8e8', border: '1px dashed #c0c0c0' }}>
+                <Typography variant="body1" color="text.secondary">
+                  No extra options selected for this booking.
+                </Typography>
+              </Paper>
+            )}
           </Grid>
-
-          {response?.ExtraOptions && response.ExtraOptions.length > 0 ? (
-            <Grid container spacing={3} mb={3}>
-              {response.ExtraOptions.map((option, index) => (
-                <Grid item xs={12} md={6} key={option.extraOptionId || index}>
-                  <Paper 
-                    elevation={2} 
-                    sx={{ 
-                      p: 3, 
-                      height: '100%',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: 2,
-                      backgroundColor: '#fafafa'
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                        {option.name || `Extra Option ${index + 1}`}
-                      </Typography>
-                      <Chip 
-                        label={`ID: ${option.extraOptionId}`} 
-                        size="small" 
-                        color="secondary" 
-                        variant="outlined"
-                      />
-                    </Box>
-                    
-                    <Grid container spacing={2}>
-                      <Grid item xs={12}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
-                          Description:
-                        </Typography>
-                        <Box 
-                          sx={{ 
-                            mt: 1,
-                            p: 1.5,
-                            backgroundColor: 'white',
-                            borderRadius: 1,
-                            border: '1px solid #e0e0e0',
-                            minHeight: '60px'
-                          }}
-                        >
-                          {renderDescription(option.description)}
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={6}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
-                          Price:
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                          ${option.pricePerItem || '0.00'}
-                        </Typography>
-                      </Grid>
-                      
-                      <Grid item xs={6}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
-                          Quantity:
-                        </Typography>
-                        <Typography variant="body1">
-                          {option.HourlyCharterBookExtraOption?.quantity || option.quantity || 1}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          ) : (
-            <Paper elevation={1} sx={{ p: 3, textAlign: 'center', backgroundColor: '#f5f5f5' }}>
-              <Typography variant="body1" color="text.secondary">
-                No extra options selected for this booking.
-              </Typography>
-            </Paper>
-          )}
 
           <Grid container justifyContent="center" spacing={2} mt={4}>
             <Grid item xs={12} sm={6} md={3}>

@@ -34,10 +34,10 @@ export default function ReasonPopup({
           bookingId: bookingId,
           bookingType: bookingType.toUpperCase(),
           action: "REJECTED",
-          rejectionReason: reason,  
+          rejectionReason: reason,
         }
       );
-  
+
       // Handle response
       if (response.status === 200 || response.status === 201) {
         toast.success(response?.data?.message || `Action successfully  taken!`, {
@@ -45,13 +45,10 @@ export default function ReasonPopup({
 
           // position: toast.POSITION.TOP_CENTER
         });
+        handleClose();
         // return response.data;
       }
-        // handleClose();
-        // setIsRejected(true);
-      
-      // Handle navigation if needed
-      // navigate("/dashboard/airportbook")
+
     } catch (error) {
       toast.error(error?.response?.data?.message || " Network error...", {
 
