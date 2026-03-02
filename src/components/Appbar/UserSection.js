@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
   IconButton,
@@ -11,6 +11,8 @@ import {
   Button,
   CircularProgress
 } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
+import LockIcon from '@mui/icons-material/Lock';
 import RSButton from "../RSButton";
 import { remote_host } from '../../globalVariable';
 import axios from "axios";
@@ -46,29 +48,41 @@ const UserSection = ({
   onLogout,
   onLoginClick
 }) => {
+  // Expose refresh function via ref if needed in the future
+  // For now, we'll use the hasFetchedUserInfo flag to control fetching
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [notifications, setNotifications] = useState(mockNotifications);
   const [notificationAnchor, setNotificationAnchor] = useState(null);
+  const hasFetchedUserInfoRef = useRef(false);
   const navigate = useNavigate();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   useEffect(() => {
     const fetchUserInfo = async () => {
+      // Only fetch if we haven't fetched before
+      if (hasFetchedUserInfoRef.current) {
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
         const token = sessionStorage.getItem("access_token");
 
-        // Log the token and request details for debugging
+        if (!token) {
+          setUserInfo(null);
+          hasFetchedUserInfoRef.current = false;
+          setLoading(false);
+          return;
+        }
 
         const response = await axios.get(`${remote_host}/api/v1/users/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
-            // Add any other required headers
           },
         });
 
@@ -84,10 +98,10 @@ const UserSection = ({
           ...userData,
           fullName: fullName
         });
+        hasFetchedUserInfoRef.current = true;
 
       } catch (error) {
         console.error("Error fetching user info:", error);
-        console.error("Error response:", error.response);
         setError(error.message);
 
         // Set fallback user info
@@ -95,13 +109,23 @@ const UserSection = ({
           fullName: 'Guest User',
           email: 'guest@example.com'
         });
+        hasFetchedUserInfoRef.current = true;
       } finally {
         setLoading(false);
       }
     };
 
     if (isAuthenticated) {
-      fetchUserInfo();
+      // Only fetch if we haven't fetched yet
+      const token = sessionStorage.getItem("access_token");
+      if (token && !hasFetchedUserInfoRef.current) {
+        fetchUserInfo();
+      }
+    } else {
+      // Reset when user logs out
+      setUserInfo(null);
+      hasFetchedUserInfoRef.current = false;
+      setError(null);
     }
   }, [isAuthenticated]);
 
@@ -354,23 +378,67 @@ const UserSection = ({
             open={Boolean(userMenuAnchor)}
             onClose={onMenuClose}
           >
-            <MenuItem onClick={onLogout}>
+            <MenuItem 
+              onClick={(e) => {
+                onMenuClose();
+                onLogout(e);
+              }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                py: 1.5,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  backgroundColor: "#03930A",
+                  "& .MuiTypography-root": {
+                    fontWeight: 600
+                  },
+                  "& .MuiSvgIcon-root": {
+                    transform: "scale(1.1)"
+                  }
+                }
+              }}
+            >
+              <LogoutIcon sx={{ fontSize: '1.2rem', transition: 'transform 0.3s ease' }} />
               <Typography
-                textAlign="center"
                 sx={{
                   fontSize: "0.95rem",
-                  letterSpacing: "0.5px"
+                  letterSpacing: "0.5px",
+                  flex: 1
                 }}
               >
                 Logout
               </Typography>
             </MenuItem>
-            <MenuItem onClick={onChangePassword}>
+            <MenuItem 
+              onClick={(e) => {
+                onMenuClose();
+                onChangePassword(e);
+              }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                py: 1.5,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  backgroundColor: "#03930A",
+                  "& .MuiTypography-root": {
+                    fontWeight: 600
+                  },
+                  "& .MuiSvgIcon-root": {
+                    transform: "scale(1.1)"
+                  }
+                }
+              }}
+            >
+              <LockIcon sx={{ fontSize: '1.2rem', transition: 'transform 0.3s ease' }} />
               <Typography
-                textAlign="center"
                 sx={{
                   fontSize: "0.95rem",
-                  letterSpacing: "0.5px"
+                  letterSpacing: "0.5px",
+                  flex: 1
                 }}
               >
                 Change Password

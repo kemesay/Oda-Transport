@@ -354,17 +354,18 @@ function ViewHourlyBookDetail(props) {
                 const childCarSeatFee = 0.00; // Constant value
 
                 let originalFare = 0;
+                let originalFare1 = 0;
                 let calculatedGratuity = 0;
                 if (response?.Gratuity?.percentage !== undefined) {
                   const gratuityPercentage = parseFloat(response.Gratuity.percentage) / 100;
-                  // Assuming initialBaseFare includes gratuity, back it out to get the fare before gratuity
-                  // Assuming initialBaseFare includes gratuity, back it out to get the fare before gratuity
-                  originalFare = initialBaseFare / (1 + gratuityPercentage);
+                  originalFare1 = initialBaseFare - childCarSeatFee;
+
+                  originalFare = originalFare1 / (1 + gratuityPercentage);
                   calculatedGratuity = originalFare * gratuityPercentage;
                 }
 
                 const fareAfterDiscount = originalFare;
-                const totalFare = initialBaseFare;
+                const totalFare = fareAfterDiscount + childCarSeatFee + calculatedGratuity;
 
                 return (
                   <>

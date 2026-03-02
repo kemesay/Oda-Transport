@@ -16,6 +16,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import RSTextField from "../RSTextField";
 import axios from "axios";
 import { remote_host } from "../../globalVariable";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { logout } from "../../store/reducers/authReducer";
 
 // Styled components for enhanced visual appeal
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -51,9 +54,11 @@ const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 export default function ChangePasswordDrawer({
-  openChangePasswordPopup,
-  setOpenChangePasswordPopup,
+  open,
+  onClose,
 }) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [changePasswordData, setChangePasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -70,7 +75,9 @@ export default function ChangePasswordDrawer({
   });
 
   const handleClose = () => {
-    setOpenChangePasswordPopup(false);
+    if (onClose) {
+      onClose();
+    }
     // Reset form and states
     setChangePasswordData({
       currentPassword: "",
@@ -135,11 +142,32 @@ export default function ChangePasswordDrawer({
 
       if (response?.status === 200) {
         setChangePasswordSuccess({
-          changePasswordSuccessMessage: "Password successfully changed!",
+          changePasswordSuccessMessage: "Password successfully changed! You will be logged out and redirected to login page.",
           ischangePasswordSuccess: true,
         });
-        // Close dialog after successful password change
-        setTimeout(handleClose, 2000);
+        // Log out user and redirect to home page after successful password change
+        setTimeout(() => {
+          // Clear session storage
+          sessionStorage.removeItem("access_token");
+          sessionStorage.removeItem("session_expiration");
+          
+          // Dispatch logout action
+          dispatch(logout());
+          
+          // Close dialog
+          handleClose();
+          
+          // Navigate to home page and scroll to login section
+          navigate("/", { replace: true });
+          
+          // Scroll to login section after a brief delay to ensure page is loaded
+          setTimeout(() => {
+            const authSection = document.getElementById("auth");
+            if (authSection) {
+              authSection.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }, 100);
+        }, 2000);
       }
     } catch (error) {
       setChangePasswordSuccess({
@@ -157,7 +185,7 @@ export default function ChangePasswordDrawer({
 
   return (
     <StyledDialog
-      open={openChangePasswordPopup}
+      open={open || false}
       onClose={handleClose}
       maxWidth="sm"
       fullWidth

@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Box, Stack, Alert, CircularProgress, Button } from "@mui/material";
 import RSTypography from "../../../../components/RSTypography";
 import RSTextField from "../../../../components/RSTextField";
 import * as yup from "yup";
 import { useSelector, useDispatch } from "react-redux";
 import { useFormik } from "formik";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { resetPassword } from "../../../../store/actions/authAction";
 const ResetPassword = () => {
   const {
@@ -17,6 +17,7 @@ const ResetPassword = () => {
   } = useSelector((state) => state.authReducer);
   const params = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const resetPasswordValidationSchema = yup.object({
     newPassword: yup.string().required("new password required"),
     confNewPassword: yup
@@ -36,6 +37,23 @@ const ResetPassword = () => {
       );
     },
   });
+
+  // Redirect to login page after successful password reset
+  useEffect(() => {
+    if (isResetPwdSuccess) {
+      const timer = setTimeout(() => {
+        navigate("/", { 
+          state: { 
+            showLogin: true,
+            message: "Password reset successful! Please login with your new password."
+          } 
+        });
+      }, 2000); // Wait 2 seconds to show success message
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isResetPwdSuccess, navigate]);
+
   return (
     <Box
       sx={{
@@ -64,6 +82,7 @@ const ResetPassword = () => {
         <RSTypography fontsize={20}>Change Password</RSTypography>
         <Stack direction={{ sm: "column", lg: "row" }} mt={2} spacing={2}>
           <RSTextField
+            type="password"
             label={"New password"}
             sx={{ width: "100%" }}
             {...formikResetPassword.getFieldProps("newPassword")}

@@ -11,6 +11,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { getFooterData } from "../../store/actions/footerAction";
 import { useNavigate } from "react-router-dom";
 import styled from "@emotion/styled";
+import AppDownloadSection from "./AppDownloadSection";
 
 const FooterWrapper = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.info.main,
@@ -138,7 +139,7 @@ function Footer() {
           </Grid>
 
           {/* Social Media Section */}
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <RSTypography 
               txtcolor={white} 
               fontsize="18px"
@@ -159,6 +160,11 @@ function Footer() {
                 </SocialButton>
               ))}
             </Stack>
+          </Grid>
+
+          {/* App Download Section */}
+          <Grid item xs={12} sm={6} md={3}>
+            <AppDownloadSection />
           </Grid>
         </Grid>
 

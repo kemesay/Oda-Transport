@@ -12,6 +12,7 @@ import RideGoogleMap from "./page/homePage/components/googleMap";
 import Order from "./page/order";
 import ResetPassword from "./page/landingPage/component/auth/ResetPassword";
 import ForgetPassword from "./page/landingPage/component/auth/ForgetPassword";
+import AppDownload from "./page/app-download";
 import Cars from "./page/UserManagement/DataTable/Car/Car";
 import PointToPointBooks from "./page/UserManagement/DataTable/PointToPointBook/PointToPointBook";
 import Users from "./page/UserManagement/DataTable/User/User";
@@ -102,6 +103,7 @@ function App() {
               <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/forget-password" element={<ForgetPassword />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/app-download" element={<AppDownload />} />
               <Route
                 path="/home/:id"
                 element={

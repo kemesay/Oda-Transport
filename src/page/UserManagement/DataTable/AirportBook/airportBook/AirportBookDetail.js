@@ -354,20 +354,21 @@ const ViewBookDetail = () => {
                 const initialBaseFare = parseFloat(response?.totalTripFeeInDollars || totalTripFeeInDollars || 0);
                 const discount = parseFloat(response?.discountAmountInDollars || 0);
                 const childCarSeatFee = 0.00; // Constant value
-                const airportPickupPreferenceFee = 0.00; // Value from previous edit, assuming constant for now
-
+                const airportPickupPreferenceFee = parseFloat(response?.AirportPickupPreference?.preferencePrice || 0);
+                const additionalStopOnTheWayFee = parseFloat(response?.AdditionalStopOnTheWay?.additionalStopPrice || 0);
+                let originalFare1 = 0;
                 let originalFare = 0;
                 let calculatedGratuity = 0;
                 if (response?.Gratuity?.percentage !== undefined) {
                   const gratuityPercentage = parseFloat(response.Gratuity.percentage) / 100;
-                  // Assuming initialBaseFare includes gratuity, back it out to get the fare before gratuity
-                  // Assuming initialBaseFare includes gratuity, back it out to get the fare before gratuity
-                  originalFare = initialBaseFare / (1 + gratuityPercentage);
+                  originalFare1 = initialBaseFare - (airportPickupPreferenceFee + additionalStopOnTheWayFee + childCarSeatFee);
+
+                  originalFare = originalFare1 / (1 + gratuityPercentage);
                   calculatedGratuity = originalFare * gratuityPercentage;
                 }
 
                 const fareAfterDiscount = originalFare;
-                const totalFare = initialBaseFare;
+                const totalFare = fareAfterDiscount + airportPickupPreferenceFee + additionalStopOnTheWayFee + calculatedGratuity + childCarSeatFee;
                 return (
                   <>
                     <Field label="Fare" value={`$${fareAfterDiscount.toFixed(2)}`} />
@@ -377,6 +378,7 @@ const ViewBookDetail = () => {
                     {response?.Gratuity && response.Gratuity.percentage !== undefined && (
                       <Field label="Gratuity" value={`$${calculatedGratuity.toFixed(2)} (${response.Gratuity.percentage}%)`} />
                     )}
+                    <Field label="Additional Stop On The Way Fee" value={`$${additionalStopOnTheWayFee.toFixed(2)}`} />
                     <Field
                       label="Total Fare"
                       value={`$${totalFare.toFixed(2)}`}

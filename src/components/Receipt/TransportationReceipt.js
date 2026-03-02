@@ -157,14 +157,7 @@ const TransportationReceipt = ({ open, onClose, payment }) => {
             </Typography>
             
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {/* <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="body2" color="text.secondary">
-                  Base Fare
-                </Typography>
-                <Typography variant="body2">
-                  $ {formatAmount(payment?.bookingDetails?.baseFare)}
-                </Typography>
-              </Box> */}
+            
 
               {payment?.bookingDetails?.waitingTime > 0 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

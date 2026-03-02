@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Box,
   Stack,
@@ -30,13 +30,28 @@ import {
   addAdditionalStopFee,
   addAirportPreferenceFee,
 } from "../../../../store/reducers/bookReducers";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 function Index({ formik, vehicleSummaryData, rideSummaryData }) {
   const [stopOnWay, setStopOnWay] = useState(false);
   const [additionalStopsOnTheWay, setAdditionalStopsOnTheWay] = useState([]);
   const { fee } = useSelector((state) => state.bookReducer);
-  const getFormattdTime = (time) => {
-    return time.format().substring(11, 19);
-  };
+  const userTimezone = useMemo(() => dayjs.tz.guess(), []);
+  const toUserZone = useCallback(
+    (value) => (value ? dayjs(value).tz(userTimezone) : null),
+    [userTimezone]
+  );
+  const getFormattdTime = useCallback(
+    (time) => {
+      const zoned = toUserZone(time);
+      return zoned ? zoned.format("HH:mm:ss") : null;
+    },
+    [toUserZone]
+  );
   const location = useLocation();
   const dispatch = useDispatch();
   const { preferences } = useSelector((state) => state.preferenceReducer);
@@ -97,6 +112,359 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
     dispatch(getAllPreferences());
   }, []);
 
+  const [currentDateTime, setCurrentDateTime] = useState(() =>
+    dayjs().tz(userTimezone)
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentDateTime(dayjs().tz(userTimezone));
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [userTimezone]);
+
+  const minimumPickupLeadTime = useMemo(
+    () => currentDateTime.add(2, "hour").second(0).millisecond(0),
+    [currentDateTime]
+  );
+
+  const minimumPickupDate = useMemo(
+    () => minimumPickupLeadTime.startOf("day"),
+    [minimumPickupLeadTime]
+  );
+
+  const pickupDateInZone = useMemo(
+    () => toUserZone(formik.values.pickupDate)?.startOf("day") || null,
+    [formik.values.pickupDate, toUserZone]
+  );
+
+  const isPickupDateSameAsMinimum = useMemo(() => {
+    if (!pickupDateInZone) return false;
+    return pickupDateInZone.isSame(minimumPickupLeadTime, "day");
+  }, [pickupDateInZone, minimumPickupLeadTime]);
+
+  const minTimeForPickup = useMemo(() => {
+    if (isPickupDateSameAsMinimum) {
+      return minimumPickupLeadTime;
+    }
+    const pickupDate = toUserZone(formik.values.pickupDate);
+    return pickupDate ? pickupDate.startOf("day") : null;
+  }, [
+    formik.values.pickupDate,
+    isPickupDateSameAsMinimum,
+    minimumPickupLeadTime,
+    toUserZone,
+  ]);
+
+  const combineDateAndTime = useCallback(
+    (dateValue, timeValue) => {
+      if (!dateValue || !timeValue) return null;
+      const dateZoned = toUserZone(dateValue).startOf("day");
+      const timeZoned = toUserZone(timeValue);
+      return dateZoned
+        .hour(timeZoned.hour())
+        .minute(timeZoned.minute())
+        .second(timeZoned.second())
+        .millisecond(0);
+    },
+    [toUserZone]
+  );
+
+  const ensureValidPickupTime = useCallback(
+    (dateValue, timeValue) => {
+      if (!timeValue) {
+        return { time: null, formatted: null };
+      }
+      const zonedTime = toUserZone(timeValue);
+      if (!zonedTime) {
+        return { time: null, formatted: null };
+      }
+
+      if (!dateValue) {
+        return {
+          time: zonedTime,
+          formatted: getFormattdTime(zonedTime),
+        };
+      }
+
+      const combined = combineDateAndTime(dateValue, zonedTime);
+      if (combined && combined.isBefore(minimumPickupLeadTime)) {
+        return {
+          time: minimumPickupLeadTime,
+          formatted: getFormattdTime(minimumPickupLeadTime),
+        };
+      }
+
+      return {
+        time: zonedTime,
+        formatted: getFormattdTime(zonedTime),
+      };
+    },
+    [
+      combineDateAndTime,
+      getFormattdTime,
+      minimumPickupLeadTime,
+      toUserZone,
+    ]
+  );
+
+  const shouldDisablePickupTime = useCallback(
+    (value, view) => {
+      if (!isPickupDateSameAsMinimum || !value) {
+        return false;
+      }
+
+      if (view === "hours") {
+        return value.hour() < minimumPickupLeadTime.hour();
+      }
+
+      if (view === "minutes") {
+        if (value.hour() < minimumPickupLeadTime.hour()) return true;
+        if (value.hour() > minimumPickupLeadTime.hour()) return false;
+        return value.minute() < minimumPickupLeadTime.minute();
+      }
+
+      if (view === "seconds") {
+        if (value.hour() < minimumPickupLeadTime.hour()) return true;
+        if (value.hour() > minimumPickupLeadTime.hour()) return false;
+        if (value.minute() < minimumPickupLeadTime.minute()) return true;
+        if (value.minute() > minimumPickupLeadTime.minute()) return false;
+        return value.second() < minimumPickupLeadTime.second();
+      }
+
+      return false;
+    },
+    [isPickupDateSameAsMinimum, minimumPickupLeadTime]
+  );
+
+  const pickupDateTime = useMemo(
+    () => combineDateAndTime(formik.values.pickupDate, formik.values.pickupTime),
+    [combineDateAndTime, formik.values.pickupDate, formik.values.pickupTime]
+  );
+
+  const minimumReturnDateTime = useMemo(() => {
+    if (!pickupDateTime) return null;
+    return pickupDateTime.add(1, "hour");
+  }, [pickupDateTime]);
+
+  const minimumReturnDate = useMemo(() => {
+    if (minimumReturnDateTime) {
+      return minimumReturnDateTime.startOf("day");
+    }
+    return minimumPickupDate;
+  }, [minimumPickupDate, minimumReturnDateTime]);
+
+  const returnDateInZone = useMemo(
+    () => toUserZone(formik.values.returnPickupDate)?.startOf("day") || null,
+    [formik.values.returnPickupDate, toUserZone]
+  );
+
+  const isReturnDateSameAsMinimum = useMemo(() => {
+    if (!minimumReturnDateTime || !returnDateInZone) return false;
+    return returnDateInZone.isSame(minimumReturnDateTime, "day");
+  }, [minimumReturnDateTime, returnDateInZone]);
+
+  const minTimeForReturn = useMemo(() => {
+    if (isReturnDateSameAsMinimum && minimumReturnDateTime) {
+      return minimumReturnDateTime;
+    }
+    const returnDate = toUserZone(formik.values.returnPickupDate);
+    return returnDate ? returnDate.startOf("day") : null;
+  }, [
+    formik.values.returnPickupDate,
+    isReturnDateSameAsMinimum,
+    minimumReturnDateTime,
+    toUserZone,
+  ]);
+
+  const ensureValidReturnTime = useCallback(
+    (dateValue, timeValue) => {
+      if (!timeValue && !dateValue) {
+        return {
+          time: null,
+          formatted: null,
+          date: null,
+          formattedDate: null,
+        };
+      }
+
+      const zonedDate = dateValue
+        ? toUserZone(dateValue).startOf("day")
+        : null;
+      const zonedTime = timeValue ? toUserZone(timeValue) : null;
+
+      if (!zonedTime) {
+        if (minimumReturnDateTime) {
+          const minDate = minimumReturnDateTime.startOf("day");
+          return {
+            time: minimumReturnDateTime,
+            formatted: getFormattdTime(minimumReturnDateTime),
+            date: minDate,
+            formattedDate: minDate.format("YYYY-MM-DD"),
+          };
+        }
+        return {
+          time: null,
+          formatted: null,
+          date: zonedDate,
+          formattedDate: zonedDate ? zonedDate.format("YYYY-MM-DD") : null,
+        };
+      }
+
+      if (!zonedDate) {
+        if (minimumReturnDateTime) {
+          const minDate = minimumReturnDateTime.startOf("day");
+          return {
+            time: minimumReturnDateTime,
+            formatted: getFormattdTime(minimumReturnDateTime),
+            date: minDate,
+            formattedDate: minDate.format("YYYY-MM-DD"),
+          };
+        }
+        return {
+          time: zonedTime,
+          formatted: getFormattdTime(zonedTime),
+          date: null,
+          formattedDate: null,
+        };
+      }
+
+      const combined = combineDateAndTime(zonedDate, zonedTime);
+
+      if (
+        minimumReturnDateTime &&
+        combined &&
+        combined.isBefore(minimumReturnDateTime)
+      ) {
+        const minDate = minimumReturnDateTime.startOf("day");
+        return {
+          time: minimumReturnDateTime,
+          formatted: getFormattdTime(minimumReturnDateTime),
+          date: minDate,
+          formattedDate: minDate.format("YYYY-MM-DD"),
+        };
+      }
+
+      return {
+        time: zonedTime,
+        formatted: getFormattdTime(zonedTime),
+        date: zonedDate,
+        formattedDate: zonedDate.format("YYYY-MM-DD"),
+      };
+    },
+    [
+      combineDateAndTime,
+      getFormattdTime,
+      minimumReturnDateTime,
+      toUserZone,
+    ]
+  );
+
+  const shouldDisableReturnTime = useCallback(
+    (value, view) => {
+      if (
+        !minimumReturnDateTime ||
+        !isReturnDateSameAsMinimum ||
+        !value
+      ) {
+        return false;
+      }
+
+      if (view === "hours") {
+        return value.hour() < minimumReturnDateTime.hour();
+      }
+
+      if (view === "minutes") {
+        if (value.hour() < minimumReturnDateTime.hour()) return true;
+        if (value.hour() > minimumReturnDateTime.hour()) return false;
+        return value.minute() < minimumReturnDateTime.minute();
+      }
+
+      if (view === "seconds") {
+        if (value.hour() < minimumReturnDateTime.hour()) return true;
+        if (value.hour() > minimumReturnDateTime.hour()) return false;
+        if (value.minute() < minimumReturnDateTime.minute()) return true;
+        if (value.minute() > minimumReturnDateTime.minute()) return false;
+        return value.second() < minimumReturnDateTime.second();
+      }
+
+      return false;
+    },
+    [isReturnDateSameAsMinimum, minimumReturnDateTime]
+  );
+
+  useEffect(() => {
+    if (!formik.values.pickupDate || !formik.values.pickupTime) {
+      if (!formik.values.pickupDate && formik.values.pickupTime) {
+        return;
+      }
+    }
+    if (!isPickupDateSameAsMinimum) {
+      return;
+    }
+    const combined = combineDateAndTime(
+      formik.values.pickupDate,
+      formik.values.pickupTime
+    );
+    if (combined && combined.isBefore(minimumPickupLeadTime)) {
+      formik.setFieldValue("pickupTime", minimumPickupLeadTime);
+      formik.setFieldValue(
+        "formattedPickupTime",
+        getFormattdTime(minimumPickupLeadTime)
+      );
+    }
+  }, [
+    combineDateAndTime,
+    formik,
+    getFormattdTime,
+    isPickupDateSameAsMinimum,
+    minimumPickupLeadTime,
+  ]);
+
+  useEffect(() => {
+    if (formik.values.pickupTime) {
+      return;
+    }
+    if (!minTimeForPickup) {
+      return;
+    }
+    formik.setFieldValue("pickupTime", minTimeForPickup);
+    formik.setFieldValue(
+      "formattedPickupTime",
+      getFormattdTime(minTimeForPickup)
+    );
+  }, [formik, getFormattdTime, minTimeForPickup]);
+
+  useEffect(() => {
+    if (!minimumReturnDateTime) {
+      return;
+    }
+
+    const combined = combineDateAndTime(
+      formik.values.returnPickupDate,
+      formik.values.returnPickupTime
+    );
+
+    if (!combined || combined.isBefore(minimumReturnDateTime)) {
+      const minDate = minimumReturnDateTime.startOf("day");
+      formik.setFieldValue("returnPickupDate", minDate);
+      formik.setFieldValue(
+        "formattedReturnPickupDate",
+        minDate.format("YYYY-MM-DD")
+      );
+      formik.setFieldValue("returnPickupTime", minimumReturnDateTime);
+      formik.setFieldValue(
+        "formattedReturnPickupTime",
+        getFormattdTime(minimumReturnDateTime)
+      );
+    }
+  }, [
+    combineDateAndTime,
+    formik,
+    getFormattdTime,
+    minimumReturnDateTime,
+  ]);
+
 
   return (
     <Box>
@@ -122,11 +490,20 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
                   disablePast
                   value={formik.values.pickupDate}
                   onChange={(date) => {
-                    formik.setFieldValue("pickupDate", date);
+                    const zonedDate = toUserZone(date)?.startOf("day") || null;
+                    formik.setFieldValue("pickupDate", zonedDate);
                     formik.setFieldValue(
                       "formattedPickupDate",
-                      date && date.format().substring(0, 10)
+                      zonedDate && zonedDate.format("YYYY-MM-DD")
                     );
+                    if (zonedDate && formik.values.pickupTime) {
+                      const { time, formatted } = ensureValidPickupTime(
+                        zonedDate,
+                        formik.values.pickupTime
+                      );
+                      formik.setFieldValue("pickupTime", time);
+                      formik.setFieldValue("formattedPickupTime", formatted);
+                    }
                   }}
                   onBlur={formik.handleBlur}
                   onError={
@@ -134,18 +511,19 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
                     Boolean(formik.errors.formattedPickupDate)
                   }
                   slotProps={erroSlot("formattedPickupDate")}
+                  minDate={minimumPickupDate}
                 />
 
                 <TimePicker
                   label="Pickup time"
                   value={formik.values.pickupTime}
                   onChange={(time) => {
-                    formik.setFieldValue("pickupTime", time);
-                    time &&
-                      formik.setFieldValue(
-                        "formattedPickupTime",
-                        getFormattdTime(time)
-                      );
+                    const { time: sanitized, formatted } = ensureValidPickupTime(
+                      formik.values.pickupDate,
+                      time
+                    );
+                    formik.setFieldValue("pickupTime", sanitized);
+                    formik.setFieldValue("formattedPickupTime", formatted);
                   }}
                   onBlur={formik.handleBlur}
                   error={
@@ -154,6 +532,9 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
                   }
                   sx={{ width: "100%" }}
                   slotProps={erroSlot("formattedPickupTime")}
+                  minTime={minTimeForPickup}
+                  disablePast={isPickupDateSameAsMinimum}
+                  shouldDisableTime={shouldDisablePickupTime}
                 />
               </DemoContainer>
             </LocalizationProvider>
@@ -165,10 +546,24 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
                     label="Return Pickup Date"
                     value={formik.values.returnPickupDate}
                     onChange={(date) => {
-                      formik.setFieldValue("returnPickupDate", date);
+                      const zonedDate = toUserZone(date)?.startOf("day") || null;
+                      const sanitized = ensureValidReturnTime(
+                        zonedDate,
+                        formik.values.returnPickupTime
+                      );
+                      formik.setFieldValue(
+                        "returnPickupDate",
+                        sanitized.date || zonedDate
+                      );
                       formik.setFieldValue(
                         "formattedReturnPickupDate",
-                        date && date.format().substring(0, 10)
+                        sanitized.formattedDate ||
+                          (zonedDate && zonedDate.format("YYYY-MM-DD"))
+                      );
+                      formik.setFieldValue("returnPickupTime", sanitized.time);
+                      formik.setFieldValue(
+                        "formattedReturnPickupTime",
+                        sanitized.formatted
                       );
                     }}
                     onBlur={formik.handleBlur}
@@ -178,18 +573,27 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
                     }
                     sx={{ width: "100%" }}
                     slotProps={erroSlot("formattedReturnPickupDate")}
+                    minDate={minimumReturnDate}
                   />
 
                   <TimePicker
                     label="Return Pickup Time"
                     value={formik.values.returnPickupTime}
                     onChange={(time) => {
-                      formik.setFieldValue("returnPickupTime", time);
-                      time &&
-                        formik.setFieldValue(
-                          "formattedReturnPickupTime",
-                          getFormattdTime(time)
-                        );
+                      const sanitized = ensureValidReturnTime(
+                        formik.values.returnPickupDate,
+                        time
+                      );
+                      formik.setFieldValue("returnPickupDate", sanitized.date);
+                      formik.setFieldValue(
+                        "formattedReturnPickupDate",
+                        sanitized.formattedDate
+                      );
+                      formik.setFieldValue("returnPickupTime", sanitized.time);
+                      formik.setFieldValue(
+                        "formattedReturnPickupTime",
+                        sanitized.formatted
+                      );
                     }}
                     onBlur={formik.handleBlur}
                     error={
@@ -198,6 +602,8 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
                     }
                     sx={{ width: "100%" }}
                     slotProps={erroSlot("formattedReturnPickupTime")}
+                    minTime={minTimeForReturn}
+                    shouldDisableTime={shouldDisableReturnTime}
                   />
                 </DemoContainer>
               </LocalizationProvider>
@@ -238,12 +644,6 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
                 multiline
               />
             )}
-
-
-
-
-
-
             {isAirportTravel && isRoundTrip() && (
               <RSTextField
                 fullWidth
