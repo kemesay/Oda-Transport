@@ -4,8 +4,7 @@ import RSRadio from "../../../../components/RSRadio";
 import "bootstrap/dist/css/bootstrap.min.css";
 import RSTextField from "../../../../components/RSTextField";
 import StepSummary from "../StepSummary";
-import { remote_host } from "../../../../globalVariable";
-import axios from "axios";
+import { BACKEND_API } from "../../../../store/utils/API";
 import { authHeader } from "../../../../util/authUtil";
 import { useDispatch, useSelector } from "react-redux";
 import { adGratitudeFee } from "../../../../store/reducers/bookReducers";
@@ -30,8 +29,8 @@ function Index({
   // Function to fetch user's payment cards
   const fetchUserPaymentCards = async () => {
     try {
-      const response = await axios.get(
-        `${remote_host}/api/v1/users/payment-detail/paymentCards`,
+      const response = await BACKEND_API.get(
+        "/api/v1/users/payment-detail/paymentCards",
         authHeader()
       );
       setUserCards(response.data);
@@ -57,8 +56,8 @@ function Index({
 
   const getUserInfo = async () => {
     try {
-      await axios
-        .get(`${remote_host}/api/v1/users/me`, authHeader())
+      await BACKEND_API
+        .get("/api/v1/users/me", authHeader())
         .then((res) => {
           const { fullName, email, phoneNumber } = res.data;
           formik.setFieldValue("passengerFullName", fullName);
@@ -78,7 +77,7 @@ function Index({
 
   const getGratitude = async () => {
     try {
-      axios.get(`${remote_host}/api/v1/gratuities`).then((res) => {
+      BACKEND_API.get("/api/v1/gratuities").then((res) => {
         const gratuityData = res.data.map((gratuity, index) => ({
           ...gratuity,
           gratuityFee: (totalFee * gratuity.percentage / 100).toFixed(2)

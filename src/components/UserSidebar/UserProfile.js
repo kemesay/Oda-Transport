@@ -15,8 +15,7 @@ import {
 import {
   Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon, Receipt as OrderIcon,
 } from '@mui/icons-material';
-import { remote_host } from '../../globalVariable';
-import axios from 'axios';
+import { BACKEND_API } from '../../store/utils/API';
 import { styled } from '@mui/material/styles';
 import {
   FlightTakeoff as FlightIcon,
@@ -101,16 +100,16 @@ function UserProfile() {
         const token = sessionStorage.getItem('access_token');
 
         // Fetch user data
-        const userResponse = await axios.get(
-          `${remote_host}/api/v1/users/me`,
+        const userResponse = await BACKEND_API.get(
+          "/api/v1/users/me",
           {
             headers: { Authorization: `Bearer ${token}` }
           }
         );
 
         // Fetch booking data
-        const bookingsResponse = await axios.get(
-          `${remote_host}/api/v1/users/bookings/mine`,
+        const bookingsResponse = await BACKEND_API.get(
+          "/api/v1/users/bookings/mine",
           {
             headers: { Authorization: `Bearer ${token}` }
           }
@@ -183,8 +182,8 @@ function UserProfile() {
       };
 
       // Make update request
-      await axios.put(
-        `${remote_host}/api/v1/users`,
+      await BACKEND_API.put(
+        "/api/v1/users",
         updatePayload,
         {
           headers: { Authorization: `Bearer ${token}` }

@@ -13,6 +13,7 @@ import {
 import * as _ from "lodash";
 import * as yup from "yup";
 import axios from "axios";
+import { BACKEND_API } from "../../../../store/utils/API";
 import { useFormik } from "formik";
 import CarImagePreview from "./CarImagePreview";
 export default function AddCar() {
@@ -96,7 +97,7 @@ export default function AddCar() {
       createCarLoading: true,
     }));
     await axios
-      .post(`https://api.odatransportation.com/api/v1/cars`, newCarData, config)
+      .post(`${BACKEND_API}/api/v1/cars`, newCarData, config)
       .then((response) => {
         const carId = response.data.carId;
         uploadCarImage(carId);
@@ -122,7 +123,7 @@ export default function AddCar() {
     carForm.append("carImage", formikCar.values.carImage); // Assuming formikCar.values.carImage is the file object
     await axios
       .put(
-        `https://api.odatransportation.com/api/v1/cars/${carId}/upload-image`,
+        `${BACKEND_API}/api/v1/cars/${carId}/upload-image`,
         carForm, config
       )
       .then(() => {

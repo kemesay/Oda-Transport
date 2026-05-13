@@ -14,6 +14,8 @@ import * as _ from "lodash";
 import * as yup from "yup";
 import axios from "axios";
 import { useFormik } from "formik";
+import { BACKEND_API } from "../../../../store/utils/API";
+
 import PopularPlaceImagePreview from "./PopularImagePreview";
 export default function AddPopularPlace() {
   const [createPopularSuccess, setCreatePopularSuccess] = useState({
@@ -58,7 +60,7 @@ export default function AddPopularPlace() {
       createPopularLoading: true,
     }));
     await axios
-      .post(`https://api.odatransportation.com/api/v1/popular-places`, newPopularData, config)
+      .post(`${BACKEND_API}/api/v1/popular-places`, newPopularData, config)
       .then((response) => {
         const popularPlaceId = response.data.popularPlaceId;
         uploadPopularPlaceImage(popularPlaceId);
@@ -84,7 +86,7 @@ export default function AddPopularPlace() {
 popularForm.append("image", formikPopular.values.popularPlaceImage);
     await axios
       .put(
-        `https://api.odatransportation.com/api/v1/popular-places/${popularPlaceId}/upload-image`,
+        `${BACKEND_API}/api/v1/popular-places/${popularPlaceId}/upload-image`,
         popularForm, config)
       .then(() => {
         setCreatePopularFail((prev) => ({ ...prev, isCreateCarFail: false }));

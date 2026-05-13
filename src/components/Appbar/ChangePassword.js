@@ -14,11 +14,11 @@ import {
 } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import RSTextField from "../RSTextField";
-import axios from "axios";
-import { remote_host } from "../../globalVariable";
+import { BACKEND_API } from "../../store/utils/API";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../../store/reducers/authReducer";
+import { scroller } from "react-scroll";
 
 // Styled components for enhanced visual appeal
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -129,8 +129,8 @@ export default function ChangePasswordDrawer({
     }
 
     try {
-      const response = await axios.post(
-        `${remote_host}/api/v1/auth/change-password`,
+      const response = await BACKEND_API.post(
+        "/api/v1/auth/change-password",
         { currentPassword, newPassword },
         {
           headers: {
@@ -145,28 +145,35 @@ export default function ChangePasswordDrawer({
           changePasswordSuccessMessage: "Password successfully changed! You will be logged out and redirected to login page.",
           ischangePasswordSuccess: true,
         });
-        // Log out user and redirect to home page after successful password change
+        
+        // Log out user and redirect to login page after successful password change
         setTimeout(() => {
-          // Clear session storage
+          // Clear all session storage
           sessionStorage.removeItem("access_token");
           sessionStorage.removeItem("session_expiration");
+          sessionStorage.removeItem("user_info_cache");
+          sessionStorage.removeItem("user_info_cache_time");
           
-          // Dispatch logout action
+          // Clear all local storage
+          localStorage.clear();
+          
+          // Dispatch logout action to update Redux state
           dispatch(logout());
           
           // Close dialog
           handleClose();
           
-          // Navigate to home page and scroll to login section
+          // Navigate to home page
           navigate("/", { replace: true });
           
-          // Scroll to login section after a brief delay to ensure page is loaded
+          // Scroll to login section after navigation completes
           setTimeout(() => {
-            const authSection = document.getElementById("auth");
-            if (authSection) {
-              authSection.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-          }, 100);
+            scroller.scrollTo("auth", {
+              smooth: true,
+              duration: 500,
+              offset: -100,
+            });
+          }, 300);
         }, 2000);
       }
     } catch (error) {

@@ -15,8 +15,7 @@ import {
 import { styled } from '@mui/material/styles';
 import { useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
-import { remote_host } from '../../globalVariable';
+import { BACKEND_API } from '../../store/utils/API';
 import { authHeader } from '../../util/authUtil';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -69,6 +68,11 @@ function UpdateBooking() {
     errorMessage: "",
   });
 
+  const [airportLocChecker, setAirportLocChecker] = useState({
+    isUnsupportedLocation: false,
+    errorMessage: "",
+  });
+
   const formik = useFormik({
     initialValues: {
       // Default values
@@ -88,10 +92,9 @@ function UpdateBooking() {
       distanceInMiles: 0,
       duration: '',
       tripType: '',
-      airPortId: '',
-      airportName: '',
-      airportAddressLatitude: '',
-      airportAddressLongitude: '',
+      airportLocationAddress: '',
+      airportLocationLatitude: '',
+      airportLocationLongitude: '',
       hotel: '',
       accommodationAddress: '',
       accommodationLatitude: '',
@@ -148,19 +151,19 @@ function UpdateBooking() {
         let endpoint;
         switch (bookingData.travelType.toLowerCase()) {
           case 'airport':
-            endpoint = `${remote_host}/api/v1/airport-books/${bookingData.bookId}`;
+            endpoint = `/api/v1/airport-books/${bookingData.bookId}`;
             break;
           case 'hourly':
-            endpoint = `${remote_host}/api/v1/hourly-charter-books/${bookingData.bookId}`;
+            endpoint = `/api/v1/hourly-charter-books/${bookingData.bookId}`;
             break;
           case 'point to point':
-            endpoint = `${remote_host}/api/v1/point-to-point-books/${bookingData.bookId}`;
+            endpoint = `/api/v1/point-to-point-books/${bookingData.bookId}`;
             break;
           default:
             throw new Error('Invalid booking type');
         }
 
-        await axios.put(endpoint, values, authHeader());
+        await BACKEND_API.put(endpoint, values, authHeader());
         
         navigate('/my-order', { 
           state: { 
@@ -183,36 +186,42 @@ function UpdateBooking() {
       let endpoint;
       switch (bookingType.toLowerCase()) {
         case 'airport':
-          endpoint = `${remote_host}/api/v1/airport-books/${bookingId}`;
+          endpoint = `/api/v1/airport-books/${bookingId}`;
           break;
         case 'hourly':
-          endpoint = `${remote_host}/api/v1/hourly-charter-books/${bookingId}`;
+          endpoint = `/api/v1/hourly-charter-books/${bookingId}`;
           break;
         case 'point to point':
-          endpoint = `${remote_host}/api/v1/point-to-point-books/${bookingId}`;
+          endpoint = `/api/v1/point-to-point-books/${bookingId}`;
           break;
         default:
           throw new Error('Invalid booking type');
       }
 
-      const response = await axios.get(endpoint, authHeader());
+      const response = await BACKEND_API.get(endpoint, authHeader());
 
+      const d = response.data;
       const detailedBookingData = {
-        ...response.data,
+        ...d,
         travelType: bookingType,
+        airportLocationAddress:
+          d.airportLocationAddress ??
+          d.Airport?.airportName ??
+          d.Airport?.name ??
+          "",
+        airportLocationLatitude:
+          d.airportLocationLatitude ?? d.Airport?.latitude ?? d.Airport?.airportAddressLatitude ?? "",
+        airportLocationLongitude:
+          d.airportLocationLongitude ?? d.Airport?.longitude ?? d.Airport?.airportAddressLongitude ?? "",
+        hotel: d.accommodationAddress || d.hotel || formik.values.hotel,
       };
 
-
-      
       setBookingData(detailedBookingData);
-      // Update formik values with the fetched data
       formik.setValues({
         ...formik.values,
         ...detailedBookingData,
         vehicle: detailedBookingData.carId,
-        vehicleName: detailedBookingData.Car?.name,
-        
-        // Map other fields as needed
+        vehicleName: detailedBookingData.Car?.carName ?? detailedBookingData.Car?.name,
       });
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to fetch booking details');
@@ -262,9 +271,11 @@ function UpdateBooking() {
           <RideDetailForm 
             formik={formik}
             locationChecker={locationChecker}
-            setLocationChecker={setLocationChecker}
+            setLocationCkecker={setLocationChecker}
             accomAddrChecker={accomAddrChecker}
             setAccomAddrChecker={setAccomAddrChecker}
+            airportLocChecker={airportLocChecker}
+            setAirportLocChecker={setAirportLocChecker}
           />
         );
       case 1:
@@ -276,7 +287,7 @@ function UpdateBooking() {
               pickupPhysicalAddress: formik.values.pickupPhysicalAddress,
               dropoffPhysicalAddress: formik.values.dropoffPhysicalAddress,
               hour: formik.values.hour,
-              airPortId: formik.values.airPortId,
+              airportLocationAddress: formik.values.airportLocationAddress,
               hotel: formik.values.hotel,
             }}
           />
@@ -291,7 +302,7 @@ function UpdateBooking() {
               pickupPhysicalAddress: formik.values.pickupPhysicalAddress,
               dropoffPhysicalAddress: formik.values.dropoffPhysicalAddress,
               hour: formik.values.hour,
-              airPortId: formik.values.airPortId,
+              airportLocationAddress: formik.values.airportLocationAddress,
               hotel: formik.values.hotel,
             }}
           />
@@ -306,7 +317,7 @@ function UpdateBooking() {
               pickupPhysicalAddress: formik.values.pickupPhysicalAddress,
               dropoffPhysicalAddress: formik.values.dropoffPhysicalAddress,
               hour: formik.values.hour,
-              airPortId: formik.values.airPortId,
+              airportLocationAddress: formik.values.airportLocationAddress,
               hotel: formik.values.hotel,
             }}
             tripSummaryData={[]}

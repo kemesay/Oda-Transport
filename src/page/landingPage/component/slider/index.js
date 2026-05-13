@@ -3,8 +3,7 @@ import Carousel from "react-material-ui-carousel";
 import { Box, Grid, Typography, Container } from "@mui/material";
 import { motion } from "framer-motion";
 import styled from "@emotion/styled";
-import axios from "axios";
-import { remote_host } from "../../../../globalVariable";
+import { BACKEND_API } from "../../../../store/utils/API";
 import { authHeader } from "../../../../util/authUtil";
 
 const SideTracker = styled(Box)(({ theme, isLeft }) => ({
@@ -102,7 +101,7 @@ export default function Slider() {
   useEffect(() => {
     const getPopularPlaces = async () => {
       try {
-        const res = await axios.get(`${remote_host}/api/v1/popular-places`, authHeader());
+        const res = await BACKEND_API.get("/api/v1/popular-places", authHeader());
         setPopularPlaces(res.data);
       } catch (e) {
         console.error("Error fetching popular places:", e);

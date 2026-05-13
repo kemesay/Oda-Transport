@@ -36,8 +36,7 @@ import {
   Info as InfoIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import axios from 'axios';
-import { remote_host } from '../../globalVariable';
+import { BACKEND_API } from '../../store/utils/API';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { format, addYears, isAfter, parse } from 'date-fns';
@@ -249,8 +248,8 @@ function PaymentCards() {
     setLoading(true);
     try {
       const token = sessionStorage.getItem('access_token');
-      const response = await axios.get(
-        `${remote_host}/api/v1/users/payment-detail/paymentCards`,
+      const response = await BACKEND_API.get(
+        "/api/v1/users/payment-detail/paymentCards",
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -295,8 +294,8 @@ function PaymentCards() {
   const handleEditCard = async (paymentDetailId) => {
     try {
       const token = sessionStorage.getItem('access_token');
-      const response = await axios.get(
-        `${remote_host}/api/v1/users/payment-detail/${paymentDetailId}`,
+      const response = await BACKEND_API.get(
+        `/api/v1/users/payment-detail/${paymentDetailId}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -320,8 +319,8 @@ function PaymentCards() {
     try {
       setCardLoading(prev => ({ ...prev, [paymentDetailId]: true }));
       const token = sessionStorage.getItem('access_token');
-      await axios.delete(
-        `${remote_host}/api/v1/users/payment-detail/${paymentDetailId}`,
+      await BACKEND_API.delete(
+        `/api/v1/users/payment-detail/${paymentDetailId}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -341,9 +340,9 @@ function PaymentCards() {
       const token = sessionStorage.getItem('access_token');
 
       // Call the set-primary endpoint
-      await axios.patch(
-        `${remote_host}/api/v1/users/payment-detail/${paymentDetailId}/set-primary`,
-        {},  // Empty body since the logic is handled in backend
+      await BACKEND_API.patch(
+        `/api/v1/users/payment-detail/${paymentDetailId}/set-primary`,
+        {},
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -366,18 +365,17 @@ function PaymentCards() {
       
       if (editingCard) {
         // Update existing card
-        await axios.put(
-          `${remote_host}/api/v1/users/payment-detail/${editingCard.paymentDetailId}`,
+        await BACKEND_API.put(
+          `/api/v1/users/payment-detail/${editingCard.paymentDetailId}`,
           values,
           {
             headers: { Authorization: `Bearer ${token}` }
           }
         );
 
-        // If this card is being set as primary, use the set-primary endpoint
         if (values.isPrimary) {
-          await axios.patch(
-            `${remote_host}/api/v1/users/payment-detail/${editingCard.paymentDetailId}/set-primary`,
+          await BACKEND_API.patch(
+            `/api/v1/users/payment-detail/${editingCard.paymentDetailId}/set-primary`,
             {},
             {
               headers: { Authorization: `Bearer ${token}` }
@@ -388,18 +386,17 @@ function PaymentCards() {
         showSnackbar('Card updated successfully');
       } else {
         // Create new card
-        const response = await axios.post(
-          `${remote_host}/api/v1/users/payment-detail/validate-card`,
+        const response = await BACKEND_API.post(
+          "/api/v1/users/payment-detail/validate-card",
           values,
           {
             headers: { Authorization: `Bearer ${token}` }
           }
         );
 
-        // If this new card should be primary, set it using the new endpoint
         if (values.isPrimary && response.data.paymentDetailId) {
-          await axios.patch(
-            `${remote_host}/api/v1/users/payment-detail/${response.data.paymentDetailId}/set-primary`,
+          await BACKEND_API.patch(
+            `/api/v1/users/payment-detail/${response.data.paymentDetailId}/set-primary`,
             {},
             {
               headers: { Authorization: `Bearer ${token}` }

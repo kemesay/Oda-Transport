@@ -1,6 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
-import { remote_host } from "../../globalVariable";
+import { BACKEND_API } from "../utils/API";
 import { authHeader } from "../../util/authUtil";
 
 export const book = createAsyncThunk(
@@ -69,15 +68,17 @@ export const book = createAsyncThunk(
           delete body.additionalStopOnTheWayDescription;
         }
 
-        res = await axios.post(
-          remote_host + "/api/v1/point-to-point-books",
+        res = await BACKEND_API.post(
+          "/api/v1/point-to-point-books",
           body,
           headers
         );
       } else if (travelType == "1") {
         const body = {
           tripType: rideInfo?.tripType,
-          airportId: rideInfo?.airPortId,
+          airportLocationAddress: rideInfo?.airportLocationAddress,
+          airportLocationLatitude: rideInfo?.airportLocationLatitude,
+          airportLocationLongitude: rideInfo?.airportLocationLongitude,
           numberOfPassengers: vehicle?.numberOfPassengers,
           numberOfSuitcases: vehicle?.numberOfSuitcases,
           accommodationAddress: rideInfo?.accommodationAddress,
@@ -141,8 +142,8 @@ export const book = createAsyncThunk(
           delete body.additionalStopOnTheWayDescription;
         }
 
-        res = await axios.post(
-          remote_host + "/api/v1/airport-books",
+        res = await BACKEND_API.post(
+          "/api/v1/airport-books",
           body,
           headers
         );
@@ -154,8 +155,8 @@ export const book = createAsyncThunk(
         }
         body.selectedHours = rideInfo?.hour;
         body.occasion = tripDetail?.occation;
-        res = await axios.post(
-          remote_host + "/api/v1/hourly-charter-books",
+        res = await BACKEND_API.post(
+          "/api/v1/hourly-charter-books",
           body,
           headers
         );
@@ -174,8 +175,8 @@ export const getPassengerBooks = createAsyncThunk(
   async (values, thunkAPI) => {
     const books = [];
     try {
-      await axios
-        .get(`${remote_host}/api/v1/users/bookings/mine`, authHeader())
+      await BACKEND_API
+        .get("/api/v1/users/bookings/mine", authHeader())
         .then((result) => {
           const {
             pointToPointBookings,
@@ -228,8 +229,8 @@ export const updateBooking = (bookingId, updateData) => async (dispatch) => {
   try {
     dispatch({ type: 'UPDATE_BOOKING_REQUEST' });
     
-    const response = await axios.put(
-      `${remote_host}/api/v1/bookings/${bookingId}`,
+    const response = await BACKEND_API.put(
+      `/api/v1/bookings/${bookingId}`,
       updateData
     );
 

@@ -55,6 +55,11 @@ function BookingForm({ isEditing = false, initialData = null, onSubmit }) {
     errorMessage: "",
   });
 
+  const [airportLocChecker, setAirportLocChecker] = useState({
+    isUnsupportedLocation: false,
+    errorMessage: "",
+  });
+
   // Helper function to format dates
   const formatDateTime = (dateString) => {
     if (!dateString) return { date: null, time: null };
@@ -85,10 +90,9 @@ function BookingForm({ isEditing = false, initialData = null, onSubmit }) {
       vehicleFee: 0,
       numberOfPassengers: 1,
       numberOfSuitcases: 0,
-      airPortId: '',
-      airportName: '',
-      airportAddressLatitude: '',
-      airportAddressLongitude: '',
+      airportLocationAddress: '',
+      airportLocationLatitude: '',
+      airportLocationLongitude: '',
       accommodationAddress: '',
       accommodationLatitude: '',
       accommodationLongitude: '',
@@ -160,10 +164,18 @@ function BookingForm({ isEditing = false, initialData = null, onSubmit }) {
         vehicleFee: parseFloat(initialData.Car?.pricePerMile || 0),
         numberOfPassengers: initialData.numberOfPassengers,
         numberOfSuitcases: initialData.numberOfSuitcases,
-        airPortId: initialData.Airport?.airportId,
-        airportName: initialData.Airport?.airportName,
-        airportAddressLatitude: initialData.Airport?.latitude,
-        airportAddressLongitude: initialData.Airport?.longitude,
+        airportLocationAddress:
+          initialData.airportLocationAddress ??
+          initialData.Airport?.airportName ??
+          "",
+        airportLocationLatitude:
+          initialData.airportLocationLatitude ??
+          initialData.Airport?.latitude ??
+          "",
+        airportLocationLongitude:
+          initialData.airportLocationLongitude ??
+          initialData.Airport?.longitude ??
+          "",
         accommodationAddress: initialData.accommodationAddress,
         accommodationLatitude: initialData.accommodationLatitude,
         accommodationLongitude: initialData.accommodationLongitude,
@@ -203,9 +215,11 @@ function BookingForm({ isEditing = false, initialData = null, onSubmit }) {
     const commonProps = {
       formik,
       locationChecker,
-      setLocationChecker,
+      setLocationCkecker: setLocationChecker,
       accomAddrChecker,
       setAccomAddrChecker,
+      airportLocChecker,
+      setAirportLocChecker,
       isEditing,
     };
 
@@ -227,7 +241,7 @@ function BookingForm({ isEditing = false, initialData = null, onSubmit }) {
               pickupPhysicalAddress: formik.values.pickupPhysicalAddress,
               dropoffPhysicalAddress: formik.values.dropoffPhysicalAddress,
               hour: formik.values.hour,
-              airPortId: formik.values.airPortId,
+              airportLocationAddress: formik.values.airportLocationAddress,
               hotel: formik.values.accommodationAddress,
               distanceInMiles: formik.values.distanceInMiles,
               duration: formik.values.duration,

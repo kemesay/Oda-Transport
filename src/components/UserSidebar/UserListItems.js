@@ -86,12 +86,12 @@ const userMenus = [
   //   badge: "2",
   // },
 
-  // {
-  //   index: 7,
-  //   link: "/user/settings",
-  //   title: "Settings",
-  //   icon: <SettingsIcon />,
-  // },
+  {
+    index: 3,
+    link: "/user/settings",
+    title: "Account & security",
+    icon: <SettingsIcon />,
+  },
 
 ];
 

@@ -5,8 +5,7 @@ import { useTheme } from "@emotion/react";
 import { FaTelegram, FaPinterest, FaInstagram } from "react-icons/fa";
 import { FiFacebook } from "react-icons/fi";
 import { RiTwitterXLine } from "react-icons/ri";
-import axios from "axios";
-import { remote_host } from "../../globalVariable";
+import { BACKEND_API } from "../../store/utils/API";
 import { useSelector, useDispatch } from "react-redux";
 import { getFooterData } from "../../store/actions/footerAction";
 import { useNavigate } from "react-router-dom";
@@ -47,9 +46,12 @@ function Footer() {
   const white = theme.palette.text.main;
 
   const getSocialMediaLinks = async () => {
-    await axios
-      .get(`${remote_host}/api/v1/social-medias`)
-      .then((res) => setSocialMedias(res.data));
+    try {
+      const res = await BACKEND_API.get("/api/v1/social-medias");
+      setSocialMedias(res.data ?? []);
+    } catch {
+      setSocialMedias([]);
+    }
   };
   useEffect(() => {
     getSocialMediaLinks();

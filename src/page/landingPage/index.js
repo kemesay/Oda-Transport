@@ -92,9 +92,11 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
       mt: '-24px',
     }}>
       {/* Hero Section - Always show */}
-      <SectionWrapper isFirst>
-        <Hero onLoginClick={handleBooking} />
-      </SectionWrapper>
+      <Element name="home">
+        <SectionWrapper isFirst>
+          <Hero onLoginClick={handleBooking} />
+        </SectionWrapper>
+      </Element>
 
       <SectionWrapper 
         bgcolor="#ffffff"
@@ -135,6 +137,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
 
       {/* Auth Section - Only show for non-authenticated users */}
       {shouldRenderSection("auth") && (
+        <Element name="auth">
         <SectionWrapper 
           bgcolor="#ffffff"
           sx={{
@@ -182,6 +185,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
             </Box>
           </motion.div>
         </SectionWrapper>
+        </Element>
       )}
 
       {/* Fleet Section - Always show */}
@@ -197,6 +201,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
       </SectionWrapper>
 
       {/* About Us Section - Always show */}
+      <Element name="aboutus">
       <SectionWrapper
         bgcolor="#ffffff"
         sx={{ 
@@ -216,6 +221,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
       >
           <AboutUs />
       </SectionWrapper>
+      </Element>
 
       {/* Wrap Contact section with Element for better scroll handling */}
       <Element name="contact">
@@ -255,6 +261,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
       </Element>
 
       {/* FAQ Section - Always show */}
+      <Element name="faq">
       <SectionWrapper
         bgcolor="#f8f9fa"
         pattern="linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)"
@@ -276,6 +283,7 @@ function LandingPage({ usernameFocus, handleUsernameFocus, setUsernameFocus }) {
       >
         <FAQ />
       </SectionWrapper>
+      </Element>
     </Box>
   );
 }

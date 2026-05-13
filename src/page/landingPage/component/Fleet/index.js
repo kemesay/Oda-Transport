@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Box, Container, Typography, Grid, IconButton } from "@mui/material";
 import { motion } from "framer-motion";
 import styled from "@emotion/styled";
-import axios from "axios";
 import { Person, Luggage, ChevronLeft, ChevronRight } from "@mui/icons-material";
 import RSButton from "../../../../components/RSButton";
-import { remote_host } from "../../../../globalVariable";
+import { BACKEND_API } from "../../../../store/utils/API";
 import { authHeader } from "../../../../util/authUtil";
 import { useNavigate } from "react-router-dom";
 
@@ -123,7 +122,7 @@ export default function Fleet() {
   useEffect(() => {
     const fetchCars = async () => {
       try {
-          const response = await axios.get(`${remote_host}/api/v1/cars`, { headers: authHeader() });
+          const response = await BACKEND_API.get("/api/v1/cars", { headers: authHeader() });
         setCars(response.data);
       } catch (error) {
         console.error('Error fetching cars:', error);

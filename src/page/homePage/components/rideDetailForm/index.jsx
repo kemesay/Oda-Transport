@@ -33,10 +33,9 @@ import {
   Marker,
   DirectionsRenderer,
 } from "@react-google-maps/api";
-import { useSelector, useDispatch } from "react-redux";
 import { GrLocation } from "react-icons/gr";
 import { TbCurrentLocation } from "react-icons/tb";
-import { MdOutlineHotel } from "react-icons/md";
+import { MdOutlineHotel, MdLocalAirport } from "react-icons/md";
 import RSRadio from "../../../../components/RSRadio";
 import { useNavigate, useParams } from "react-router-dom";
 import RSTypography from "../../../../components/RSTypography";
@@ -54,12 +53,16 @@ function Index({
   setLocationCkecker,
   setAccomAddrChecker,
   accomAddrChecker,
+  airportLocChecker,
+  setAirportLocChecker,
 }) {
   const [trip, setTrip] = React.useState();
   const [latLng, setLatLng] = useState(null);
   const [searchOriginResult, setSearchOriginResult] = useState(null);
   const [searchDestinationResult, setSearchDestinationResult] = useState(null);
   const [searchAccomodationResult, setSearchAccomodationResult] =
+    useState(null);
+  const [searchAirportLocationResult, setSearchAirportLocationResult] =
     useState(null);
   const [directionsResponse, setDirectionsResponse] = useState();
   const theme = useTheme();
@@ -73,7 +76,6 @@ function Index({
   const onLoad = useCallback((map) => (mapRef.current = map), []);
   const mapRef = useRef();
   const pointToPointTripTypes = useMemo(() => ["One-Way", "Round-Trip"]);
-  const { airports } = useSelector((state) => state.airportReducer);
   const { isLoaded } = useLoadScript({
     // googleMapsApiKey: "AIzaSyCvm85RFSLVS4DV7zBb1l0UlOJ1tpSXRPQ",
     googleMapsApiKey: "AIzaSyAgAp1RwiIqCyZZg63gsmyP6TZBuVxw_8c",
@@ -95,16 +97,20 @@ function Index({
     formik.values.dropoffLongitude]);
 
   useEffect(() => {
-    if (formik.values.airportAddressLatitude &&
-      formik.values.airportAddressLongitude &&
+    if (
+      formik.values.airportLocationLatitude &&
+      formik.values.airportLocationLongitude &&
       formik.values.accommodationLatitude &&
-      formik.values.accommodationLongitude) {
+      formik.values.accommodationLongitude
+    ) {
       calculateAirportDistance();
     }
-  }, [formik.values.airportAddressLatitude,
-  formik.values.airportAddressLongitude,
-  formik.values.accommodationLatitude,
-  formik.values.accommodationLongitude]);
+  }, [
+    formik.values.airportLocationLatitude,
+    formik.values.airportLocationLongitude,
+    formik.values.accommodationLatitude,
+    formik.values.accommodationLongitude,
+  ]);
 
   const airportServiceTripTypes = useMemo(
     () => [
@@ -156,8 +162,8 @@ function Index({
       directionsService = new google.maps.DirectionsService();
 
       const airportLatLng = {
-        lat: formik.values.airportAddressLatitude,
-        lng: formik.values.airportAddressLongitude
+        lat: formik.values.airportLocationLatitude,
+        lng: formik.values.airportLocationLongitude,
       };
 
       const accomodationtLatLng = {
@@ -339,7 +345,8 @@ function Index({
         lat: place.geometry.location.lat(),
         lng: place.geometry.location.lng(),
       };
-      const accommodationAddress = place.name;
+      const accommodationAddress =
+        place.formatted_address || place.name || "";
       formik.setFieldValue("hotel", accommodationAddress);
       formik.setFieldValue("accommodationAddress", accommodationAddress);
       formik.setFieldValue("accommodationLatitude", latlng?.lat);
@@ -371,14 +378,37 @@ function Index({
   function onLoadAccomodationFunc(autocomplete) {
     setSearchAccomodationResult(autocomplete);
   }
-  function handleAirportChange(e) {
-    formik.handleChange(e);
-    const selectedAirport = airports.find(airport => airport.airportName === e.target.value);
-    if (selectedAirport) {
-      formik.setFieldValue("airPortId", selectedAirport.airportId);
-      formik.setFieldValue("airportName", selectedAirport.airportName);
-      formik.setFieldValue("airportAddressLatitude", selectedAirport.airportAddressLatitude);
-      formik.setFieldValue("airportAddressLongitude", selectedAirport.airportAddressLongitude);
+  function onLoadAirportLocationFunc(autocomplete) {
+    setSearchAirportLocationResult(autocomplete);
+  }
+
+  function onAirportLocationChanged() {
+    if (searchAirportLocationResult != null) {
+      const place = searchAirportLocationResult.getPlace();
+      const address_components = place.address_components;
+      const isInCalifornia = isLocationInColifornia(address_components);
+      const latlng = {
+        lat: place.geometry?.location?.lat(),
+        lng: place.geometry?.location?.lng(),
+      };
+      const airportLocationAddress = place.formatted_address || place.name || "";
+      formik.setFieldValue("airportLocationAddress", airportLocationAddress);
+      formik.setFieldValue("airportLocationLatitude", latlng?.lat);
+      formik.setFieldValue("airportLocationLongitude", latlng?.lng);
+
+      if (!isInCalifornia) {
+        setAirportLocChecker?.({
+          isUnsupportedLocation: true,
+          errorMessage: "Airport/Terminal pick-up must be in California, USA",
+        });
+      } else {
+        setAirportLocChecker?.({
+          isUnsupportedLocation: false,
+          errorMessage: "",
+        });
+      }
+    } else {
+      alert("Please choose an airport or terminal from the suggestions");
     }
   }
 
@@ -428,6 +458,9 @@ function Index({
             {accomAddrChecker.isUnsupportedLocation && travelType == "1" && (
               <Alert severity="error">{accomAddrChecker.errorMessage}</Alert>
             )}
+            {airportLocChecker?.isUnsupportedLocation && travelType == "1" && (
+              <Alert severity="error">{airportLocChecker.errorMessage}</Alert>
+            )}
             {(travelType == 1 || travelType == 2) && (
               <FormControl fullWidth color="info">
                 <InputLabel id="demo-simple-select-helper-label">
@@ -458,35 +491,41 @@ function Index({
               </FormControl>
             )}
 
-            {travelType == 1 && (
-              <FormControl fullWidth color="info">
-                <InputLabel id="airport label">Select Airport</InputLabel>
-                <Select
-                  label="Select Airport"
-                  name="airportName"
-                  value={formik.values.airportName}
-                  onChange={(e) => handleAirportChange(e)}
+            {travelType == 1 && isLoaded && (
+              <Autocomplete
+                onPlaceChanged={onAirportLocationChanged}
+                onLoad={onLoadAirportLocationFunc}
+                options={{
+                  types: ["establishment"],
+                  componentRestrictions: { country: "us" },
+                }}
+              >
+                <TextField
+                  color="info"
+                  label="Airport or terminal (search & select)"
+                  fullWidth
+                  name="airportLocationAddress"
+                  value={formik.values.airportLocationAddress}
+                  onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   error={
-                    formik.touched.airportName &&
-                    Boolean(formik.errors.airportName)
+                    formik.touched.airportLocationAddress &&
+                    Boolean(formik.errors.airportLocationAddress)
                   }
                   helperText={
-                    formik.touched.airportName && formik.errors.airportName
+                    (formik.touched.airportLocationAddress &&
+                      formik.errors.airportLocationAddress) ||
+                    "Pick a California airport/terminal from suggestions so coordinates are sent"
                   }
-                >
-                  {airports?.map((airport) => (
-                    <MenuItem value={airport.airportName} key={airport.airportName}>
-                      {airport.airportName}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {formik.touched.airportName && (
-                  <FormHelperText sx={{ color: "red" }}>
-                    {formik.errors.airportName}
-                  </FormHelperText>
-                )}
-              </FormControl>
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <MdLocalAirport />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Autocomplete>
             )}
 
             {travelType == 3 && (

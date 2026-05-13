@@ -13,7 +13,6 @@ import {
   Select,
   Checkbox,
 } from "@mui/material";
-import axios from "axios";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -25,7 +24,7 @@ import RSTextField from "../../../../components/RSTextField";
 import RSRadio from "../../../../components/RSRadio";
 import StepSummary from "../StepSummary";
 import { getAllPreferences } from "../../../../store/actions/preferenceAction";
-import { remote_host } from "../../../../globalVariable";
+import { BACKEND_API } from "../../../../store/utils/API";
 import {
   addAdditionalStopFee,
   addAirportPreferenceFee,
@@ -81,8 +80,8 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
     );
   };
   const getAdditionalAtStopOnTheWay = async () => {
-    await axios
-      .get(`${remote_host}/api/v1/additional-stops`)
+    await BACKEND_API
+      .get("/api/v1/additional-stops")
       .then((res) => {
         setAdditionalStopsOnTheWay(res.data);
       })
@@ -124,7 +123,7 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
   }, [userTimezone]);
 
   const minimumPickupLeadTime = useMemo(
-    () => currentDateTime.add(2, "hour").second(0).millisecond(0),
+    () => currentDateTime.add(1, "hour").second(0).millisecond(0),
     [currentDateTime]
   );
 

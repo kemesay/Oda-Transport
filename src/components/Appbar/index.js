@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, scroller } from "react-scroll";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -70,24 +70,40 @@ function Header({ handleUsernameFocus }) {
     },
   }));
 
-  const scrollToSection = (sectionId, offset = -100) => {
-    navigate("/");
-    scroller.scrollTo(sectionId, {
-      smooth: true,
-      duration: 500,
-      offset: offset,
-      spy: true,
-      activeClass: 'active'
-    });
-  };
+  const scrollToSection = useCallback(
+    (sectionId, offset = -100, navigateState) => {
+      const runScroll = () => {
+        scroller.scrollTo(sectionId, {
+          smooth: true,
+          duration: 500,
+          offset,
+          spy: true,
+          activeClass: "active",
+        });
+      };
+      if (location.pathname !== "/") {
+        navigate("/", navigateState != null ? { state: navigateState } : undefined);
+        window.setTimeout(runScroll, 150);
+      } else {
+        window.setTimeout(runScroll, 0);
+      }
+    },
+    [navigate, location.pathname]
+  );
   
   const getNavbarMenu = () => {
     if (!isAuthenticated) return NAVBAR_MENUS.public;
     return getUserRole() === "user" ? NAVBAR_MENUS.authenticated : [];
   };
 
-  const handleNavigation = (menu, index) => {
-    setActiveTab(index);
+  const handleNavigation = (menu, tabIndex) => {
+    const menus = getNavbarMenu();
+    const idx =
+      typeof tabIndex === "number"
+        ? tabIndex
+        : menus.findIndex((m) => m.title === menu.title);
+    if (idx >= 0) setActiveTab(idx);
+
     if (isAuthenticated) {
       navigate(menu.link);
       return;
@@ -95,37 +111,46 @@ function Header({ handleUsernameFocus }) {
 
     if (menu.title === "Book Ride Now") {
       navigate(menu.link);
-    } else {
-      scrollToSection(menu.scrollLink, menu.offset);
+    } else if (menu.scrollLink) {
+      const navState = idx >= 0 ? { publicNavTab: idx } : undefined;
+      scrollToSection(menu.scrollLink, menu.offset ?? -100, navState);
     }
   };
 
-  const handleOpenUserMenu = (event) => {
+  // Memoize handlers to prevent unnecessary re-renders and ensure instant menu opening
+  const handleOpenUserMenu = useCallback((event) => {
+    event?.stopPropagation?.();
     setUserMenuAnchor(event.currentTarget);
-  };
+  }, []);
 
-  const handleCloseUserMenu = () => {
+  const handleCloseUserMenu = useCallback(() => {
     setUserMenuAnchor(null);
-  };
+  }, []);
 
-  const handleLogout = (e) => {
-    handleCloseUserMenu(e);
+  const handleLogout = useCallback((e) => {
+    handleCloseUserMenu();
     dispatch(logout());
-    navigate("/");
+    navigate("/", { state: {} });
     setActiveTab(0); // Reset to home after logout
-  };
+  }, [dispatch, navigate, handleCloseUserMenu]);
 
   const handleClickOpen = () => {
     setIsPasswordDialogOpen(true);
   };
 
-  const handleChangePassword = () => {
-    handleClickOpen();
-  };
+  const handleChangePassword = useCallback(() => {
+    setIsPasswordDialogOpen(true);
+  }, []);
+
+  const handleLoginClick = useCallback(() => {
+    scrollToSection("auth");
+    handleUsernameFocus();
+  }, [scrollToSection, handleUsernameFocus]);
 
   // Enhanced tab selection logic
   const determineActiveTab = () => {
     const menus = getNavbarMenu();
+    const path = location.pathname;
     
     // For authenticated users, default to "My Account" on initial load
     if (isAuthenticated && !initialAuthCheck) {
@@ -135,30 +160,50 @@ function Header({ handleUsernameFocus }) {
       }
     }
 
+    // Keep "My Account" active for any user dashboard route
+    if (path.startsWith("/user")) {
+      return menus.findIndex(menu => menu.title === "My Account");
+    }
+
+    // Landing scroll targets passed tab index when navigating from another route (e.g. /home/1 → /)
+    if (
+      !isAuthenticated &&
+      path === "/" &&
+      typeof location.state?.publicNavTab === "number"
+    ) {
+      return location.state.publicNavTab;
+    }
+
     // Fallback to path-based detection
-    switch (location.pathname) {
+    switch (path) {
       case "/home/1":
       case "/home/2":
       case "/home/3":
         return menus.findIndex(menu => menu.title === "Book Ride Now");
-      case "/user/my-order":
-        return menus.findIndex(menu => menu.title === "My Account");
       default:
         return 0;
     }
   };
 
+  // Only check authentication on signin success, not on every render
   useEffect(() => {
-    dispatch(setIsAuthenticated());
-  }, [isSigninSuccess]);
+    if (isSigninSuccess) {
+      dispatch(setIsAuthenticated());
+    }
+  }, [isSigninSuccess, dispatch]);
 
+  // Update active tab only when pathname or auth status actually changes
   useEffect(() => {
     if (isAuthenticated !== undefined) {
       const newActiveTab = determineActiveTab();
-      setActiveTab(newActiveTab);
-      setInitialAuthCheck(true);
+      if (newActiveTab !== activeTab) {
+        setActiveTab(newActiveTab);
+      }
+      if (!initialAuthCheck) {
+        setInitialAuthCheck(true);
+      }
     }
-  }, [location.pathname, isAuthenticated]);
+  }, [location.pathname, location.key, isAuthenticated]);
 
   // Styled components
   const StyledAppBar = styled(AppBar)(({ theme }) => ({
@@ -200,7 +245,7 @@ function Header({ handleUsernameFocus }) {
             alt="Odaa Transportation Logo"
             src={logo1}
             onClick={() => {
-              navigate("/");
+              navigate("/", { state: {} });
               setActiveTab(0);
             }}
           />
@@ -216,7 +261,6 @@ function Header({ handleUsernameFocus }) {
           ) : (
             <DesktopNavigation
               activeTab={activeTab}
-              onTabChange={(e, newValue) => setActiveTab(newValue)}
               menus={getNavbarMenu()}
               onNavigate={handleNavigation}
             />
@@ -228,12 +272,9 @@ function Header({ handleUsernameFocus }) {
           userMenuAnchor={userMenuAnchor}
           onAvatarClick={handleOpenUserMenu}
           onMenuClose={handleCloseUserMenu}
-          onChangePassword={() => setIsPasswordDialogOpen(true)}
+          onChangePassword={handleChangePassword}
           onLogout={handleLogout}
-          onLoginClick={() => {
-            scrollToSection("auth");
-            handleUsernameFocus();
-          }}
+          onLoginClick={handleLoginClick}
         />
       </StyledToolbar>
 

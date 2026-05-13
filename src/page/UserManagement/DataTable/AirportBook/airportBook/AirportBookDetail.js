@@ -412,16 +412,33 @@ const ViewBookDetail = () => {
             </Grid>
           )}
 
-          {/* Airport Details Section */}
-          {response?.Airport && (
+          {/* Airport location (API v2: free-form address + coords, or legacy Airport relation) */}
+          {(response?.airportLocationAddress ||
+            response?.airportLocationLatitude ||
+            response?.Airport) && (
             <Grid container spacing={2} mt={4} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, p: 3, backgroundColor: '#f9f9f9' }}>
               <Typography variant="h6" sx={{ ml: 2, mb: 1, fontWeight: 'bold', width: '100%' }}>
-                Airport Details:
+                Airport / terminal:
               </Typography>
               <Grid container spacing={2} mt={1} pl={2} pr={2}>
-                {response.Airport.airportId && <Field label="Airport ID" value={response.Airport.airportId} />}
-                {response.Airport.airportName && <Field label="Airport Name" value={response.Airport.airportName} />}
-                {response.Airport.airportAddress && <Field label="Airport Address" value={response.Airport.airportAddress} />}
+                {response.airportLocationAddress && (
+                  <Field label="Location address" value={response.airportLocationAddress} />
+                )}
+                {response.airportLocationLatitude != null && (
+                  <Field label="Latitude" value={response.airportLocationLatitude} />
+                )}
+                {response.airportLocationLongitude != null && (
+                  <Field label="Longitude" value={response.airportLocationLongitude} />
+                )}
+                {response.Airport?.airportId && (
+                  <Field label="Airport ID (legacy)" value={response.Airport.airportId} />
+                )}
+                {response.Airport?.airportName && (
+                  <Field label="Airport name (legacy)" value={response.Airport.airportName} />
+                )}
+                {response.Airport?.airportAddress && (
+                  <Field label="Airport address (legacy)" value={response.Airport.airportAddress} />
+                )}
               </Grid>
             </Grid>
           )}

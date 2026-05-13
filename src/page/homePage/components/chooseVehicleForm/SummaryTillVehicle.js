@@ -55,8 +55,11 @@ function SummaryTillVehicle({ summaryData, travelType }) {
             <Field field={"Hours"} value={summaryData.hour} />
           )}
 
-          {summaryData.airPortId && travelType == 1 && (
-            <Field field={"Air Port"} value={summaryData.airPortId} />
+          {summaryData.airportLocationAddress && travelType == 1 && (
+            <Field
+              field={"Airport / terminal"}
+              value={summaryData.airportLocationAddress}
+            />
           )}
 
           {summaryData.hotel && (

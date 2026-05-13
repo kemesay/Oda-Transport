@@ -40,18 +40,20 @@ function StepSummary({
       case "3":
         pickupAddr = rideSummaryData.pickupPhysicalAddress;
         break;
-      case "1":
+      case "1": {
         const isFromAirport =
-          tripType == "Ride from the airport(round trip)" ||
-          "Ride from the airport(one way)";
+          tripType === "Ride from the airport(round trip)" ||
+          tripType === "Ride from the airport(one way)";
         const isToAirport =
-          tripType == "Ride to the airport(round trip)" ||
-          "Ride to the airport(one way)";
+          tripType === "Ride to the airport(round trip)" ||
+          tripType === "Ride to the airport(one way)";
         pickupAddr = isFromAirport
-          ? rideSummaryData.airportName
+          ? rideSummaryData.airportLocationAddress
           : isToAirport
             ? rideSummaryData.hotel
             : null;
+        break;
+      }
       default:
         break;
     }
@@ -65,18 +67,20 @@ function StepSummary({
       case "3":
         dropoffAddr = rideSummaryData.dropoffPhysicalAddress;
         break;
-      case "1":
+      case "1": {
         const isFromAirport =
-          tripType == "Ride from the airport(round trip)" ||
-          "Ride from the airport(one way)";
+          tripType === "Ride from the airport(round trip)" ||
+          tripType === "Ride from the airport(one way)";
         const isToAirport =
-          tripType == "Ride to the airport(round trip)" ||
-          "Ride to the airport(one way)";
+          tripType === "Ride to the airport(round trip)" ||
+          tripType === "Ride to the airport(one way)";
         dropoffAddr = isFromAirport
           ? rideSummaryData.hotel
           : isToAirport
-            ? rideSummaryData.airportName
+            ? rideSummaryData.airportLocationAddress
             : null;
+        break;
+      }
       default:
         break;
     }
@@ -112,8 +116,8 @@ function StepSummary({
         isVisible: isHourlyTravel,
       },
       {
-        label: "Airport",
-        value: rideSummaryData?.airportName,
+        label: "Airport / terminal",
+        value: rideSummaryData?.airportLocationAddress,
         isVisible: isAirportTravel,
       },
       {

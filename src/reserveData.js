@@ -4,7 +4,7 @@ import { CircularProgress, Alert } from "@mui/material";
 import axios from "axios";
 import "react-credit-cards-2/dist/es/styles-compiled.css";
 import { remote_host } from "../../../../globalVariable";
-
+import { BACKEND_API } from "../../store/utils/API";
 const CreditCardForm = ({ formik }) => {
   const [errorResponse, setErrorresponse] = useState({
     isError: false,
@@ -76,7 +76,7 @@ const CreditCardForm = ({ formik }) => {
 
     setSuccessresponse((prev) => ({ ...prev, isLoading: true }));
     await axios
-      .post(`${remote_host}/api/v1/users/payment-detail/validate-card`, body)
+      .post(`${BACKEND_API}/api/v1/users/payment-detail/validate-card`, body)
       .then((result) => {
         if (result.data) {
           formik.setFieldValue("isValidCardInfo", true);

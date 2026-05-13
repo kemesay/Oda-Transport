@@ -1,11 +1,10 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
-import { remote_host } from "../../globalVariable";
+import { BACKEND_API } from "../utils/API";
 export const getAirports = createAsyncThunk(
   "book/get-cars",
   async (values, thunkAPI) => {
     try {
-      var res = await axios.get(remote_host + "/api/v1/airports");
+      var res = await BACKEND_API.get("/api/v1/airports");
       console.log("airports: ", res.data);
       return res.data;
     } catch (error) {

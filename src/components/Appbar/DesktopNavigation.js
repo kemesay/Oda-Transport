@@ -19,19 +19,18 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-const DesktopNavigation = ({ activeTab, onTabChange, menus, onNavigate }) => {
+const DesktopNavigation = ({ activeTab, menus, onNavigate }) => {
   return (
     <StyledTabs
       sx={{ marginLeft: "0px" }}
       value={activeTab}
-      onChange={(e, value) => onTabChange(value)}
+      onChange={(e, value) => {
+        const menu = menus[value];
+        if (menu) onNavigate(menu, value);
+      }}
     >
       {menus.map((menu) => (
-        <StyledTab
-          key={menu.title}
-          label={menu.title}
-          onClick={() => onNavigate(menu)}
-        />
+        <StyledTab key={menu.title} label={menu.title} />
       ))}
     </StyledTabs>
   );

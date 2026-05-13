@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Box, TextField, Checkbox, Autocomplete, Alert } from '@mui/material';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import { BACKEND_API } from '../../../store/utils/API';
 import axios from 'axios';
-import { remote_host } from '../../../globalVariable';
 
 const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
 const checkedIcon = <CheckBoxIcon fontSize="small" />;
@@ -47,8 +47,8 @@ const SelectedPaymentCard = ({
       setError(null);
 
       try {
-        const response = await axios.get(
-          `${remote_host}/api/v1/users/payment-detail/paymentCards`,
+        const response = await BACKEND_API.get(
+          `/api/v1/users/payment-detail/paymentCards`,
           {
             headers: {
               Authorization: `Bearer ${authToken}`,

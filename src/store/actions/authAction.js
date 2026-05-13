@@ -1,7 +1,5 @@
-
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
-import { remote_host } from "../../globalVariable";
+import { BACKEND_API } from "../utils/API";
 
 export const signIn = createAsyncThunk(
   "user/login",
@@ -13,8 +11,8 @@ export const signIn = createAsyncThunk(
 
     try {
       var res;
-      await axios
-        .post(`${remote_host}/api/v1/auth/login`, body)
+      await BACKEND_API
+        .post("/api/v1/auth/login", body)
         .then((response) => {
           res = response.data;
         });
@@ -40,7 +38,7 @@ export const signup = createAsyncThunk(
 
     try {
       var res;
-      await axios.post(`${remote_host}/api/v1/users`, body).then((response) => {
+      await BACKEND_API.post("/api/v1/users", body).then((response) => {
         res = response.data;
       });
       return res;
@@ -58,8 +56,8 @@ export const resetPassword = createAsyncThunk(
   async (values, thunkAPI) => {
     try {
       var res;
-      await axios
-        .post(`${remote_host}/api/v1/auth/reset-password`, values)
+      await BACKEND_API
+        .post("/api/v1/auth/reset-password", values)
         .then((response) => {
           res = response.data;
         });
@@ -79,8 +77,8 @@ export const forgetPassword = createAsyncThunk(
     console.log("values: ", values);
     try {
       var res;
-      await axios
-        .post(`${remote_host}/api/v1/auth/forgot-password`, values)
+      await BACKEND_API
+        .post("/api/v1/auth/forgot-password", values)
         .then((response) => {
           res = response.data;
         });

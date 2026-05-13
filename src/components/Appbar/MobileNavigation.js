@@ -18,10 +18,10 @@ const MobileNavigation = ({ isOpen, onToggle, menus, onNavigate }) => {
       
       <Drawer anchor="left" open={isOpen} onClose={onToggle}>
         <List>
-          {menus.map((menu) => (
+          {menus.map((menu, index) => (
             <ListItem key={menu.title}>
               <ListItemButton onClick={() => {
-                onNavigate(menu);
+                onNavigate(menu, index);
                 onToggle();
               }}>
                 <RSButton

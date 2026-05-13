@@ -22,11 +22,10 @@ import { book } from "../../store/actions/bookActions";
 import Success from "./components/Success";
 import { getAllCars } from "../../store/actions/carAction";
 import { getExtraOptions } from "../../store/actions/extraOptions";
-import { getAirports } from "../../store/actions/airportAction";
 import GuestUser from "./components/GuestUser";
 import axios from "axios";
 import { addMinimumInitialFee, updateTotalFee } from "../../store/reducers/bookReducers";
-import { remote_host } from "../../globalVariable";
+import { BACKEND_API } from "../../store/utils/API";
 function Index() {
     const [activeStep, setActiveStep] = useState(0);
     const [selectedTripType, setSelectedTripType] = React.useState();
@@ -37,6 +36,11 @@ function Index() {
     });
 
     const [accomAddrChecker, setAccomAddrChecker] = useState({
+        isUnsupportedLocation: false,
+        errorMessage: "",
+    });
+
+    const [airportLocChecker, setAirportLocChecker] = useState({
         isUnsupportedLocation: false,
         errorMessage: "",
     });
@@ -181,10 +185,9 @@ function Index() {
             distanceInMiles: 0,
             duration: null,
             hour: 5,
-            airPortId: null,
-            airportName: "",
-            airportAddressLongitude: 0,
-            airportAddressLatitude: 0,
+            airportLocationAddress: "",
+            airportLocationLatitude: 0,
+            airportLocationLongitude: 0,
             hotel: "",
             accommodationAddress: "",
             accommodationLongitude: 0,
@@ -199,7 +202,8 @@ function Index() {
                 handleNext();
             } else if (
                 travelType == "1" &&
-                !accomAddrChecker.isUnsupportedLocation
+                !accomAddrChecker.isUnsupportedLocation &&
+                !airportLocChecker.isUnsupportedLocation
             ) {
                 handleNext();
             }
@@ -467,8 +471,25 @@ function Index() {
         } else if (travelType == 1) {
             setrideInfoValidationSchemaObj({
                 tripType: yup.string("Trip Type").required("Trip type is required!"),
-                airPortId: yup.string("airport").required("Airport required!"),
-                hotel: yup.string("Hotel is string").required("Hotel is required!"),
+                airportLocationAddress: yup
+                    .string()
+                    .required("Airport or terminal location is required"),
+                airportLocationLatitude: yup
+                    .number()
+                    .notOneOf([0], "Select airport location from search suggestions"),
+                airportLocationLongitude: yup
+                    .number()
+                    .notOneOf([0], "Select airport location from search suggestions"),
+                accommodationAddress: yup
+                    .string()
+                    .required("Hotel / residence address is required"),
+                hotel: yup.string().required("Hotel / residence is required"),
+                accommodationLatitude: yup
+                    .number()
+                    .notOneOf([0], "Select accommodation from search suggestions"),
+                accommodationLongitude: yup
+                    .number()
+                    .notOneOf([0], "Select accommodation from search suggestions"),
             });
         } else if (travelType == 3) {
             setrideInfoValidationSchemaObj({
@@ -775,7 +796,6 @@ function Index() {
 
     useEffect(() => {
         dispatch(getAllCars());
-        dispatch(getAirports());
         dispatch(getExtraOptions());
         // addMinFee();
     }, []);
@@ -804,6 +824,8 @@ function Index() {
                                         setLocationCkecker={setLocationCkecker}
                                         accomAddrChecker={accomAddrChecker}
                                         setAccomAddrChecker={setAccomAddrChecker}
+                                        airportLocChecker={airportLocChecker}
+                                        setAirportLocChecker={setAirportLocChecker}
                                         selectedTripType={selectedTripType}
                                     />
                                 )}

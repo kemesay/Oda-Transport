@@ -17,7 +17,7 @@ import {
   Snackbar
 } from '@mui/material';
 import { Receipt as ReceiptIcon } from '@mui/icons-material';
-import { remote_host } from '../../globalVariable';
+import { BACKEND_API } from '../../store/utils/API';
 import TransportationReceipt from '../Receipt/TransportationReceipt';
 
 
@@ -60,21 +60,14 @@ function PaymentHistory() {
           throw new Error('No access token found');
         }
 
-        const response = await fetch(`${remote_host}/api/v1/users/bookings/mine`, {
-          method: 'GET',
+        const response = await BACKEND_API.get("/api/v1/users/bookings/mine", {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           }
         });
 
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
+        const data = response.data;
         console.log('response Data', data)
 
         

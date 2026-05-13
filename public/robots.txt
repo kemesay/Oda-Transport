@@ -1,1 +1,25 @@
- 
+# robots.txt for ODA Black Car Service
+# https://odatransportation.com
+
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /user/
+Disallow: /home/
+Disallow: /map
+Disallow: /update-booking
+Disallow: /reset-password/
+Disallow: /not-in-california
+
+# Allow important public pages
+Allow: /terms-and-conditions
+Allow: /privacy-policy
+Allow: /register
+Allow: /forget-password
+Allow: /app-download
+
+# Sitemap location
+Sitemap: https://odatransportation.com/sitemap.xml
+
+# Crawl-delay (optional - helps prevent server overload)
+Crawl-delay: 1

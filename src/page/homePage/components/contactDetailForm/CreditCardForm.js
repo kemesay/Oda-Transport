@@ -371,9 +371,8 @@
 import React, { useState, useEffect } from "react";
 import Cards from "react-credit-cards-2";
 import { CircularProgress, Alert, Checkbox, FormControlLabel } from "@mui/material";
-import axios from "axios";
 import "react-credit-cards-2/dist/es/styles-compiled.css";
-import { remote_host } from "../../../../globalVariable";
+import { BACKEND_API } from "../../../../store/utils/API";
 
 const CreditCardForm = ({ formik, onSubmit, shouldValidate }) => {
   const [cardInfo, setCardInfo] = useState({
@@ -510,8 +509,8 @@ const CreditCardForm = ({ formik, onSubmit, shouldValidate }) => {
           isPrimary: formik.values.cardDetails?.isPrimary || false,
         };
 
-        await axios.post(
-          `${remote_host}/api/v1/users/payment-detail/validate-card`,
+        await BACKEND_API.post(
+          "/api/v1/users/payment-detail/validate-card",
           cardDetails,
           { headers }
         );
