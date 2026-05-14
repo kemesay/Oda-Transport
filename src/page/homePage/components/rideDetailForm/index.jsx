@@ -23,7 +23,7 @@ import {
   useTheme,
   useMediaQuery,
   Alert,
-
+  Typography,
 } from "@mui/material";
 
 import {
@@ -55,6 +55,10 @@ function Index({
   accomAddrChecker,
   airportLocChecker,
   setAirportLocChecker,
+  /** When set (e.g. "1"|"2"|"3"), used instead of `/home/:id` route param — needed on `/update-booking`. */
+  travelRouteId,
+  /** If true, user cannot switch service type (update flow). */
+  disableServiceTypeSwitch,
 }) {
   const [trip, setTrip] = React.useState();
   const [latLng, setLatLng] = useState(null);
@@ -69,7 +73,7 @@ function Index({
   const matchXS = useMediaQuery(theme.breakpoints.down("md"));
 
   const params = useParams();
-  const travelType = params.id;
+  const travelType = travelRouteId ?? params.id;
   const pickupPhysicalAddressRef = useRef();
   const dropDownAddressRef = useRef();
   const center = useMemo(() => ({ lat: 50, lng: -80 }), []);
@@ -416,6 +420,14 @@ function Index({
     return <>loading</>;
   }
 
+  if (travelType == null || travelType === "") {
+    return (
+      <Alert severity="error">
+        Missing booking service type. Open Update Booking from Current Bookings.
+      </Alert>
+    );
+  }
+
   return (
     <Box>
       <Grid
@@ -427,29 +439,36 @@ function Index({
           <Stack direction={"column"} spacing={2}>
             <FormControl fullWidth>
               <FormLabel sx={{ color: "info" }}>Select Type of Service</FormLabel>
-              <RadioGroup
-                row
-                defaultValue={travelType}
-                name="radio-buttons-group"
-                onChange={handleChangeTripType}
-              >
-               
-                <FormControlLabel
-                  value={1}
-                  control={<RSRadio />}
-                  label="Airport Service"
-                />
-                 <FormControlLabel
-                  value={2}
-                  control={<RSRadio />}
-                  label="Point to Point"
-                />
-                <FormControlLabel
-                  value={3}
-                  control={<RSRadio />}
-                  label="Hourly Charter"
-                />
-              </RadioGroup>
+              {disableServiceTypeSwitch ? (
+                <Typography variant="body2" sx={{ mt: 1, color: "text.secondary" }}>
+                  {travelType == 1 && "Airport Service (editing existing booking)"}
+                  {travelType == 2 && "Point to Point (editing existing booking)"}
+                  {travelType == 3 && "Hourly Charter (editing existing booking)"}
+                </Typography>
+              ) : (
+                <RadioGroup
+                  row
+                  defaultValue={travelType}
+                  name="radio-buttons-group"
+                  onChange={handleChangeTripType}
+                >
+                  <FormControlLabel
+                    value={1}
+                    control={<RSRadio />}
+                    label="Airport Service"
+                  />
+                  <FormControlLabel
+                    value={2}
+                    control={<RSRadio />}
+                    label="Point to Point"
+                  />
+                  <FormControlLabel
+                    value={3}
+                    control={<RSRadio />}
+                    label="Hourly Charter"
+                  />
+                </RadioGroup>
+              )}
             </FormControl>
             {locationChecker.isUnsupportedLocation &&
               (travelType == "2" || travelType === "3") && (

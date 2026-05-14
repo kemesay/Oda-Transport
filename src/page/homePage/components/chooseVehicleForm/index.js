@@ -10,6 +10,7 @@ import {
   InputLabel,
   CircularProgress,
   FormControl,
+  Typography,
 } from "@mui/material";
 import CarComponent from "./CarComponent";
 import { useDispatch, useSelector } from "react-redux";
@@ -25,10 +26,18 @@ import {
 import { updateExtraOption } from "../../../../store/reducers/extraOptionReducer";
 import { useLocation } from "react-router-dom";
 
-function Index({ formik, rideSummaryData, hour, distanceInMiles }) {
+function Index({
+  formik,
+  rideSummaryData,
+  hour,
+  distanceInMiles,
+  travelRouteId,
+  /** When editing an existing booking: keep saved vehicle visible and do not auto-clear it when filters tighten. */
+  updateBookingMode,
+}) {
   const dispatch = useDispatch();
   const location = useLocation();
-  var travelType = location.pathname.split("/").pop();
+  var travelType = travelRouteId ?? location.pathname.split("/").pop();
   const [carType, setCarType] = useState("All Vehicles");
   const { cars, loading } = useSelector((state) => state.carReducer);
   const { fee } = useSelector((state) => state.bookReducer);
@@ -47,7 +56,7 @@ function Index({ formik, rideSummaryData, hour, distanceInMiles }) {
   };
   const handleCarSelect = (selectedCarId) => {
     const updatedCars = cars.map((car) => {
-      if (car.carId == selectedCarId && formik?.vehicle != car.carId) {
+      if (car.carId == selectedCarId && formik.values.vehicle != car.carId) {
         const prevSelectedCarFee = formik.values.vehicleFee;
         const prevCarMinimumStartFee = parseFloat(
           formik.values.prevCarMinimumStartFee
@@ -166,17 +175,23 @@ function Index({ formik, rideSummaryData, hour, distanceInMiles }) {
     setCarType(e.target.value);
   };
   const filterCars = () => {
-    var filteredCars = [];
-    filteredCars = cars?.filter(
-      (car) =>
-        car?.maxSuitcases >= formik.values.numberOfSuitcases &&
-        car?.maxPassengers >= formik.values.numberOfPassengers &&
-        (carType === "All Vehicles" ? true : car?.carType === carType)
-    );
-    return filteredCars;
+    if (!cars?.length) return [];
+    const typeOk = (car) =>
+      carType === "All Vehicles" ? true : car?.carType === carType;
+
+    // Update flow: show every vehicle (by type filter) so the user can switch cars freely.
+    if (updateBookingMode) {
+      return cars.filter((car) => typeOk(car));
+    }
+
+    const capacityOk = (car) =>
+      car?.maxSuitcases >= formik.values.numberOfSuitcases &&
+      car?.maxPassengers >= formik.values.numberOfPassengers;
+    return cars.filter((car) => capacityOk(car) && typeOk(car));
   };
 
   useEffect(() => {
+    if (updateBookingMode) return;
     const filteredCars = filterCars();
     const selectedCarIndex = filteredCars.findIndex(
       (car) => car.carId == formik.values.vehicle
@@ -186,7 +201,7 @@ function Index({ formik, rideSummaryData, hour, distanceInMiles }) {
       formik.setFieldValue("vehicle", null);
       handleCarSelect(-1);
     }
-  }, [formik.values.numberOfSuitcases, formik.values.numberOfPassengers]);
+  }, [formik.values.numberOfSuitcases, formik.values.numberOfPassengers, updateBookingMode]);
   return (
     <Grid container direction={{ xs: "column-reverse", lg: "row" }} spacing={1}>
       <Grid item xs={3}>
@@ -195,6 +210,7 @@ function Index({ formik, rideSummaryData, hour, distanceInMiles }) {
           vehicleSummaryData={[]}
           tripSummaryData={[]}
           contactSummaryData={[]}
+          travelRouteId={travelRouteId}
         />
       </Grid>
       <Grid item container xs={8} spacing={2} justifyContent={"center"}>
@@ -290,6 +306,12 @@ function Index({ formik, rideSummaryData, hour, distanceInMiles }) {
         </Grid>
 
         <Grid item xs={12}>
+          {/* {updateBookingMode && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              All vehicles are shown (by type filter) so you can change your selection.
+              Adjust passengers or suitcases on step 1 if you need a different capacity class.
+            </Alert>
+          )} */}
           <Stack direction="column" spacing={2}>
             {formik.touched.vehicle && Boolean(formik.errors.vehicle) && (
               <Alert severity="error">{formik.errors.vehicle}</Alert>
@@ -308,6 +330,8 @@ function Index({ formik, rideSummaryData, hour, distanceInMiles }) {
                   hour={hour}
                   distanceInMiles={distanceInMiles}
                   isRoundTrip={isRoundTrip}
+                  travelRouteId={travelRouteId}
+                  updateBookingMode={updateBookingMode}
                 />
               </Box>
             ))}

@@ -6,15 +6,25 @@ import {
   useTheme,
   Badge,
   useMediaQuery,
+  Typography,
+  Chip,
 } from "@mui/material";
 import RSTypography from "../../../../components/RSTypography";
 import RSButton from "../../../../components/RSButton";
 import { BsPeople } from "react-icons/bs";
 import { PiSuitcaseDuotone } from "react-icons/pi";
 import { useLocation } from "react-router-dom";
-import { round } from "lodash";
 
-function CarComponent({ carDetail, formik, handleCarSelect, hour, distanceInMiles, isRoundTrip }) {
+function CarComponent({
+  carDetail,
+  formik,
+  handleCarSelect,
+  hour,
+  distanceInMiles,
+  isRoundTrip,
+  travelRouteId,
+  updateBookingMode,
+}) {
   const {
     carName,
     carImageUrl,
@@ -22,11 +32,31 @@ function CarComponent({ carDetail, formik, handleCarSelect, hour, distanceInMile
     pricePerHour,
     maxPassengers,
     maxSuitcases,
-    isSelected,
   } = carDetail;
+
+  const currentVehicle = formik.values.vehicle;
+  const bookedVehicleId = formik.values.originalCarIdFromBooking;
+
+  const effectiveVehicleId =
+    currentVehicle !== "" && currentVehicle != null
+      ? currentVehicle
+      : bookedVehicleId !== "" && bookedVehicleId != null
+        ? bookedVehicleId
+        : null;
+
+  const isSelected =
+    effectiveVehicleId != null &&
+    String(carDetail.carId) === String(effectiveVehicleId);
+
+  const isStillOriginalBookedVehicle =
+    updateBookingMode &&
+    bookedVehicleId != null &&
+    bookedVehicleId !== "" &&
+    String(carDetail.carId) === String(bookedVehicleId) &&
+    String(currentVehicle) === String(bookedVehicleId);
   const theme = useTheme();
   const location = useLocation();
-  var travelType = location.pathname.split("/").pop();
+  var travelType = travelRouteId ?? location.pathname.split("/").pop();
   const matchSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
   const CarImg = () => {
     return (
@@ -81,9 +111,14 @@ function CarComponent({ carDetail, formik, handleCarSelect, hour, distanceInMile
   return (
     <Box
       sx={{
-        boxShadow: "0px 4px 4px rgba(0, 0, 0, 0.25)",
         padding: 1,
         paddingBottom: matchSmallScreen && 4,
+        borderRadius: 1,
+        border: isSelected ? "2px solid #03930A" : "2px solid transparent",
+        bgcolor: isSelected ? "rgba(3, 147, 10, 0.08)" : "transparent",
+        boxShadow: isSelected
+          ? "0px 4px 12px rgba(3, 147, 10, 0.25)"
+          : "0px 4px 4px rgba(0, 0, 0, 0.25)",
       }}
     >
       <Grid container justifyContent={"space-between"}>
@@ -135,17 +170,39 @@ function CarComponent({ carDetail, formik, handleCarSelect, hour, distanceInMile
               ${calculateCarFee()}
             </RSTypography>
 
+            {isStillOriginalBookedVehicle && (
+              <Chip
+                size="small"
+                variant="outlined"
+                label="Booked vehicle (from reservation)"
+                sx={{
+                  alignSelf: "center",
+                  fontWeight: 600,
+                  borderColor: "#03930A",
+                  color: "#03930A",
+                  bgcolor: "rgba(3, 147, 10, 0.06)",
+                }}
+              />
+            )}
+
             {/* Select Button */}
             <Grid container justifyContent={"center"}>
               <Grid item xs={11} md={6}>
                 {isSelected ? (
-                  <RSButton
-                    backgroundcolor={"#FF0013"}
-                    txtcolor={"#FFF"}
-                    sx={selectCarButtonStyle}
-                  >
-                    Selected
-                  </RSButton>
+                  <Stack spacing={0.5} alignItems="center">
+                    <RSButton
+                      backgroundcolor={"#FF0013"}
+                      txtcolor={"#FFF"}
+                      sx={selectCarButtonStyle}
+                    >
+                      Selected
+                    </RSButton>
+                    {updateBookingMode && (
+                      <Typography variant="caption" color="text.secondary" textAlign="center">
+                        Choose another vehicle below to switch
+                      </Typography>
+                    )}
+                  </Stack>
                 ) : (
                   <RSButton
                     sx={selectCarButtonStyle}

@@ -15,6 +15,11 @@ function Index({
   vehicleSummaryData,
   rideSummaryData,
   tripSummaryData,
+  /** When true, do not overwrite passenger fields from /users/me on mount (update booking). */
+  skipAutoContactFill,
+  /** When true, hide payment method UI — PATCH update does not change payment here. */
+  hidePaymentSection,
+  travelRouteId,
 }) {
   const [bookForPassenger, setBookForPassenger] = useState(
     formik.values.bookingFor == "SomeoneElse"
@@ -68,11 +73,15 @@ function Index({
   };
 
   const handleChangeGratitude = (e) => {
-    const calculatedFee = totalFee + parseInt(e.target.value) - parseInt(formik.values.prevGratuityFee);
-    formik.setFieldValue("gratuityId", e.target.name);
-    formik.setFieldValue("prevGratuityFee", e.target.value);
-    formik.setFieldValue("gratuityFee", parseInt(e.target.value));
-    dispatch(adGratitudeFee(calculatedFee));
+    const gratuityId = Number(e.target.value);
+    const g = gratuities.find((x) => Number(x.gratuityId) === gratuityId);
+    if (!g) return;
+    const newFee = parseFloat(g.gratuityFee) || 0;
+    const oldFee = parseFloat(formik.values.prevGratuityFee) || 0;
+    formik.setFieldValue("gratuityId", gratuityId);
+    formik.setFieldValue("prevGratuityFee", newFee);
+    formik.setFieldValue("gratuityFee", newFee);
+    dispatch(adGratitudeFee(totalFee + newFee - oldFee));
   };
 
   const getGratitude = async () => {
@@ -90,14 +99,27 @@ function Index({
   };
 
   useEffect(() => {
-    getUserInfo();
+    if (!totalFee) return;
+    setGratuity((prev) => {
+      if (!prev.length) return prev;
+      return prev.map((g) => ({
+        ...g,
+        gratuityFee: (totalFee * g.percentage / 100).toFixed(2),
+      }));
+    });
+  }, [totalFee]);
+
+  useEffect(() => {
+    if (!skipAutoContactFill) {
+      getUserInfo();
+    }
     getGratitude();
-    
+
     // Fetch payment cards if user is authenticated
     if (isAuthenticated) {
       fetchUserPaymentCards();
     }
-  }, [isAuthenticated]); // Add isAuthenticated to dependency array
+  }, [isAuthenticated, skipAutoContactFill]); // Add isAuthenticated to dependency array
 
   const isFieldDisabled = () => {
     if (isAuthenticated) {
@@ -120,6 +142,7 @@ function Index({
           vehicleSummaryData={vehicleSummaryData}
           tripSummaryData={tripSummaryData}
           contactSummaryData={[]}
+          travelRouteId={travelRouteId}
         />
       </Grid>
       <Grid item xs={8} spacing={{ xs: 12, md: 6 }}>
@@ -181,20 +204,21 @@ function Index({
         </Grid>
         <Grid item xs={12} my={3}>
           <FormControl>
+            <FormLabel id="gratitude_label" sx={{ fontSize: 20 }}>
+              Gratuity
+            </FormLabel>
             <RadioGroup
-              aria-labelledby="gratitude"
-              name="radio-gratitude"
+              aria-labelledby="gratitude_label"
+              name="gratuityId"
+              value={String(formik.values.gratuityId ?? "")}
               onChange={handleChangeGratitude}
-              defaultValue={0}
             >
-              <FormLabel id="gratitude_label" sx={{ fontSize: 20 }}>Gratuity</FormLabel>
               {gratuities.map((gratuity) => {
                 const { gratuityId, description, gratuityFee } = gratuity;
                 return (
                   <FormControlLabel
                     key={gratuityId}
-                    value={gratuityFee}
-                    name={gratuityId}
+                    value={String(gratuityId)}
                     control={<RSRadio />}
                     label={`${description} ${gratuityFee > 0 ? `$(${gratuityFee})` : ""}`}
                   />
@@ -204,13 +228,15 @@ function Index({
           </FormControl>
         </Grid>
         <Grid item xs={12} mt={2}>
-          <Box>
-            <PaymentMethodSelector 
-              formik={formik}
-              authToken={isAuthenticated ? sessionStorage.getItem('access_token') : null}
-              userCards={userCards} // Pass the userCards to PaymentMethodSelector
-            />
-          </Box>
+          {!hidePaymentSection && (
+            <Box>
+              <PaymentMethodSelector
+                formik={formik}
+                authToken={isAuthenticated ? sessionStorage.getItem('access_token') : null}
+                userCards={userCards} // Pass the userCards to PaymentMethodSelector
+              />
+            </Box>
+          )}
         </Grid>
       </Grid>
     </Grid>

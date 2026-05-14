@@ -12,6 +12,7 @@ import {
   MenuItem,
   Select,
   Checkbox,
+  Alert,
 } from "@mui/material";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -35,7 +36,7 @@ import timezone from "dayjs/plugin/timezone";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-function Index({ formik, vehicleSummaryData, rideSummaryData }) {
+function Index({ formik, vehicleSummaryData, rideSummaryData, travelRouteId }) {
   const [stopOnWay, setStopOnWay] = useState(false);
   const [additionalStopsOnTheWay, setAdditionalStopsOnTheWay] = useState([]);
   const { fee } = useSelector((state) => state.bookReducer);
@@ -54,7 +55,7 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
   const location = useLocation();
   const dispatch = useDispatch();
   const { preferences } = useSelector((state) => state.preferenceReducer);
-  var travelType = location.pathname.split("/").pop();
+  var travelType = travelRouteId ?? location.pathname.split("/").pop();
   const tripType = rideSummaryData.tripType;
   const erroSlot = (field) => {
     return {
@@ -110,6 +111,13 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
     getAdditionalAtStopOnTheWay();
     dispatch(getAllPreferences());
   }, []);
+
+  useEffect(() => {
+    const id = Number(formik.values.additionalStopId);
+    if (!Number.isNaN(id) && id > 0) {
+      setStopOnWay(true);
+    }
+  }, [formik.values.additionalStopId]);
 
   const [currentDateTime, setCurrentDateTime] = useState(() =>
     dayjs().tz(userTimezone)
@@ -478,10 +486,20 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
             vehicleSummaryData={vehicleSummaryData}
             tripSummaryData={[]}
             contactSummaryData={[]}
+            travelRouteId={travelRouteId}
           />
         </Grid>
         <Grid item xs={8} mt={-1}>
           <Stack direction={"column"} spacing={2}>
+            {/* {isAirportTravel && (
+              <Alert severity="info" variant="outlined">
+                Airport add-ons: pickup preferences are loaded from{" "}
+                <strong>/api/v1/airport/pickup-preference</strong>, additional
+                stops from <strong>/api/v1/additional-stops</strong> (same as new
+                bookings). Gratuity options are on the last step from{" "}
+                <strong>/api/v1/gratuities</strong>.
+              </Alert>
+            )} */}
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DemoContainer components={["DatePicker", "TimePicker"]}>
                 <DatePicker
@@ -708,17 +726,19 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
                 </FormLabel>
                 <RadioGroup
                   row
-                  defaultValue={1}
                   name="pickupPreference"
                   onBlur={formik.handleBlur}
                   label="Special pickupPreferences"
-                  value={formik.values.pickupPreference}
+                  value={String(formik.values.pickupPreference ?? "")}
                   onChange={(e) => {
-                    formik.setFieldValue("pickupPreference", e.target.value);
-                    const prefFee = parseFloat(
-                      preferences[e.target.name].preferencePrice
+                    const id = e.target.value;
+                    formik.setFieldValue("pickupPreference", id);
+                    const pref = preferences.find(
+                      (p) => String(p.pickupPreferenceId) === String(id)
                     );
-                    const prevPrefFee = formik.values.prevPickupPrefValue;
+                    if (!pref) return;
+                    const prefFee = parseFloat(pref.preferencePrice);
+                    const prevPrefFee = parseFloat(formik.values.prevPickupPrefValue) || 0;
                     dispatch(addAirportPreferenceFee({ prefFee, prevPrefFee }));
                     formik.setFieldValue("prevPickupPrefValue", prefFee);
                     formik.setFieldValue("pickupPreferenceFee", prefFee);
@@ -732,11 +752,10 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
                     formik.errors.pickupPreference
                   }
                 >
-                  {preferences?.map((preference, key) => (
+                  {preferences?.map((preference) => (
                     <FormControlLabel
                       key={preference.pickupPreferenceId}
-                      value={preference.pickupPreferenceId}
-                      name={key}
+                      value={String(preference.pickupPreferenceId)}
                       control={<RSRadio />}
                       label={`${preference.preferenceName} ($${preference.preferencePrice})`}
                     />
@@ -822,6 +841,11 @@ function Index({ formik, vehicleSummaryData, rideSummaryData }) {
                         <RadioGroup
                           aria-labelledby="demo-radio-buttons-group-label"
                           name="radio-buttons-group"
+                          value={
+                            formik.values.additionalStopId
+                              ? String(formik.values.additionalStopId)
+                              : ""
+                          }
                           onChange={handleStopOnWayChange}
                         >
                           {additionalStopsOnTheWay.map((stopOnWay) => {

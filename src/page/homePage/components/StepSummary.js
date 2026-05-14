@@ -9,11 +9,12 @@ function StepSummary({
   tripSummaryData,
   contactSummaryData,
   screenType,
+  travelRouteId,
 }) {
   const theme = useTheme();
   const location = useLocation();
   const tripType = rideSummaryData.tripType;
-  var travelType = location.pathname.split("/").pop();
+  var travelType = travelRouteId ?? location.pathname.split("/").pop();
   const isAirportTravel = travelType == "1";
   const isPointToPointTravel = travelType == "2";
   const isHourlyTravel = travelType == "3";

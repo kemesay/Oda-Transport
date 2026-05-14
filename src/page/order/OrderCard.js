@@ -2,8 +2,6 @@ import * as React from "react";
 import { styled } from "@mui/material/styles";
 import {
   Card,
-  Collapse,
-  IconButton,
   CardActions,
   CardContent,
   CardMedia,
@@ -13,9 +11,13 @@ import {
   Box,
   Divider,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { 
-  MdExpandMore, MdAccessTime, MdLocationOn, MdPerson, 
+  MdAccessTime, MdLocationOn, MdPerson, 
   MdFlight, MdConfirmationNumber, MdPayments, MdEmail, MdPhone,
   MdDescription, MdAddLocation, MdSchedule, MdEventAvailable,
 } from "react-icons/md";
@@ -89,17 +91,6 @@ const InfoItem = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(1),
 }));
 
-const ExpandMore = styled((props) => {
-  const { expand, ...other } = props;
-  return <IconButton {...other} />;
-})(({ theme, expand }) => ({
-  transform: !expand ? "rotate(0deg)" : "rotate(180deg)",
-  marginLeft: "auto",
-  transition: theme.transitions.create("transform", {
-    duration: theme.transitions.duration.shortest,
-  }),
-}));
-
 const DetailSection = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(2),
   padding: theme.spacing(2),
@@ -133,7 +124,6 @@ export default function OrderCard(props) {
     tripType,
     numberOfPassengers,
     pickupDateTime,
-    returnPickupDateTime,
     distanceInMiles,
     passengerFullName,
     passengerCellPhone,
@@ -141,7 +131,6 @@ export default function OrderCard(props) {
     bookingFor,
     specialInstructions,
     paymentStatus,
-    createdAt,
     pickupPhysicalAddress,
     dropoffPhysicalAddress,
     additionalStopOnTheWayDescription,
@@ -152,11 +141,10 @@ export default function OrderCard(props) {
     returnFlightNumber,
     selectedHours,
     occasion,
-    numberOfSuitcases,
     Car,
   } = props.order;
 
-  const [expanded, setExpanded] = React.useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
   const navigate = useNavigate();
 
   const formatDateTime = (dateTimeStr) => {
@@ -379,6 +367,8 @@ export default function OrderCard(props) {
             </Stack>
           </DetailSection>
         );
+      default:
+        return null;
     }
   };
 
@@ -496,36 +486,57 @@ export default function OrderCard(props) {
       <Divider sx={{ margin: '0 16px' }} />
 
       <CardActions disableSpacing>
-        {/* <ActionButton
-          startIcon={<MdEdit />}
+        <ActionButton
           onClick={handleUpdateBooking}
-          disabled={bookingStatus === 'cancelled'}
+          disabled={isCompleted}
         >
           Update Booking
-        </ActionButton> */}
-        <Typography variant="body2" color="text.secondary">
-          View Details
-        </Typography>
-        <ExpandMore
-          expand={expanded}
-          onClick={() => setExpanded(!expanded)}
-          aria-expanded={expanded}
-          aria-label="show more"
-          sx={{ color: '#03930A' }}
+        </ActionButton>
+        <Button
+          variant="text"
+          onClick={() => setIsDetailsOpen(true)}
+          sx={{ color: '#03930A', fontWeight: 600 }}
         >
-          <MdExpandMore />
-        </ExpandMore>
+          View Details
+        </Button>
       </CardActions>
 
-      <Collapse in={expanded} timeout="auto" unmountOnExit>
-        <CardContent>
+      <Dialog
+        open={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle sx={{ color: '#03930A', fontWeight: 700 }}>
+          {travelType} Booking Details
+        </DialogTitle>
+        <DialogContent dividers>
           <Stack spacing={3}>
             {renderCommonDetails()}
             {renderContactDetails()}
             {renderTravelDetails()}
           </Stack>
-        </CardContent>
-      </Collapse>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setIsDetailsOpen(false)} variant="outlined">
+            Close
+          </Button>
+          <Button
+            onClick={() => {
+              setIsDetailsOpen(false);
+              handleUpdateBooking();
+            }}
+            variant="contained"
+            disabled={isCompleted}
+            sx={{
+              bgcolor: '#03930A',
+              '&:hover': { bgcolor: '#027508' },
+            }}
+          >
+            Update Booking
+          </Button>
+        </DialogActions>
+      </Dialog>
     </StyledCard>
   );
 }

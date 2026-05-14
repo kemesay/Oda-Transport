@@ -13,8 +13,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDispatch } from "react-redux";
 import { BACKEND_API } from '../../store/utils/API';
 import { authHeader } from '../../util/authUtil';
 import { useFormik } from 'formik';
@@ -25,7 +25,22 @@ import RideDetailForm from '../homePage/components/rideDetailForm';
 import VehicleForm from '../homePage/components/chooseVehicleForm';
 import TripDetailForm from '../homePage/components/tripDetail';
 import ContactDetailForm from '../homePage/components/contactDetailForm';
-import { updateBooking } from '../../store/actions/bookActions';
+import {
+  mapApiBookingToFormik,
+  travelTypeToRouteId,
+  resolveCarIdFromApi,
+} from "./mapApiBookingToFormik";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import { getAllCars } from "../../store/actions/carAction";
+import { getExtraOptions } from "../../store/actions/extraOptions";
+import { updateCars } from "../../store/reducers/carReducer";
+import { updateExtraOption } from "../../store/reducers/extraOptionReducer";
+import { store } from "../../store";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const UpdateContainer = styled(Container)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -56,6 +71,7 @@ function UpdateBooking() {
   const dispatch = useDispatch();
   const [activeStep, setActiveStep] = useState(0);
   const [bookingData, setBookingData] = useState(null);
+  const [travelRouteId, setTravelRouteId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [locationChecker, setLocationChecker] = useState({
@@ -138,34 +154,170 @@ function UpdateBooking() {
       securityCode: '',
       isGuestBooking: false,
       entryOptionSelected: false,
+      cardDetails: {
+        cardOwnerName: '',
+        creditCardNumber: '',
+        expirationDate: '',
+        securityCode: '',
+        zipCode: '',
+      },
+      /** Set from GET when updating; used to highlight the booked car if `vehicle` is ever cleared. */
+      originalCarIdFromBooking: null,
     },
     validationSchema: Yup.object({
-      // Add your validation schema here
-      vehicle: Yup.string().required('Vehicle selection is required'),
+      vehicle: Yup.mixed().required('Vehicle selection is required'),
       numberOfPassengers: Yup.number().required('Number of passengers is required'),
-      // ... add other validations as needed
     }),
     onSubmit: async (values) => {
       try {
         setLoading(true);
+        const travelType = (bookingData?.travelType || "").toLowerCase();
+
+        const tz = dayjs.tz.guess();
+        const formatPatchDateTime = (values, isoFallback) => {
+          if (values?.formattedPickupDate && values?.formattedPickupTime) {
+            return `${values.formattedPickupDate} ${values.formattedPickupTime}`;
+          }
+          if (isoFallback) {
+            return dayjs(isoFallback).tz(tz).format("YYYY-MM-DD HH:mm:ss");
+          }
+          return "";
+        };
+
+        const formatReturnPatchDateTime = (values, isoFallback) => {
+          if (values?.formattedReturnPickupDate && values?.formattedReturnPickupTime) {
+            return `${values.formattedReturnPickupDate} ${values.formattedReturnPickupTime}`;
+          }
+          if (isoFallback) {
+            return dayjs(isoFallback).tz(tz).format("YYYY-MM-DD HH:mm:ss");
+          }
+          return "";
+        };
+
+        const extraOptions = Array.isArray(values.extraOptions)
+          ? values.extraOptions
+              .map((o) => ({
+                extraOptionId: o.extraOptionId,
+                quantity: o.quantity,
+              }))
+              .filter((o) => o.extraOptionId && o.quantity)
+          : [];
+
         let endpoint;
-        switch (bookingData.travelType.toLowerCase()) {
-          case 'airport':
-            endpoint = `/api/v1/airport-books/${bookingData.bookId}`;
-            break;
-          case 'hourly':
-            endpoint = `/api/v1/hourly-charter-books/${bookingData.bookId}`;
-            break;
-          case 'point to point':
-            endpoint = `/api/v1/point-to-point-books/${bookingData.bookId}`;
-            break;
-          default:
-            throw new Error('Invalid booking type');
+        let body;
+
+        if (travelType === "airport") {
+          endpoint = `/api/v1/users/bookings/mine/airport/${bookingData.bookId}`;
+          body = {
+            tripType: values.tripType,
+            airportLocationAddress: values.airportLocationAddress,
+            airportLocationLatitude: Number(values.airportLocationLatitude),
+            airportLocationLongitude: Number(values.airportLocationLongitude),
+            numberOfPassengers: Number(values.numberOfPassengers),
+            numberOfSuitcases: Number(values.numberOfSuitcases),
+            accommodationAddress: values.accommodationAddress,
+            accommodationLongitude: Number(values.accommodationLongitude),
+            accommodationLatitude: Number(values.accommodationLatitude),
+            airline: values.airline,
+            arrivalFlightNumber: values.arrivalFlightNumber,
+            specialInstructions: values.instruction,
+            pickupDateTime: formatPatchDateTime(values, bookingData?.pickupDateTime),
+            distanceInMiles: Number(values.distanceInMiles),
+            carId: Number(values.vehicle),
+            gratuityId: Number(values.gratuityId),
+            bookingFor: values.bookingFor,
+            passengerFullName: values.passengerFullName,
+            passengerCellPhone: values.passengerCellPhone,
+            passengerEmail: values.email,
+            pickupPreferenceId: Number(values.pickupPreference),
+          };
+
+          // Optional fields (match create-booking behavior)
+          if (values.additionalStopId && Number(values.additionalStopId) !== 0) {
+            body.additionalStopId = Number(values.additionalStopId);
+            body.additionalStopOnTheWayDescription = values.additionalStopOnTheWayDescription;
+          }
+
+          const returnTrip =
+            values.tripType === "Ride from the airport(round trip)" ||
+            values.tripType === "Ride to the airport(round trip)";
+          if (returnTrip) {
+            body.returnPickupDateTime = formatReturnPatchDateTime(
+              values,
+              bookingData?.returnPickupDateTime
+            );
+            if (values.returnAirline) body.returnAirline = values.returnAirline;
+            if (values.returnFlightNumber) {
+              body.returnFlightNumber = values.returnFlightNumber;
+            }
+          }
+
+          if (extraOptions.length > 0) body.extraOptions = extraOptions;
+        } else if (travelType === "point to point") {
+          endpoint = `/api/v1/users/bookings/mine/p2p/${bookingData.bookId}`;
+          body = {
+            tripType: values.tripType,
+            pickupPhysicalAddress: values.pickupPhysicalAddress,
+            pickupLongitude: Number(values.pickupLongitude),
+            pickupLatitude: Number(values.pickupLatitude),
+            dropoffPhysicalAddress: values.dropoffPhysicalAddress,
+            dropoffLongitude: Number(values.dropoffLongitude),
+            dropoffLatitude: Number(values.dropoffLatitude),
+            distanceInMiles: Number(values.distanceInMiles),
+            numberOfPassengers: Number(values.numberOfPassengers),
+            numberOfSuitcases: Number(values.numberOfSuitcases),
+            pickupDateTime: formatPatchDateTime(values, bookingData?.pickupDateTime),
+            specialInstructions: values.instruction,
+            bookingFor: values.bookingFor,
+            passengerFullName: values.passengerFullName,
+            passengerEmail: values.email,
+            passengerCellPhone: values.passengerCellPhone,
+            carId: Number(values.vehicle),
+            gratuityId: Number(values.gratuityId),
+          };
+
+          if (values.tripType === "Round-Trip") {
+            body.returnPickupDateTime = formatReturnPatchDateTime(
+              values,
+              bookingData?.returnPickupDateTime
+            );
+          }
+
+          if (values.additionalStopId && Number(values.additionalStopId) !== 0) {
+            body.additionalStopId = Number(values.additionalStopId);
+            body.additionalStopOnTheWayDescription = values.additionalStopOnTheWayDescription;
+          }
+
+          if (extraOptions.length > 0) body.extraOptions = extraOptions;
+        } else if (travelType === "hourly") {
+          endpoint = `/api/v1/users/bookings/mine/hourly/${bookingData.bookId}`;
+          body = {
+            pickupPhysicalAddress: values.pickupPhysicalAddress,
+            pickupLongitude: Number(values.pickupLongitude),
+            pickupLatitude: Number(values.pickupLatitude),
+            dropoffPhysicalAddress: values.dropoffPhysicalAddress,
+            dropoffLongitude: Number(values.dropoffLongitude),
+            dropoffLatitude: Number(values.dropoffLatitude),
+            selectedHours: Number(values.hour),
+            occasion: values.occation,
+            numberOfPassengers: Number(values.numberOfPassengers),
+            numberOfSuitcases: Number(values.numberOfSuitcases),
+            pickupDateTime: formatPatchDateTime(values, bookingData?.pickupDateTime),
+            specialInstructions: values.instruction,
+            bookingFor: values.bookingFor,
+            passengerFullName: values.passengerFullName,
+            passengerCellPhone: values.passengerCellPhone,
+            passengerEmail: values.email,
+            carId: Number(values.vehicle),
+            gratuityId: Number(values.gratuityId),
+          };
+        } else {
+          throw new Error("Invalid booking type");
         }
 
-        await BACKEND_API.put(endpoint, values, authHeader());
+        await BACKEND_API.patch(endpoint, body, authHeader());
         
-        navigate('/my-order', { 
+        navigate('/user/my-order', { 
           state: { 
             updateSuccess: true,
             message: 'Booking updated successfully!' 
@@ -183,48 +335,120 @@ function UpdateBooking() {
     try {
       setLoading(true);
       setError(null);
+      setTravelRouteId(null);
       let endpoint;
       switch (bookingType.toLowerCase()) {
-        case 'airport':
+        case "airport":
           endpoint = `/api/v1/airport-books/${bookingId}`;
           break;
-        case 'hourly':
+        case "hourly":
           endpoint = `/api/v1/hourly-charter-books/${bookingId}`;
           break;
-        case 'point to point':
+        case "point to point":
           endpoint = `/api/v1/point-to-point-books/${bookingId}`;
           break;
         default:
-          throw new Error('Invalid booking type');
+          throw new Error("Invalid booking type");
       }
 
       const response = await BACKEND_API.get(endpoint, authHeader());
-
       const d = response.data;
-      const detailedBookingData = {
+
+      const canonicalId =
+        d.airportBookId ??
+        d.pointToPointBookId ??
+        d.hourlyCharterBookId ??
+        bookingId;
+
+      const merged = {
         ...d,
         travelType: bookingType,
+        bookId: String(canonicalId),
         airportLocationAddress:
           d.airportLocationAddress ??
           d.Airport?.airportName ??
           d.Airport?.name ??
           "",
         airportLocationLatitude:
-          d.airportLocationLatitude ?? d.Airport?.latitude ?? d.Airport?.airportAddressLatitude ?? "",
+          d.airportLocationLatitude ??
+          d.Airport?.latitude ??
+          d.Airport?.airportAddressLatitude ??
+          "",
         airportLocationLongitude:
-          d.airportLocationLongitude ?? d.Airport?.longitude ?? d.Airport?.airportAddressLongitude ?? "",
-        hotel: d.accommodationAddress || d.hotel || formik.values.hotel,
+          d.airportLocationLongitude ??
+          d.Airport?.longitude ??
+          d.Airport?.airportAddressLongitude ??
+          "",
+        hotel: d.accommodationAddress || d.hotel || "",
       };
 
-      setBookingData(detailedBookingData);
-      formik.setValues({
-        ...formik.values,
-        ...detailedBookingData,
-        vehicle: detailedBookingData.carId,
-        vehicleName: detailedBookingData.Car?.carName ?? detailedBookingData.Car?.name,
+      const mapped = mapApiBookingToFormik(bookingType, merged);
+      const resolvedCarId = resolveCarIdFromApi(merged);
+
+      await dispatch(getAllCars()).unwrap();
+      const carsList = store.getState().carReducer.cars || [];
+      const selectedCarId = resolvedCarId || mapped.vehicle;
+      dispatch(
+        updateCars(
+          carsList.map((car) => ({
+            ...car,
+            isSelected: String(car.carId) === String(selectedCarId),
+          }))
+        )
+      );
+
+      await dispatch(getExtraOptions()).unwrap();
+      const catalog = store.getState().extraOptionReducer.extraOptions || [];
+      const chosen = mapped.extraOptions || [];
+      dispatch(
+        updateExtraOption(
+          catalog.map((opt) => {
+            const row = chosen.find(
+              (c) => Number(c.extraOptionId) === Number(opt.extraOptionId)
+            );
+            if (row && Number(row.quantity) > 0) {
+              return {
+                ...opt,
+                isSelected: true,
+                itemQuantity: Number(row.quantity),
+              };
+            }
+            return { ...opt, isSelected: false, itemQuantity: 0 };
+          })
+        )
+      );
+
+      setTravelRouteId(travelTypeToRouteId(bookingType));
+      setBookingData(merged);
+
+      formik.resetForm({
+        values: {
+          ...formik.initialValues,
+          ...mapped,
+          vehicle:
+            resolvedCarId !== "" && resolvedCarId != null
+              ? resolvedCarId
+              : mapped.vehicle !== "" && mapped.vehicle != null
+                ? mapped.vehicle
+                : "",
+          originalCarIdFromBooking:
+            resolvedCarId !== "" && resolvedCarId != null
+              ? resolvedCarId
+              : mapped.vehicle !== "" && mapped.vehicle != null
+                ? mapped.vehicle
+                : null,
+          cardDetails: {
+            ...formik.initialValues.cardDetails,
+            ...(mapped.cardDetails || {}),
+          },
+        },
       });
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to fetch booking details');
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to fetch booking details"
+      );
     } finally {
       setLoading(false);
     }
@@ -232,7 +456,7 @@ function UpdateBooking() {
 
   useEffect(() => {
     if (!location.state?.bookingData) {
-      navigate('/orders');
+      navigate('/user/my-order');
       return;
     }
     const { bookingData } = location.state;
@@ -248,8 +472,13 @@ function UpdateBooking() {
       isUnsupportedLocation: false,
       errorMessage: "",
     });
+    setAirportLocChecker({
+      isUnsupportedLocation: false,
+      errorMessage: "",
+    });
 
     fetchBookingDetails(travelType, bookingId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: re-run when `location` (state) changes
   }, [location]);
 
   const steps = ['Ride Details', 'Vehicle Selection', 'Trip Details', 'Contact Details'];
@@ -268,20 +497,28 @@ function UpdateBooking() {
     switch (step) {
       case 0:
         return (
-          <RideDetailForm 
+          <RideDetailForm
             formik={formik}
+            handleChangeTripType={() => {}}
+            selectedTripType={travelRouteId}
             locationChecker={locationChecker}
             setLocationCkecker={setLocationChecker}
             accomAddrChecker={accomAddrChecker}
             setAccomAddrChecker={setAccomAddrChecker}
             airportLocChecker={airportLocChecker}
             setAirportLocChecker={setAirportLocChecker}
+            travelRouteId={travelRouteId}
+            disableServiceTypeSwitch
           />
         );
       case 1:
         return (
-          <VehicleForm 
+          <VehicleForm
             formik={formik}
+            travelRouteId={travelRouteId}
+            updateBookingMode
+            hour={formik.values.hour}
+            distanceInMiles={formik.values.distanceInMiles}
             rideSummaryData={{
               tripType: formik.values.tripType,
               pickupPhysicalAddress: formik.values.pickupPhysicalAddress,
@@ -294,8 +531,9 @@ function UpdateBooking() {
         );
       case 2:
         return (
-          <TripDetailForm 
+          <TripDetailForm
             formik={formik}
+            travelRouteId={travelRouteId}
             vehicleSummaryData={[]}
             rideSummaryData={{
               tripType: formik.values.tripType,
@@ -309,8 +547,11 @@ function UpdateBooking() {
         );
       case 3:
         return (
-          <ContactDetailForm 
+          <ContactDetailForm
             formik={formik}
+            travelRouteId={travelRouteId}
+            skipAutoContactFill
+            hidePaymentSection
             vehicleSummaryData={[]}
             rideSummaryData={{
               tripType: formik.values.tripType,
@@ -326,20 +567,6 @@ function UpdateBooking() {
       default:
         return null;
     }
-  };
-
-  const handleChangeTripType = (event) => {
-    const travelType = event.target.value;
-    formik.setFieldValue('travelType', travelType);
-    // Reset location checkers when travel type changes
-    setLocationChecker({
-      isUnsupportedLocation: false,
-      errorMessage: "",
-    });
-    setAccomAddrChecker({
-      isUnsupportedLocation: false,
-      errorMessage: "",
-    });
   };
 
   if (loading) {
@@ -360,7 +587,7 @@ function UpdateBooking() {
           severity="error" 
           sx={{ mb: 2 }}
           action={
-            <Button color="inherit" size="small" onClick={() => navigate('/my-order')}>
+            <Button color="inherit" size="small" onClick={() => navigate('/user/my-order')}>
               Return to Orders
             </Button>
           }
