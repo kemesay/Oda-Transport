@@ -37,7 +37,16 @@ import { getAllCars } from "../../store/actions/carAction";
 import { getExtraOptions } from "../../store/actions/extraOptions";
 import { updateCars } from "../../store/reducers/carReducer";
 import { updateExtraOption } from "../../store/reducers/extraOptionReducer";
+import { updateTotalFee } from "../../store/reducers/bookReducers";
 import { store } from "../../store";
+import useLiveBookingServiceFee from "../../hooks/useLiveBookingServiceFee";
+import {
+  calculateServiceFee,
+  sumExtraOptionFeePerLeg,
+  computeGratuityOnCarFare,
+  getLegCarPrice,
+  vehicleRatesFromCar,
+} from "../../utils/bookingFeeCalculator";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -144,6 +153,7 @@ function UpdateBooking() {
       email: '',
       bookingFor: 'Myself',
       gratuityId: 1,
+      gratuityPercentage: 0,
       prevGratuityFee: 0,
       gratuityFee: 0,
       isValidCardInfo: false,
@@ -418,31 +428,78 @@ function UpdateBooking() {
         )
       );
 
-      setTravelRouteId(travelTypeToRouteId(bookingType));
+      const routeId = travelTypeToRouteId(bookingType);
+      setTravelRouteId(routeId);
       setBookingData(merged);
+
+      const car = carsList.find((c) => String(c.carId) === String(selectedCarId));
+      const vehiclePatch = vehicleRatesFromCar(car, routeId) || {};
+      const extraOptionFeeSynced = sumExtraOptionFeePerLeg(
+        mapped.extraOptions,
+        catalog
+      );
+
+      const nextVehicle =
+        resolvedCarId !== "" && resolvedCarId != null
+          ? resolvedCarId
+          : mapped.vehicle !== "" && mapped.vehicle != null
+            ? mapped.vehicle
+            : "";
+      const originalCar =
+        resolvedCarId !== "" && resolvedCarId != null
+          ? resolvedCarId
+          : mapped.vehicle !== "" && mapped.vehicle != null
+            ? mapped.vehicle
+            : null;
+
+      const mergedForm = {
+        ...formik.initialValues,
+        ...mapped,
+        ...vehiclePatch,
+        extraOptionFee: extraOptionFeeSynced,
+        vehicle: nextVehicle,
+        originalCarIdFromBooking: originalCar,
+        cardDetails: {
+          ...formik.initialValues.cardDetails,
+          ...(mapped.cardDetails || {}),
+        },
+      };
+
+      const feeBase = {
+        travelRouteId: routeId,
+        tripType: mergedForm.tripType,
+        vehicleFee: mergedForm.vehicleFee,
+        minimumStartFee: mergedForm.minimumStartFee,
+        extraOptionFee: mergedForm.extraOptionFee,
+        distanceInMiles: mergedForm.distanceInMiles,
+        hour: mergedForm.hour,
+        stopOnWayFee: mergedForm.stopOnWayFee,
+        pickupPreferenceFee: mergedForm.pickupPreferenceFee,
+      };
+      const gratuityPercentage =
+        merged.Gratuity?.percentage != null
+          ? Number(merged.Gratuity.percentage)
+          : Number(mergedForm.gratuityPercentage) || 0;
+      const legCar = getLegCarPrice(routeId, feeBase);
+      const gratuityFee =
+        gratuityPercentage > 0
+          ? computeGratuityOnCarFare(legCar, gratuityPercentage, mergedForm.tripType)
+          : 0;
 
       formik.resetForm({
         values: {
-          ...formik.initialValues,
-          ...mapped,
-          vehicle:
-            resolvedCarId !== "" && resolvedCarId != null
-              ? resolvedCarId
-              : mapped.vehicle !== "" && mapped.vehicle != null
-                ? mapped.vehicle
-                : "",
-          originalCarIdFromBooking:
-            resolvedCarId !== "" && resolvedCarId != null
-              ? resolvedCarId
-              : mapped.vehicle !== "" && mapped.vehicle != null
-                ? mapped.vehicle
-                : null,
-          cardDetails: {
-            ...formik.initialValues.cardDetails,
-            ...(mapped.cardDetails || {}),
-          },
+          ...mergedForm,
+          gratuityPercentage,
+          gratuityFee,
+          prevGratuityFee: gratuityFee,
         },
       });
+
+      dispatch(
+        updateTotalFee(
+          calculateServiceFee({ ...feeBase, gratuityPercentage, gratuityFee })
+        )
+      );
     } catch (error) {
       setError(
         error.response?.data?.message ||
@@ -477,9 +534,26 @@ function UpdateBooking() {
       errorMessage: "",
     });
 
+    dispatch(updateTotalFee(0));
     fetchBookingDetails(travelType, bookingId);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: re-run when `location` (state) changes
   }, [location]);
+
+  const v = formik.values;
+  useLiveBookingServiceFee({
+    enabled: Boolean(bookingData && travelRouteId),
+    travelRouteId,
+    tripType: v.tripType,
+    vehicleFee: v.vehicleFee,
+    minimumStartFee: v.minimumStartFee,
+    extraOptionFee: v.extraOptionFee,
+    distanceInMiles: v.distanceInMiles,
+    hour: v.hour,
+    stopOnWayFee: v.stopOnWayFee,
+    pickupPreferenceFee: v.pickupPreferenceFee,
+    gratuityFee: v.gratuityFee,
+    gratuityPercentage: v.gratuityPercentage,
+  });
 
   const steps = ['Ride Details', 'Vehicle Selection', 'Trip Details', 'Contact Details'];
 

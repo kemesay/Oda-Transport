@@ -9,6 +9,10 @@ import { authHeader } from "../../../../util/authUtil";
 import { useDispatch, useSelector } from "react-redux";
 import { adGratitudeFee } from "../../../../store/reducers/bookReducers";
 import PaymentMethodSelector from '../paymentMethodSelector';
+import {
+  computeGratuityOnCarFare,
+  getLegCarPrice,
+} from "../../../../utils/bookingFeeCalculator";
 
 function Index({
   formik,
@@ -30,6 +34,19 @@ function Index({
   const dispatch = useDispatch();
 
   const { isAuthenticated } = useSelector((state) => state.authReducer);
+
+  const tripType = rideSummaryData?.tripType ?? formik.values.tripType;
+  const legCarPriceForTip = () =>
+    getLegCarPrice(travelRouteId, {
+      vehicleFee: formik.values.vehicleFee,
+      minimumStartFee: formik.values.minimumStartFee,
+      distanceInMiles:
+        formik.values.distanceInMiles ?? rideSummaryData?.distanceInMiles,
+      hour: formik.values.hour ?? rideSummaryData?.hour,
+    });
+
+  const tipDollarsForPercentage = (percentage) =>
+    computeGratuityOnCarFare(legCarPriceForTip(), percentage, tripType);
 
   // Function to fetch user's payment cards
   const fetchUserPaymentCards = async () => {
@@ -76,9 +93,11 @@ function Index({
     const gratuityId = Number(e.target.value);
     const g = gratuities.find((x) => Number(x.gratuityId) === gratuityId);
     if (!g) return;
-    const newFee = parseFloat(g.gratuityFee) || 0;
+    const pct = Number(g.percentage) || 0;
+    const newFee = pct > 0 ? tipDollarsForPercentage(pct) : 0;
     const oldFee = parseFloat(formik.values.prevGratuityFee) || 0;
     formik.setFieldValue("gratuityId", gratuityId);
+    formik.setFieldValue("gratuityPercentage", pct);
     formik.setFieldValue("prevGratuityFee", newFee);
     formik.setFieldValue("gratuityFee", newFee);
     dispatch(adGratitudeFee(totalFee + newFee - oldFee));
@@ -87,11 +106,20 @@ function Index({
   const getGratitude = async () => {
     try {
       BACKEND_API.get("/api/v1/gratuities").then((res) => {
-        const gratuityData = res.data.map((gratuity, index) => ({
+        const gratuityData = res.data.map((gratuity) => ({
           ...gratuity,
-          gratuityFee: (totalFee * gratuity.percentage / 100).toFixed(2)
+          gratuityFee: tipDollarsForPercentage(gratuity.percentage).toFixed(2),
         }));
         setGratuity(gratuityData);
+        const selected = gratuityData.find(
+          (x) => Number(x.gratuityId) === Number(formik.values.gratuityId)
+        );
+        if (selected && Number(selected.percentage) > 0) {
+          const tip = tipDollarsForPercentage(selected.percentage);
+          formik.setFieldValue("gratuityPercentage", selected.percentage);
+          formik.setFieldValue("gratuityFee", tip);
+          formik.setFieldValue("prevGratuityFee", tip);
+        }
       });
     } catch (error) {
       console.log("unable to load gratitudes: ", error);
@@ -99,15 +127,25 @@ function Index({
   };
 
   useEffect(() => {
-    if (!totalFee) return;
+    if (!travelRouteId || !formik.values.vehicleFee) return;
     setGratuity((prev) => {
       if (!prev.length) return prev;
       return prev.map((g) => ({
         ...g,
-        gratuityFee: (totalFee * g.percentage / 100).toFixed(2),
+        gratuityFee: tipDollarsForPercentage(g.percentage).toFixed(2),
       }));
     });
-  }, [totalFee]);
+  }, [
+    travelRouteId,
+    tripType,
+    formik.values.vehicleFee,
+    formik.values.minimumStartFee,
+    formik.values.distanceInMiles,
+    formik.values.hour,
+    formik.values.extraOptionFee,
+    formik.values.stopOnWayFee,
+    formik.values.pickupPreferenceFee,
+  ]);
 
   useEffect(() => {
     if (!skipAutoContactFill) {

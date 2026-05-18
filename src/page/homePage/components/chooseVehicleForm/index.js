@@ -97,8 +97,7 @@ function Index({
     const updatedExtraOptions = extraOptions.map((option) => {
       if (selectedOptionId == option.extraOptionId) {
         const extraOptionFee = formik.values.extraOptionFee;
-        const priceMultiplier = isRoundTrip() ? 2 : 1;
-        const pricePerExtraOption = parseFloat(option.pricePerItem) * priceMultiplier;
+        const pricePerExtraOption = parseFloat(option.pricePerItem);
         
         formik.setFieldValue("extraOptionFee", extraOptionFee + pricePerExtraOption);
         dispatch(addExtraOptionFee(pricePerExtraOption));
@@ -116,8 +115,8 @@ function Index({
     const updatedExtraOptions = extraOptions.map((option) => {
       if (selectedOptionId == option.extraOptionId) {
         const extraOptionFee = formik.values.extraOptionFee;
-        const priceMultiplier = isRoundTrip() ? 2 : 1;
-        const pricePerExtraOption = parseFloat(option.pricePerItem) * option.itemQuantity * priceMultiplier;
+        const pricePerExtraOption =
+          parseFloat(option.pricePerItem) * option.itemQuantity;
         
         formik.setFieldValue("extraOptionFee", extraOptionFee - pricePerExtraOption);
         dispatch(reduceExtraOptionFee(pricePerExtraOption));
@@ -135,8 +134,7 @@ function Index({
     const updatedExtraOptions = extraOptions.map((option) => {
       if (selectedOptionId == option.extraOptionId) {
         const extraOptionFee = formik.values.extraOptionFee;
-        const priceMultiplier = isRoundTrip() ? 2 : 1;
-        const pricePerExtraOption = parseFloat(option.pricePerItem) * priceMultiplier;
+        const pricePerExtraOption = parseFloat(option.pricePerItem);
         
         formik.setFieldValue("extraOptionFee", extraOptionFee + pricePerExtraOption);
         dispatch(addExtraOptionFee(pricePerExtraOption));
@@ -155,8 +153,7 @@ function Index({
     const updatedExtraOptions = extraOptions.map((option) => {
       if (selectedOptionId == option.extraOptionId) {
         const extraOptionFee = formik.values.extraOptionFee;
-        const priceMultiplier = isRoundTrip() ? 2 : 1;
-        const pricePerExtraOption = parseFloat(option.pricePerItem) * priceMultiplier;
+        const pricePerExtraOption = parseFloat(option.pricePerItem);
         
         formik.setFieldValue("extraOptionFee", extraOptionFee - pricePerExtraOption);
         dispatch(reduceExtraOptionFee(pricePerExtraOption));

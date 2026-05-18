@@ -26,6 +26,7 @@ import GuestUser from "./components/GuestUser";
 import axios from "axios";
 import { addMinimumInitialFee, updateTotalFee } from "../../store/reducers/bookReducers";
 import { BACKEND_API } from "../../store/utils/API";
+import { calculateServiceFee } from "../../utils/bookingFeeCalculator";
 function Index() {
     const [activeStep, setActiveStep] = useState(0);
     const [selectedTripType, setSelectedTripType] = React.useState();
@@ -403,6 +404,7 @@ function Index() {
             isGuestBooking: false,
             entryOptionSelected: false,
             gratuityId: 1,
+            gratuityPercentage: 0,
             gratuityFee: 0,
             prevGratuityFee: 0,
             feeBeforeGratuity: 0,
@@ -756,35 +758,30 @@ function Index() {
     // };
 
     const feeCalculator = () => {
+        const { vehicleFee, minimumStartFee, extraOptionFee } =
+            formikChooseVehicle.values;
+        const { distanceInMiles, hour, tripType } = formikRideInfo.values;
+        const { stopOnWayFee, pickupPreferenceFee } = formikTripDetail.values;
+        const { gratuityFee, gratuityPercentage } = formikContact.values;
 
-        var totalFee = 0
-
-        const { vehicleFee,
-            minimumStartFee,
-            extraOptionFee } = formikChooseVehicle.values
-
-        const { distanceInMiles, hour } = formikRideInfo.values
-
-        const { stopOnWayFee, pickupPreferenceFee } = formikTripDetail.values
-        const gratuityFee = formikContact.values.gratuityFee
-        if (travelType === "1" || travelType === "2") {
-            if (isRoundTrip()) {
-                totalFee = totalFee + vehicleFee * distanceInMiles * 2
-            } else {
-                totalFee = totalFee + vehicleFee * distanceInMiles
-            }
-
-        } else if (travelType === "3") {
-            totalFee = totalFee + vehicleFee * hour;
-        }
-        const totalMinFee = isRoundTrip() ? minimumStartFee * 2 : minimumStartFee
-        totalFee =
-            totalFee + extraOptionFee + totalMinFee +
-            stopOnWayFee + pickupPreferenceFee + gratuityFee;
-
-        dispatch(updateTotalFee(totalFee));
-
-    }
+        dispatch(
+            updateTotalFee(
+                calculateServiceFee({
+                    travelRouteId: travelType,
+                    tripType,
+                    vehicleFee,
+                    minimumStartFee,
+                    extraOptionFee,
+                    distanceInMiles,
+                    hour,
+                    stopOnWayFee,
+                    pickupPreferenceFee,
+                    gratuityFee,
+                    gratuityPercentage,
+                })
+            )
+        );
+    };
 
     useEffect(() => {
         feeCalculator()

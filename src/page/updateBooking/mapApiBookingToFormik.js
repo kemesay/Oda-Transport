@@ -83,6 +83,7 @@ export function mapApiBookingToFormik(travelTypeLabel, d) {
     passengerCellPhone: d.passengerCellPhone ?? "",
     email: d.passengerEmail ?? "",
     gratuityId: Number(d.gratuityId ?? 1),
+    gratuityPercentage: Number(d.Gratuity?.percentage ?? 0),
     isGuestBooking: Boolean(d.isGuestBooking),
     paymentMethod: d.paymentMethod ?? "",
     paymentDetailId: d.paymentDetailId ? Number(d.paymentDetailId) : 0,
