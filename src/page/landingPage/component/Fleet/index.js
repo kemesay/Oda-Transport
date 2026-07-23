@@ -15,8 +15,8 @@ const FleetContainer = styled(Container)(({ theme }) => ({
 
 const FleetHeader = styled(Box)(({ theme }) => ({
   textAlign: 'center',
-  color: '#03930A',
-  marginBottom: theme.spacing(8),
+  color: '#ffffff',
+  marginBottom: theme.spacing(6),
 }));
 
 const CarouselContainer = styled(Box)(({ theme }) => ({
@@ -248,20 +248,50 @@ export default function Fleet() {
       >
         <FleetHeader>
           <Typography
+            sx={{
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              letterSpacing: '3px',
+              textTransform: 'uppercase',
+              color: '#4CB051',
+              mb: 1,
+            }}
+          >
+            Our Vehicles
+          </Typography>
+          <Typography
             variant="h4"
-            fontWeight="600"
-            sx={{ mb: 2 }}
+            fontWeight="700"
+            sx={{
+              mb: 1.5,
+              color: '#ffffff',
+              position: 'relative',
+              display: 'inline-block',
+              '&::after': {
+                content: '""',
+                display: 'block',
+                width: '56px',
+                height: '3px',
+                background: 'linear-gradient(90deg, #03930A, #4CB051)',
+                borderRadius: '2px',
+                margin: '10px auto 0',
+              },
+            }}
           >
             Our Fleet
           </Typography>
           <Typography
-            variant="h6"
-            color="text.white"
-
-            sx={{ maxWidth: 800, mx: 'auto', color: 'white'}}
+            sx={{
+              maxWidth: 620,
+              mx: 'auto',
+              color: 'rgba(255,255,255,0.6)',
+              fontSize: '1.05rem',
+              lineHeight: 1.7,
+              mt: 2,
+            }}
           >
-            Explore our diverse range of premium vehicles designed to meet your
-            transportation needs with style and comfort.
+            Explore our range of premium vehicles — each maintained to the
+            highest standard for your comfort and safety.
           </Typography>
         </FleetHeader>
 
@@ -429,24 +459,26 @@ export default function Fleet() {
                 <ChevronRight sx={{ fontSize: 28 }} />
               </NavigationButton>
 
-              {/* Add swipe indicator for mobile */}
+              {/* Dot indicators — visible on all screen sizes */}
               <Box
                 sx={{
-                  display: { xs: 'flex', sm: 'none' },
+                  display: 'flex',
                   justifyContent: 'center',
-                  mt: 2,
+                  mt: 3,
                   gap: 1,
                 }}
               >
                 {cars.map((_, index) => (
                   <Box
                     key={index}
+                    onClick={() => { if (!isAnimating) { setDirection(index > currentIndex ? 'right' : 'left'); setCurrentIndex(index); } }}
                     sx={{
-                      width: 8,
+                      width: index === currentIndex ? 24 : 8,
                       height: 8,
-                      borderRadius: '50%',
-                      backgroundColor: index === currentIndex ? '#03930A' : '#E0E0E0',
-                      transition: 'all 0.3s ease',
+                      borderRadius: index === currentIndex ? '4px' : '50%',
+                      backgroundColor: index === currentIndex ? '#03930A' : 'rgba(255,255,255,0.25)',
+                      transition: 'all 0.35s ease',
+                      cursor: 'pointer',
                     }}
                   />
                 ))}

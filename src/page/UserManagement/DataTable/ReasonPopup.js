@@ -9,6 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { BACKEND_API } from "../../../store/utils/API";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
+import { adminApproveBookingType } from "../../../utils/bookingTypeMap";
 
 
 export default function ReasonPopup({
@@ -32,7 +33,7 @@ export default function ReasonPopup({
        endpoint,
         {
           bookingId: bookingId,
-          bookingType: bookingType.toUpperCase(),
+          bookingType: adminApproveBookingType(bookingType),
           action: "REJECTED",
           rejectionReason: reason,
         }

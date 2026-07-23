@@ -13,7 +13,6 @@ import {
   Chip,
 } from "@mui/material";
 import ReasonPopup from "../../ReasonPopup";
-import PaymentStatusPopup from "../../PaymentStatus";
 import BookingStatusPoup from "../../BookingStatus";
 import DiscountPopup from "../../discountpopup"; // Import DiscountPopup
 import { BACKEND_API } from "../../../../../store/utils/API";
@@ -21,6 +20,10 @@ import { ToastContainer, toast } from "react-toastify";
 import axios from "axios";
 import useGetData from "../../../../../store/hooks/useGetData";
 import { calculateDistance, formatDuration } from "../../../../../util/dateUtil";
+import useBookingPaymentRealtime from "../../../../../hooks/useBookingPaymentRealtime";
+import useAdminTakePayment from "../../../../../hooks/useAdminTakePayment";
+import { getPaymentStatusBackgroundColor } from "../../../../../constants/paymentStatusColors";
+import { fareBreakdownFromBooking } from "../../../../../utils/fareBreakdownFromBooking";
 
 const Field = ({ label, value, direction = { xs: "column", sm: "row" }, sx }) => {
   return (
@@ -152,7 +155,6 @@ const ViewBookDetail = () => {
   };
 
   const endpoint = `/api/v1/admin/bookings/approve`;
-  const paymentendpoint = `/api/v1/admin/bookings/update-payment-status`;
   const detailendpoint = `/api/v1/airport-books/${airportBookId}`;
 
   const handleAcceptBook = React.useCallback(async () => {
@@ -175,36 +177,8 @@ const ViewBookDetail = () => {
     }
   }, [endpoint, airportBookId]);
 
-  const handleAcceptPayment = React.useCallback(async () => {
-    try {
-      const response = await BACKEND_API.post(paymentendpoint, {
-        bookingId: airportBookId,
-        bookingType: "AIRPORT",
-      });
-
-      if (response.status === 200 || response.status === 201) {
-        toast.success(response?.data?.message || `Payment Taken successfully!`, {
-          autoClose: 6000,
-        });
-      }
-    } catch (error) {
-      toast.error(error?.response?.data?.message || " Network error...", {});
-    } finally {
-      setLoading(false);
-    }
-  }, [paymentendpoint, airportBookId]);
-
-  const getBackgroundColorforpayment = React.useCallback((paymentStatus) => {
-    switch (paymentStatus) {
-      case "PAID":
-        return "green";
-      case "CANCELLED":
-        return "red";
-      case "DISCOUNT_APPLIED": // New color for discount applied status
-        return "blue";
-      default:
-        return "orange";
-    }
+  const getBackgroundColorforpayment = React.useCallback((status) => {
+    return getPaymentStatusBackgroundColor(status);
   }, []);
 
   const getBackgroundColorforbooking = React.useCallback((bookingStatus) => {
@@ -223,6 +197,26 @@ const ViewBookDetail = () => {
   }, []);
 
   const { data: response, isLoading: isLoadingGet, isError: isErrorGet, isFetching: isFetchingTax, error: errorGet } = useGetData(detailendpoint, { enabled: !!airportBookId });
+
+  const { paymentStatus: livePaymentStatus } = useBookingPaymentRealtime({
+    travelType: "Airport",
+    bookingId: airportBookId,
+    initialPaymentStatus: response?.paymentStatus || paymentStatus,
+    admin: true,
+    enabled: !!airportBookId,
+  });
+  const displayPaymentStatus = livePaymentStatus || response?.paymentStatus || paymentStatus;
+  const displayBookingStatus = response?.bookingStatus || bookingStatus;
+
+  const { takePayment, takingPayment, canTake, hint: takePaymentHint } =
+    useAdminTakePayment({
+      bookingId: airportBookId,
+      bookingType: "AIRPORT",
+      paymentStatus: displayPaymentStatus,
+      bookingStatus: displayBookingStatus,
+    });
+
+  const handleAcceptPayment = takePayment;
 
   if (!airportBookId) {
     navigate('/dashboard/airport-books', { state: { error: 'Airport booking ID not provided.' } });
@@ -284,7 +278,7 @@ const ViewBookDetail = () => {
               <Box
                 sx={{
                   color: "white",
-                  backgroundColor: getBackgroundColorforpayment(response?.paymentStatus || paymentStatus),
+                  backgroundColor: getBackgroundColorforpayment(displayPaymentStatus),
                   border: "1px solid",
                   padding: "8px 12px",
                   borderRadius: "4px",
@@ -293,10 +287,17 @@ const ViewBookDetail = () => {
                   fontWeight: "bold",
                 }}
               >
-                Payment Status: {response?.paymentStatus || paymentStatus}
+                Payment Status: {displayPaymentStatus}
                 {response?.hasDiscountApplied && " (Discount Applied)"}
               </Box>
             </Grid>
+            {takePaymentHint && (
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "center" }}>
+                  {takePaymentHint}
+                </Typography>
+              </Grid>
+            )}
             <Grid item xs={12} sm={6}>
               <Box
                 sx={{
@@ -351,37 +352,54 @@ const ViewBookDetail = () => {
             <Grid container spacing={2} mt={1} pl={2} pr={2}>
               {/* Calculate values */}
               {(() => {
-                const initialBaseFare = parseFloat(response?.totalTripFeeInDollars || totalTripFeeInDollars || 0);
-                const discount = parseFloat(response?.discountAmountInDollars || 0);
-                const childCarSeatFee = 0.00; // Constant value
-                const airportPickupPreferenceFee = parseFloat(response?.AirportPickupPreference?.preferencePrice || 0);
-                const additionalStopOnTheWayFee = parseFloat(response?.AdditionalStopOnTheWay?.additionalStopPrice || 0);
-                let originalFare1 = 0;
-                let originalFare = 0;
-                let calculatedGratuity = 0;
-                if (response?.Gratuity?.percentage !== undefined) {
-                  const gratuityPercentage = parseFloat(response.Gratuity.percentage) / 100;
-                  originalFare1 = initialBaseFare - (airportPickupPreferenceFee + additionalStopOnTheWayFee + childCarSeatFee);
-
-                  originalFare = originalFare1 / (1 + gratuityPercentage);
-                  calculatedGratuity = originalFare * gratuityPercentage;
-                }
-
-                const fareAfterDiscount = originalFare;
-                const totalFare = fareAfterDiscount + airportPickupPreferenceFee + additionalStopOnTheWayFee + calculatedGratuity + childCarSeatFee;
-                return (
-                  <>
-                    <Field label="Fare" value={`$${fareAfterDiscount.toFixed(2)}`} />
-                    <Field label="Child Car Seat Fee" value={`$${childCarSeatFee.toFixed(2)}`} />
-                    <Field label="Airport Pickup Preference Fee" value={`$${airportPickupPreferenceFee.toFixed(2)}`} />
-                    {response?.discountAmountInDollars && <Field label="Discount Amount" value={`$${discount.toFixed(2)}`} />}
-                    {response?.Gratuity && response.Gratuity.percentage !== undefined && (
-                      <Field label="Gratuity" value={`$${calculatedGratuity.toFixed(2)} (${response.Gratuity.percentage}%)`} />
-                    )}
-                    <Field label="Additional Stop On The Way Fee" value={`$${additionalStopOnTheWayFee.toFixed(2)}`} />
+                const fare = fareBreakdownFromBooking(response || {});
+                if (!fare) {
+                  return (
                     <Field
                       label="Total Fare"
-                      value={`$${totalFare.toFixed(2)}`}
+                      value={`$${parseFloat(response?.totalTripFeeInDollars || totalTripFeeInDollars || 0).toFixed(2)}`}
+                    />
+                  );
+                }
+                return (
+                  <>
+                    <Field label="Fare (vehicle)" value={`$${fare.carFare.toFixed(2)}`} />
+                    {fare.roundTrip && (
+                      <Field
+                        label="Rate note"
+                        value="Round trip — mileage and minimum start fee doubled"
+                      />
+                    )}
+                    {fare.airportPickupPreferencePrice > 0 && (
+                      <Field
+                        label="Airport Pickup Preference"
+                        value={`$${fare.airportPickupPreferencePrice.toFixed(2)}`}
+                      />
+                    )}
+                    {fare.extraOptionsPrice > 0 && (
+                      <Field
+                        label="Extras"
+                        value={`$${fare.extraOptionsPrice.toFixed(2)}`}
+                      />
+                    )}
+                    {fare.additionalStopPrice > 0 && (
+                      <Field
+                        label="Additional Stop"
+                        value={`$${fare.additionalStopPrice.toFixed(2)}`}
+                      />
+                    )}
+                    {fare.gratuity > 0 && (
+                      <Field
+                        label="Gratuity"
+                        value={`$${fare.gratuity.toFixed(2)} (${fare.gratuityPercentage}%)`}
+                      />
+                    )}
+                    {fare.discount > 0 && (
+                      <Field label="Discount" value={`-$${fare.discount.toFixed(2)}`} />
+                    )}
+                    <Field
+                      label="Total Fare"
+                      value={`$${fare.total.toFixed(2)}`}
                       sx={{
                         backgroundColor: '#6a6a6a',
                         color: 'white',
@@ -609,8 +627,9 @@ const ViewBookDetail = () => {
                 }}
                 fullWidth
                 onClick={handleAcceptPayment}
+                disabled={!canTake || takingPayment}
               >
-                TAKE PAYMENT
+                {takingPayment ? "CAPTURING…" : "TAKE PAYMENT"}
               </Button>
             </Grid>
 
@@ -647,15 +666,6 @@ const ViewBookDetail = () => {
 
       {popupType === "EDIT_BOOKING_STATUS" && (
         <BookingStatusPoup
-          bookingId={airportBookId}
-          bookingType="airport"
-          open={open}
-          handleClose={handleClose}
-        />
-      )}
-
-      {popupType === "EDIT_PAYMENT_STATUS" && (
-        <PaymentStatusPopup
           bookingId={airportBookId}
           bookingType="airport"
           open={open}

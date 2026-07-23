@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import BillingModeToggle from "./BillingModeToggle";
 
 import {
   Box,
@@ -24,6 +25,11 @@ import {
   useMediaQuery,
   Alert,
   Typography,
+  Skeleton,
+  Chip,
+  IconButton,
+  Button,
+  Divider,
 } from "@mui/material";
 
 import {
@@ -35,13 +41,13 @@ import {
 } from "@react-google-maps/api";
 import { GrLocation } from "react-icons/gr";
 import { TbCurrentLocation } from "react-icons/tb";
-import { MdOutlineHotel, MdLocalAirport } from "react-icons/md";
+import { MdOutlineHotel, MdLocalAirport, MdClose, MdAddLocation } from "react-icons/md";
 import RSRadio from "../../../../components/RSRadio";
 import { useNavigate, useParams } from "react-router-dom";
 import RSTypography from "../../../../components/RSTypography";
 import {
   checkServiceLocation,
-  isLocationInColifornia,
+  isLocationInAllowedPickupState,
 } from "../../../../util/locationUtil";
 const libraries = ["places"];
 
@@ -69,6 +75,7 @@ function Index({
   const [searchAirportLocationResult, setSearchAirportLocationResult] =
     useState(null);
   const [directionsResponse, setDirectionsResponse] = useState();
+  const sidePickAutocompleteRefs = useRef([]);
   const theme = useTheme();
   const matchXS = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -87,6 +94,22 @@ function Index({
     libraries: libraries,
   });
 
+  // Serialized coordinates of every fully-geocoded side pick / detour stop.
+  // Used as an effect dependency so the route (and therefore the map) is
+  // always recalculated against the freshest stops, instead of relying on
+  // the `setTimeout` + closure calls that used to run right after a stop
+  // was added/edited/removed (those captured a stale `formik.values` from
+  // before the edit, so the map could silently ignore the latest stop).
+  const activeSidePicksKey = useMemo(
+    () =>
+      JSON.stringify(
+        (formik.values.sidePicks || [])
+          .filter((sp) => sp.latitude && sp.longitude)
+          .map((sp) => [sp.latitude, sp.longitude])
+      ),
+    [formik.values.sidePicks]
+  );
+
   useEffect(() => {
     if (formik.values.pickupLatitude &&
       formik.values.pickupLongitude &&
@@ -98,7 +121,8 @@ function Index({
   }, [formik.values.pickupLatitude &&
     formik.values.pickupLongitude &&
     formik.values.dropoffLatitude &&
-    formik.values.dropoffLongitude]);
+    formik.values.dropoffLongitude,
+    activeSidePicksKey]);
 
   useEffect(() => {
     if (
@@ -114,6 +138,7 @@ function Index({
     formik.values.airportLocationLongitude,
     formik.values.accommodationLatitude,
     formik.values.accommodationLongitude,
+    activeSidePicksKey,
   ]);
 
   const airportServiceTripTypes = useMemo(
@@ -128,71 +153,101 @@ function Index({
 
   const calculateDistance = async () => {
     const google = window.google;
-    var directionsService = null;
-    if (google) {
-      directionsService = new google.maps.DirectionsService();
-      const originLatLng = {
-        lat: formik.values.pickupLatitude,
-        lng: formik.values.pickupLongitude
-      }
-      const destinationLatLng = {
-        lat: formik.values.dropoffLatitude,
-        lng: formik.values.dropoffLongitude
-      }
+    if (!google) return;
+    const directionsService = new google.maps.DirectionsService();
+    const originLatLng = {
+      lat: formik.values.pickupLatitude,
+      lng: formik.values.pickupLongitude,
+    };
+    const destinationLatLng = {
+      lat: formik.values.dropoffLatitude,
+      lng: formik.values.dropoffLongitude,
+    };
 
-      await directionsService
-        .route({
-          origin: originLatLng,
-          destination: destinationLatLng,
-          travelMode: google.maps.TravelMode["DRIVING"],
-        })
-        .then((response) => {
-          const distanceInMile =
-            response.routes[0].legs[0].distance.value / 1609.344;
-          formik.setFieldValue("distanceInMiles", distanceInMile.toFixed(2));
-          setDirectionsResponse(response);
-          formik.setFieldValue(
-            "duration",
-            response.routes[0].legs[0].duration.text
-          );
-        });
-    }
+    const activeSidePicks = (formik.values.sidePicks || []).filter(
+      (sp) => sp.latitude && sp.longitude
+    );
+    const waypoints = activeSidePicks.map((sp) => ({
+      location: { lat: sp.latitude, lng: sp.longitude },
+      stopover: true,
+    }));
+
+    await directionsService
+      .route({
+        origin: originLatLng,
+        destination: destinationLatLng,
+        waypoints,
+        travelMode: google.maps.TravelMode["DRIVING"],
+      })
+      .then((response) => {
+        const totalMeters = response.routes[0].legs.reduce(
+          (sum, leg) => sum + leg.distance.value,
+          0
+        );
+        const distanceInMile = totalMeters / 1609.344;
+        formik.setFieldValue("distanceInMiles", distanceInMile.toFixed(2));
+        setDirectionsResponse(response);
+        const totalSecs = response.routes[0].legs.reduce(
+          (sum, leg) => sum + leg.duration.value,
+          0
+        );
+        const hrs = Math.floor(totalSecs / 3600);
+        const mins = Math.floor((totalSecs % 3600) / 60);
+        formik.setFieldValue(
+          "duration",
+          hrs > 0 ? `${hrs} hr ${mins} min` : `${mins} min`
+        );
+      });
   };
 
   const calculateAirportDistance = async () => {
     const google = window.google;
-    var directionsService = null;
-    if (google) {
-      directionsService = new google.maps.DirectionsService();
+    if (!google) return;
+    const directionsService = new google.maps.DirectionsService();
+    const airportLatLng = {
+      lat: formik.values.airportLocationLatitude,
+      lng: formik.values.airportLocationLongitude,
+    };
+    const accomodationtLatLng = {
+      lat: formik.values.accommodationLatitude,
+      lng: formik.values.accommodationLongitude,
+    };
 
-      const airportLatLng = {
-        lat: formik.values.airportLocationLatitude,
-        lng: formik.values.airportLocationLongitude,
-      };
+    const activeSidePicks = (formik.values.sidePicks || []).filter(
+      (sp) => sp.latitude && sp.longitude
+    );
+    const waypoints = activeSidePicks.map((sp) => ({
+      location: { lat: sp.latitude, lng: sp.longitude },
+      stopover: true,
+    }));
 
-      const accomodationtLatLng = {
-        lat: formik.values.accommodationLatitude,
-        lng: formik.values.accommodationLongitude
-      };
-
-      await directionsService
-        .route({
-          origin: airportLatLng,
-          destination: accomodationtLatLng,
-          travelMode: google.maps.TravelMode["DRIVING"],
-        })
-        .then((response) => {
-          const distanceInMile =
-            response.routes[0].legs[0].distance.value / 1609.344;
-          formik.setFieldValue("distanceInMiles", distanceInMile.toFixed(2));
-          setDirectionsResponse(response);
-          formik.setFieldValue(
-            "duration",
-            response.routes[0].legs[0].duration.text
-          );
-        })
-        .catch((error) => console.log("error2: ", error));
-    }
+    await directionsService
+      .route({
+        origin: airportLatLng,
+        destination: accomodationtLatLng,
+        waypoints,
+        travelMode: google.maps.TravelMode["DRIVING"],
+      })
+      .then((response) => {
+        const totalMeters = response.routes[0].legs.reduce(
+          (sum, leg) => sum + leg.distance.value,
+          0
+        );
+        const distanceInMile = totalMeters / 1609.344;
+        formik.setFieldValue("distanceInMiles", distanceInMile.toFixed(2));
+        setDirectionsResponse(response);
+        const totalSecs = response.routes[0].legs.reduce(
+          (sum, leg) => sum + leg.duration.value,
+          0
+        );
+        const hrs = Math.floor(totalSecs / 3600);
+        const mins = Math.floor((totalSecs % 3600) / 60);
+        formik.setFieldValue(
+          "duration",
+          hrs > 0 ? `${hrs} hr ${mins} min` : `${mins} min`
+        );
+      })
+      .catch((error) => console.log("error2: ", error));
   };
   const getTripType = () => {
     if (travelType == 1) {
@@ -247,7 +302,7 @@ function Index({
       const place = searchOriginResult.getPlace();
       const address_components = place.address_components;
 
-      const isInUsa = isLocationInColifornia(address_components);
+      const isInAllowedState = isLocationInAllowedPickupState(address_components);
 
       const pickupPhysicalAddress = place.formatted_address;
       const latlng = {
@@ -258,10 +313,10 @@ function Index({
       formik.setFieldValue("pickupLatitude", latlng?.lat);
       formik.setFieldValue("pickupLongitude", latlng?.lng);
 
-      if (!isInUsa) {
+      if (!isInAllowedState) {
         setLocationCkecker({
           isUnsupportedLocation: true,
-          errorMessage: "pickup address should be in California, USA",
+          errorMessage: "pickup address should be in California or Washington, USA",
         });
         formik.setFieldValue("isUnsupportedPickupAddr", true);
       } else if (formik.values.isUnsupportedDropoffAddr) {
@@ -271,7 +326,7 @@ function Index({
         });
       }
 
-      if (isInUsa) {
+      if (isInAllowedState) {
         if (formik.values.isUnsupportedDropoffAddr) {
           setLocationCkecker({
             isUnsupportedLocation: true,
@@ -315,7 +370,7 @@ function Index({
       } else if (formik.values.isUnsupportedPickupAddr) {
         setLocationCkecker({
           isUnsupportedLocation: true,
-          errorMessage: "pickup address should be in California, USA",
+          errorMessage: "pickup address should be in California or Washington, USA",
         });
       }
 
@@ -323,7 +378,7 @@ function Index({
         if (formik.values.isUnsupportedPickupAddr) {
           setLocationCkecker({
             isUnsupportedLocation: true,
-            errorMessage: "pickup address should be in California, USA",
+            errorMessage: "pickup address should be in California or Washington, USA",
           });
         } else {
           setLocationCkecker({
@@ -379,6 +434,47 @@ function Index({
   function onLoadDestinationFunc(autocomplete) {
     setSearchDestinationResult(autocomplete);
   }
+
+  function addSidePick() {
+    const current = formik.values.sidePicks || [];
+    formik.setFieldValue("sidePicks", [
+      ...current,
+      { address: "", latitude: null, longitude: null },
+    ]);
+    sidePickAutocompleteRefs.current.push(null);
+  }
+
+  function removeSidePick(idx) {
+    const current = formik.values.sidePicks || [];
+    const updated = current.filter((_, i) => i !== idx);
+    formik.setFieldValue("sidePicks", updated);
+    sidePickAutocompleteRefs.current.splice(idx, 1);
+    // Route/map recalculation now runs via the activeSidePicksKey-keyed
+    // effects above, once formik.values.sidePicks actually reflects this
+    // removal — no need to (and no longer safe to) trigger it here directly.
+  }
+
+  function onLoadSidePickFunc(autocomplete, idx) {
+    sidePickAutocompleteRefs.current[idx] = autocomplete;
+  }
+
+  function onSidePickChanged(idx) {
+    const autocomplete = sidePickAutocompleteRefs.current[idx];
+    if (!autocomplete) return;
+    const place = autocomplete.getPlace();
+    if (!place?.geometry) return;
+    const latlng = {
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng(),
+    };
+    const address = place.formatted_address || place.name || "";
+    const current = [...(formik.values.sidePicks || [])];
+    current[idx] = { address, latitude: latlng.lat, longitude: latlng.lng };
+    formik.setFieldValue("sidePicks", current);
+    // Route/map recalculation now runs via the activeSidePicksKey-keyed
+    // effects above, once formik.values.sidePicks actually reflects this
+    // pick — no need to (and no longer safe to) trigger it here directly.
+  }
   function onLoadAccomodationFunc(autocomplete) {
     setSearchAccomodationResult(autocomplete);
   }
@@ -390,7 +486,7 @@ function Index({
     if (searchAirportLocationResult != null) {
       const place = searchAirportLocationResult.getPlace();
       const address_components = place.address_components;
-      const isInCalifornia = isLocationInColifornia(address_components);
+      const isInAllowedState = isLocationInAllowedPickupState(address_components);
       const latlng = {
         lat: place.geometry?.location?.lat(),
         lng: place.geometry?.location?.lng(),
@@ -400,10 +496,11 @@ function Index({
       formik.setFieldValue("airportLocationLatitude", latlng?.lat);
       formik.setFieldValue("airportLocationLongitude", latlng?.lng);
 
-      if (!isInCalifornia) {
+      if (!isInAllowedState) {
         setAirportLocChecker?.({
           isUnsupportedLocation: true,
-          errorMessage: "Airport/Terminal pick-up must be in California, USA",
+          errorMessage:
+            "Airport/Terminal pick-up must be in California or Washington, USA",
         });
       } else {
         setAirportLocChecker?.({
@@ -417,7 +514,27 @@ function Index({
   }
 
   if (!isLoaded) {
-    return <>loading</>;
+    return (
+      <Box sx={{ p: 1 }}>
+        <Grid container spacing={3} justifyContent={{ lg: "space-between", sm: "center" }}>
+          <Grid item md={5} xs={12}>
+            <Stack spacing={2}>
+              <Skeleton variant="rectangular" height={40} sx={{ borderRadius: 1 }} />
+              <Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} />
+              <Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} />
+              <Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} />
+            </Stack>
+          </Grid>
+          <Grid item md={6} xs={12}>
+            <Skeleton variant="rectangular" height={420} sx={{ borderRadius: 2 }} />
+            <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
+              <Skeleton variant="text" width={120} />
+              <Skeleton variant="text" width={120} />
+            </Stack>
+          </Grid>
+        </Grid>
+      </Box>
+    );
   }
 
   if (travelType == null || travelType === "") {
@@ -438,7 +555,17 @@ function Index({
         <Grid item md={5} xs={12}>
           <Stack direction={"column"} spacing={2}>
             <FormControl fullWidth>
-              <FormLabel sx={{ color: "info" }}>Select Type of Service</FormLabel>
+              <FormLabel
+                sx={{
+                  color: "text.primary",
+                  fontWeight: 600,
+                  fontSize: "0.85rem",
+                  letterSpacing: "0.5px",
+                  mb: 0.5,
+                }}
+              >
+                Select Type of Service
+              </FormLabel>
               {disableServiceTypeSwitch ? (
                 <Typography variant="body2" sx={{ mt: 1, color: "text.secondary" }}>
                   {travelType == 1 && "Airport Service (editing existing booking)"}
@@ -534,7 +661,7 @@ function Index({
                   helperText={
                     (formik.touched.airportLocationAddress &&
                       formik.errors.airportLocationAddress) ||
-                    "Pick a California airport/terminal from suggestions so coordinates are sent"
+                    "Pick a California or Washington airport/terminal from suggestions so coordinates are sent"
                   }
                   InputProps={{
                     startAdornment: (
@@ -551,19 +678,21 @@ function Index({
               <FormControl fullWidth color="info">
                 <InputLabel id="hour label">Select Hours</InputLabel>
                 <Select
-                  // value={selectedTrip}
                   label="Select Hours"
-                  // onChange={handleChange}
                   name="hour"
                   value={formik.values.hour}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   error={formik.touched.hour && Boolean(formik.errors.hour)}
-                  helperText={formik.touched.hour && formik.errors.hour}
                 >
-                  {Array.from({ length: 20 }, (_, index) => (
-                    <MenuItem value={index + 5}>{index + 5}</MenuItem>
-                  ))}
+                  {Array.from({ length: 20 }, (_, index) => {
+                    const hours = index + 4; // minimum booking is 4 hours
+                    return (
+                      <MenuItem key={hours} value={hours}>
+                        {hours} hours{hours === 4 ? " (minimum)" : ""}
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
                 {formik.touched.hour && (
                   <FormHelperText sx={{ color: "red" }}>
@@ -571,6 +700,13 @@ function Index({
                   </FormHelperText>
                 )}
               </FormControl>
+            )}
+
+            {travelType == 3 && (
+              <BillingModeToggle
+                value={formik.values.billingMode || "PRE_BOOKED"}
+                onChange={(mode) => formik.setFieldValue("billingMode", mode)}
+              />
             )}
 
             {(travelType == 2 || travelType == 3) && isLoaded && (
@@ -670,6 +806,82 @@ function Index({
                 />
               </Autocomplete>
             )}
+
+            {(travelType == 1 || travelType == 2) && isLoaded && (
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                  <Divider sx={{ flex: 1 }} />
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "text.secondary", fontWeight: 600, whiteSpace: "nowrap" }}
+                  >
+                    Side Pick / Detour Stops
+                  </Typography>
+                  <Divider sx={{ flex: 1 }} />
+                </Stack>
+
+                {(formik.values.sidePicks || []).map((sp, idx) => (
+                  <Box key={idx} sx={{ mb: 1 }}>
+                    <Autocomplete
+                      onPlaceChanged={() => onSidePickChanged(idx)}
+                      onLoad={(ac) => onLoadSidePickFunc(ac, idx)}
+                    >
+                      <TextField
+                        color="info"
+                        label={`Detour stop ${idx + 1}`}
+                        fullWidth
+                        value={sp.address}
+                        onChange={(e) => {
+                          const current = [...(formik.values.sidePicks || [])];
+                          current[idx] = { ...current[idx], address: e.target.value };
+                          formik.setFieldValue("sidePicks", current);
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <MdAddLocation color="#f59e0b" />
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                size="small"
+                                onClick={() => removeSidePick(idx)}
+                                sx={{ color: "error.main" }}
+                              >
+                                <MdClose />
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                        helperText={
+                          sp.latitude
+                            ? `📍 ${sp.latitude?.toFixed(4)}, ${sp.longitude?.toFixed(4)}`
+                            : "Search & select from suggestions to capture coordinates"
+                        }
+                      />
+                    </Autocomplete>
+                  </Box>
+                ))}
+
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  size="small"
+                  startIcon={<MdAddLocation />}
+                  onClick={addSidePick}
+                  sx={{ borderStyle: "dashed", width: "100%" }}
+                >
+                  + Add Detour Stop
+                </Button>
+
+                {(formik.values.sidePicks || []).length > 0 && (
+                  <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
+                    Detour stops add extra driving distance — fare updates automatically.
+                  </Typography>
+                )}
+              </Box>
+            )}
           </Stack>
         </Grid>
 
@@ -699,17 +911,49 @@ function Index({
             <Stack
               direction={{ xs: "column", md: "row" }}
               justifyContent={"space-between"}
+              sx={{
+                background: "rgba(3,147,10,0.04)",
+                border: "1px solid rgba(3,147,10,0.12)",
+                borderRadius: 1.5,
+                px: 2,
+                py: 1.2,
+                mt: 0.5,
+              }}
             >
-              <RSTypography>
-                Distance:{" "}
-                {formik.values.distanceInMiles
-                  ? formik.values.distanceInMiles + " mile"
-                  : "_"}
-              </RSTypography>
-              <RSTypography>
-                Duration:{" "}
-                {formik.values.duration ? formik.values.duration : "_"}
-              </RSTypography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    bgcolor: formik.values.distanceInMiles ? "#03930A" : "#ccc",
+                  }}
+                />
+                <RSTypography>
+                  Distance:{" "}
+                  <strong>
+                    {formik.values.distanceInMiles
+                      ? formik.values.distanceInMiles + " mi"
+                      : "—"}
+                  </strong>
+                </RSTypography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    bgcolor: formik.values.duration ? "#03930A" : "#ccc",
+                  }}
+                />
+                <RSTypography>
+                  Duration:{" "}
+                  <strong>
+                    {formik.values.duration ? formik.values.duration : "—"}
+                  </strong>
+                </RSTypography>
+              </Box>
             </Stack>
           </Stack>
         </Grid>

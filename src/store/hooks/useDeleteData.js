@@ -24,8 +24,7 @@ const useDeleteData = () => {
 
         return response;
       } catch (error) {
-        // Handle error
-        toast.error("An error occurred while deleting data or data not available");
+        toast.error(error.message || "An error occurred while deleting data.");
       }
     },
   });

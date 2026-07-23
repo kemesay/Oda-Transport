@@ -1,136 +1,139 @@
-import React, { useState, useEffect } from 'react';
-import { Box, TextField, Checkbox, Autocomplete, Alert } from '@mui/material';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import { BACKEND_API } from '../../../store/utils/API';
-import axios from 'axios';
+import React, { useMemo } from 'react';
+import { Box, TextField, Autocomplete, Alert, Chip, Typography } from '@mui/material';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import StarIcon from '@mui/icons-material/Star';
 
-const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
-const checkedIcon = <CheckBoxIcon fontSize="small" />;
-
-const maskCardNumber = (cardNumber) => {
-  if (!cardNumber) return '';
-  const lastFourDigits = cardNumber.slice(-4);
-  const maskedPart = '•'.repeat(12);
-  return `${maskedPart} ${lastFourDigits}`;
+/** Per-brand accent colors used in the brand chip */
+const BRAND_COLORS = {
+  visa:       { bg: '#EEF2FF', color: '#1A1F71', border: '#C7D2FE' },
+  mastercard: { bg: '#FFF7ED', color: '#9A3412', border: '#FDBA74' },
+  amex:       { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
+  discover:   { bg: '#FFF7ED', color: '#C2410C', border: '#FED7AA' },
+  default:    { bg: '#F3F4F6', color: '#374151', border: '#D1D5DB' },
 };
 
-const getCardTypeDisplay = (cardNumber) => {
-  if (!cardNumber) return '';
-  const firstDigit = cardNumber[0];
-  switch (firstDigit) {
-    case '4': return 'VISA';
-    case '5': return 'MASTERCARD';
-    case '3': return 'AMEX';
-    case '6': return 'DISCOVER';
-    default: return 'CARD';
-  }
-};
+function brandStyle(raw) {
+  const key = (raw || '').toLowerCase();
+  return BRAND_COLORS[key] || BRAND_COLORS.default;
+}
 
-const SelectedPaymentCard = ({ 
+/** Single card row shown inside the dropdown list */
+function CardOptionRow({ option }) {
+  const style = brandStyle(option.cardBrand);
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+      {/* Brand chip */}
+      <Box
+        sx={{
+          px: 1,
+          py: 0.25,
+          borderRadius: '6px',
+          background: style.bg,
+          border: `1px solid ${style.border}`,
+          color: style.color,
+          fontSize: '0.7rem',
+          fontWeight: 700,
+          letterSpacing: '0.5px',
+          textTransform: 'uppercase',
+          minWidth: 56,
+          textAlign: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {option.cardBrand || 'Card'}
+      </Box>
+
+      {/* Masked number */}
+      <Typography
+        sx={{
+          fontFamily: 'monospace',
+          fontSize: '0.88rem',
+          letterSpacing: '1px',
+          color: 'text.primary',
+          flex: 1,
+        }}
+      >
+        {option.maskedNumber}
+      </Typography>
+
+      {/* Primary badge */}
+      {option.isPrimary && (
+        <Chip
+          icon={<StarIcon sx={{ fontSize: '12px !important' }} />}
+          label="Primary"
+          size="small"
+          sx={{
+            height: 20,
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            bgcolor: 'rgba(3,147,10,0.1)',
+            color: '#03930A',
+            border: '1px solid rgba(3,147,10,0.3)',
+            '& .MuiChip-icon': { color: '#03930A' },
+          }}
+        />
+      )}
+    </Box>
+  );
+}
+
+const SelectedPaymentCard = ({
+  userCards = [],
   selectedPaymentCard,
   handlePaymentCardChange,
-  authToken
+  loading = false,
+  error = null,
 }) => {
-  const [paymentCards, setPaymentCards] = useState([]);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchPaymentCards = async () => {
-      if (!authToken) {
-        setError('Authentication token is required');
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await BACKEND_API.get(
-          `/api/v1/users/payment-detail/paymentCards`,
-          {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-
-        const formattedCards = response.data.map(card => ({
-          ...card,
-          maskedNumber: maskCardNumber(card.creditCardNumber),
-          cardType: getCardTypeDisplay(card.creditCardNumber),
-          displayName: `${getCardTypeDisplay(card.creditCardNumber)} •••• ${card.creditCardNumber.slice(-4)}${card.isPrimary ? ' (Primary)' : ''}`
-        }));
-
-        setPaymentCards(formattedCards);
-      } catch (error) {
-        setError(error.response?.data?.message || 'Failed to fetch payment cards');
-        console.error('Error fetching payment cards:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPaymentCards();
-  }, [authToken]);
-
-  const handleChange = (event, newValue) => {
-    handlePaymentCardChange(event, newValue);
-  };
+  const options = useMemo(() => userCards, [userCards]);
 
   if (error) {
     return <Alert severity="error">{error}</Alert>;
   }
 
+  if (!loading && options.length === 0) {
+    return (
+      <Alert severity="info">
+        No saved cards available. Choose &quot;Pay with new card&quot; instead.
+      </Alert>
+    );
+  }
+
   return (
     <Autocomplete
       id="payment-card-selector"
-      options={paymentCards}
+      options={options}
       value={selectedPaymentCard || null}
-      onChange={handleChange}
-      isOptionEqualToValue={(option, value) => 
-        option?.paymentDetailId === value?.paymentDetailId
+      onChange={(_event, newValue) => handlePaymentCardChange(_event, newValue)}
+      isOptionEqualToValue={(option, value) =>
+        Number(option?.paymentDetailId) === Number(value?.paymentDetailId)
       }
+      // Text shown in the input when a card is selected: "Visa ···· 4242"
       getOptionLabel={(option) => option?.displayName || ''}
-      renderOption={(props, option, { selected }) => (
-        <li {...props}>
-          <Checkbox
-            icon={icon}
-            checkedIcon={checkedIcon}
-            style={{ marginRight: 8 }}
-            checked={selected}
-          />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box sx={{ 
-              fontWeight: 'bold',
-              color: option.isPrimary ? '#03930A' : 'inherit',
-              minWidth: 80
-            }}>
-              {option.cardType}
-            </Box>
-            <Box sx={{ fontFamily: 'monospace', letterSpacing: '0.5px' }}>
-              {option.maskedNumber}
-            </Box>
-            {option.isPrimary && (
-              <Box sx={{ ml: 1, color: '#03930A', fontSize: '0.875rem', fontWeight: 500 }}>
-                (Primary)
-              </Box>
-            )}
-          </Box>
+      renderOption={(props, option) => (
+        <li {...props} key={option.paymentDetailId}>
+          <CardOptionRow option={option} />
         </li>
       )}
       renderInput={(params) => (
-        <TextField 
-          {...params} 
-          label="Select Payment Card"
-          placeholder={loading ? 'Loading cards...' : 'Choose a payment method'}
-          error={!!error}
+        <TextField
+          {...params}
+          size="small"
+          margin="dense"
+          label="Select saved card"
+          placeholder={loading ? 'Loading cards…' : 'Choose a saved card'}
+          InputProps={{
+            ...params.InputProps,
+            startAdornment: (
+              <>
+                <CreditCardIcon sx={{ color: 'text.disabled', fontSize: 18, mr: 0.5 }} />
+                {params.InputProps.startAdornment}
+              </>
+            ),
+          }}
         />
       )}
       loading={loading}
-      disabled={loading}
+      disabled={loading || options.length === 0}
     />
   );
 };

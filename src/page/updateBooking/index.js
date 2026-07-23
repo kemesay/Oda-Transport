@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { BACKEND_API } from '../../store/utils/API';
 import { authHeader } from '../../util/authUtil';
 import { useFormik } from 'formik';
@@ -47,6 +47,8 @@ import {
   getLegCarPrice,
   vehicleRatesFromCar,
 } from "../../utils/bookingFeeCalculator";
+import SquarePaymentForm from "../../components/SquarePaymentForm";
+import { PAYMENT_METHODS } from "../../constants/paymentMethods";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -78,8 +80,11 @@ function UpdateBooking() {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { totalFee } = useSelector((state) => state.bookReducer);
   const [activeStep, setActiveStep] = useState(0);
   const [bookingData, setBookingData] = useState(null);
+  const [originalTotal, setOriginalTotal] = useState(0);
+  const [paymentRetokenError, setPaymentRetokenError] = useState(null);
   const [travelRouteId, setTravelRouteId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -124,7 +129,7 @@ function UpdateBooking() {
       accommodationAddress: '',
       accommodationLatitude: '',
       accommodationLongitude: '',
-      hour: 5,
+      hour: 4,
       pickupDate: null,
       pickupTime: null,
       returnPickupDate: null,
@@ -173,6 +178,9 @@ function UpdateBooking() {
       },
       /** Set from GET when updating; used to highlight the booked car if `vehicle` is ever cleared. */
       originalCarIdFromBooking: null,
+      square: undefined,
+      squareTokenize: undefined,
+      paymentMethod: "",
     },
     validationSchema: Yup.object({
       vehicle: Yup.mixed().required('Vehicle selection is required'),
@@ -181,7 +189,32 @@ function UpdateBooking() {
     onSubmit: async (values) => {
       try {
         setLoading(true);
+        setPaymentRetokenError(null);
         const travelType = (bookingData?.travelType || "").toLowerCase();
+        const priceChanged =
+          originalTotal > 0 &&
+          totalFee > 0 &&
+          Math.abs(originalTotal - totalFee) > 0.009;
+        const needsSquareRetoken =
+          priceChanged && bookingData?.paymentMethod === PAYMENT_METHODS.SQUARE_NEW;
+
+        if (needsSquareRetoken) {
+          try {
+            if (typeof values.squareTokenize === "function") {
+              await values.squareTokenize();
+            } else if (!values.square?.sourceId) {
+              setPaymentRetokenError(
+                "Trip total changed — re-enter your card to authorize the new amount."
+              );
+              setLoading(false);
+              return;
+            }
+          } catch (err) {
+            setPaymentRetokenError(err?.message || "Card tokenization failed.");
+            setLoading(false);
+            return;
+          }
+        }
 
         const tz = dayjs.tz.guess();
         const formatPatchDateTime = (values, isoFallback) => {
@@ -325,6 +358,10 @@ function UpdateBooking() {
           throw new Error("Invalid booking type");
         }
 
+        if (needsSquareRetoken && values.square?.sourceId) {
+          body.square = values.square;
+        }
+
         await BACKEND_API.patch(endpoint, body, authHeader());
         
         navigate('/user/my-order', { 
@@ -431,6 +468,7 @@ function UpdateBooking() {
       const routeId = travelTypeToRouteId(bookingType);
       setTravelRouteId(routeId);
       setBookingData(merged);
+      setOriginalTotal(Number(d.totalTripFeeInDollars) || 0);
 
       const car = carsList.find((c) => String(c.carId) === String(selectedCarId));
       const vehiclePatch = vehicleRatesFromCar(car, routeId) || {};
@@ -492,6 +530,7 @@ function UpdateBooking() {
           gratuityPercentage,
           gratuityFee,
           prevGratuityFee: gratuityFee,
+          paymentMethod: merged.paymentMethod || "",
         },
       });
 
@@ -540,6 +579,14 @@ function UpdateBooking() {
   }, [location]);
 
   const v = formik.values;
+  const priceChangedForPayment =
+    originalTotal > 0 &&
+    totalFee > 0 &&
+    Math.abs(originalTotal - totalFee) > 0.009;
+  const showSquareRetoken =
+    priceChangedForPayment &&
+    bookingData?.paymentMethod === PAYMENT_METHODS.SQUARE_NEW;
+
   useLiveBookingServiceFee({
     enabled: Boolean(bookingData && travelRouteId),
     travelRouteId,
@@ -711,6 +758,27 @@ function UpdateBooking() {
 
           <Box sx={{ mt: 4 }}>
             {renderStepContent(activeStep)}
+
+            {activeStep === steps.length - 1 && showSquareRetoken && (
+              <Alert severity="warning" sx={{ mt: 3 }}>
+                Your updated trip total is ${totalFee.toFixed(2)} (was $
+                {originalTotal.toFixed(2)}). Re-enter your card to authorize the new amount.
+              </Alert>
+            )}
+            {activeStep === steps.length - 1 && showSquareRetoken && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: "rgba(3,147,10,0.05)", borderRadius: 2 }}>
+                <SquarePaymentForm
+                  formik={formik}
+                  visible
+                  amountDollars={totalFee}
+                />
+              </Box>
+            )}
+            {paymentRetokenError && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {paymentRetokenError}
+              </Alert>
+            )}
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4, gap: 2 }}>
               {activeStep > 0 && (

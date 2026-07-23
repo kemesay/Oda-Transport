@@ -27,6 +27,55 @@ import axios from "axios";
 import { addMinimumInitialFee, updateTotalFee } from "../../store/reducers/bookReducers";
 import { BACKEND_API } from "../../store/utils/API";
 import { calculateServiceFee } from "../../utils/bookingFeeCalculator";
+import { PAYMENT_METHODS } from "../../constants/paymentMethods";
+import SquarePaymentStatus from "../../components/SquarePaymentStatus";
+import {
+    clearSquareCheckoutNonce,
+    hasVerifiedSquarePayment,
+    persistSquareCheckoutNonce,
+    resolveSquarePaymentPayload,
+} from "../../services/squareCheckoutSession";
+import { assertSquarePayloadForBooking } from "../../utils/squareBookingPayload";
+
+function feeChangedSinceTokenize(tokenizedAtFee, currentFee) {
+    if (tokenizedAtFee == null || tokenizedAtFee === "") return false;
+    return Math.abs(Number(tokenizedAtFee) - Number(currentFee)) > 0.01;
+}
+
+async function verifySquareCardForCheckout(formikContact, totalFee) {
+    const values = formikContact.values;
+    if (values.paymentMethod !== PAYMENT_METHODS.SQUARE_NEW) {
+        return true;
+    }
+
+    const needsToken =
+        !hasVerifiedSquarePayment(values) ||
+        feeChangedSinceTokenize(values.squareTokenizedAtFee, totalFee);
+
+    if (!needsToken) {
+        const resolved = resolveSquarePaymentPayload(values);
+        if (resolved && !values.square?.sourceId) {
+            await formikContact.setFieldValue("square", resolved);
+        }
+        return true;
+    }
+
+    if (typeof values.squareTokenize !== "function") {
+        throw new Error(
+            "Payment form is not ready. Go back to Contact, wait for the card field to load, then tap Summary again."
+        );
+    }
+
+    const square = await values.squareTokenize();
+    persistSquareCheckoutNonce(square, {
+        amount: totalFee,
+        paymentMethod: PAYMENT_METHODS.SQUARE_NEW,
+    });
+    await formikContact.setFieldValue("square", square);
+    await formikContact.setFieldValue("squareTokenizedAtFee", totalFee);
+    return true;
+}
+
 function Index() {
     const [activeStep, setActiveStep] = useState(0);
     const [selectedTripType, setSelectedTripType] = React.useState();
@@ -46,88 +95,9 @@ function Index() {
         errorMessage: "",
     });
 
-    // Add these at the top of your file, right after the imports
-    const PAYMENT_METHODS = {
-        PRIMARY: 'PRIMARY_CARD',
-        EXISTING: 'EXISTING_CARD',
-        NEW: 'NEW_CARD'
-    };
-
-    // Card validation helper functions
-    const isValidCardNumber = (number) => {
-        // Remove all non-digit characters
-        const cleaned = number.replace(/\D/g, '');
-        
-        // Card type validation rules
-        const cardRules = {
-            visa: {
-                pattern: /^4[0-9]{12}(?:[0-9]{3})?$/,
-                length: [13, 16, 19]
-            },
-            mastercard: {
-                pattern: /^5[1-5][0-9]{14}$/,
-                length: [16]
-            },
-            amex: {
-                pattern: /^3[47][0-9]{13}$/,
-                length: [15]
-            },
-            discover: {
-                pattern: /^6(?:011|5[0-9]{2})[0-9]{12}$/,
-                length: [16]
-            },
-            diners: {
-                pattern: /^3(?:0[0-5]|[68][0-9])[0-9]{11}$/,
-                length: [14]
-            },
-            jcb: {
-                pattern: /^(?:2131|1800|35\d{3})\d{11}$/,
-                length: [16]
-            }
-        };
-
-        // Check if the number matches any card type pattern
-        const cardType = Object.keys(cardRules).find(type => 
-            cardRules[type].pattern.test(cleaned) && 
-            cardRules[type].length.includes(cleaned.length)
-        );
-
-        if (!cardType) return false;
-
-        // Luhn algorithm check
-        let sum = 0;
-        let shouldDouble = false;
-
-        for (let i = cleaned.length - 1; i >= 0; i--) {
-            let digit = parseInt(cleaned.charAt(i), 10);
-
-            if (shouldDouble) {
-                digit *= 2;
-                if (digit > 9) digit -= 9;
-            }
-
-            sum += digit;
-            shouldDouble = !shouldDouble;
-        }
-
-        return (sum % 10) === 0;
-    };
-
-    const isValidExpiration = (exp) => {
-        if (!exp) return false;
-
-        const [month, year] = exp.split('/').map(Number);
-        if (!month || !year || month < 1 || month > 12) return false;
-
-        const currentYear = new Date().getFullYear() % 100;
-        const currentMonth = new Date().getMonth() + 1;
-
-        if (year < currentYear) return false;
-        if (year === currentYear && month < currentMonth) return false;
-
-        return true;
-    };
-
+    const [tokenizeError, setTokenizeError] = useState(null);
+    const [verifyingCard, setVerifyingCard] = useState(false);
+    const advanceFromContactRef = React.useRef(null);
 
     const dispatch = useDispatch();
     const { isAuthenticated } = useSelector(
@@ -139,9 +109,10 @@ function Index() {
 
     const location = useLocation();
     const navigate = useNavigate();
-    const { isBookSuccess, errorMessage, isError, isBookPending } = useSelector(
+    const { isBookSuccess, errorMessage, isError, isBookPending, lastBookingResult } = useSelector(
         (state) => state.bookReducer
     );
+    const { totalFee } = useSelector((state) => state.bookReducer);
     var travelType = location.pathname.split("/").pop();
     const [open, setOpen] = useState(false);
 
@@ -185,7 +156,8 @@ function Index() {
             dropoffLatitude: 0,
             distanceInMiles: 0,
             duration: null,
-            hour: 5,
+            hour: 4,
+            billingMode: "PRE_BOOKED",
             airportLocationAddress: "",
             airportLocationLatitude: 0,
             airportLocationLongitude: 0,
@@ -193,6 +165,7 @@ function Index() {
             accommodationAddress: "",
             accommodationLongitude: 0,
             accommodationLatitude: 0,
+            sidePicks: [],
         },
         validationSchema: rideInfoValidationSchema,
         onSubmit: (values) => {
@@ -322,15 +295,14 @@ function Index() {
         validationSchema: tripDetailValidationSchema,
         onSubmit: (value) => {
             handleNext();
-            if (!isAuthenticated) setEntryAsGuestOptionPage(true);
+            if (!isAuthenticated) {
+                setEntryAsGuestOptionPage(true);
+            }
         },
     });
     const contactValidationSchema = yup.object().shape({
         firstName: yup.string("should be string") /* .required() */,
         lastName: yup.string("should be string") /* .required() */,
-        isValidCardInfo: yup
-            .boolean()
-            .oneOf([true], "Please, validate your card Info!"),
         email: yup.string().email("invalid email").required("email required"),
         /* .required("Email required") */
         // confirmEmail: yup
@@ -351,34 +323,21 @@ function Index() {
 
         paymentMethod: yup.string().required('Payment method is required'),
 
-        paymentDetailId: yup.number().when('paymentMethod', {
-            is: PAYMENT_METHODS.EXISTING,
-            then: (schema) => schema.required('Please select a card'),
-            otherwise: (schema) => schema.nullable()
+        paymentDetailId: yup.mixed().when('paymentMethod', {
+            is: PAYMENT_METHODS.SQUARE_SAVED,
+            then: (schema) => schema.required('Please select a saved card'),
+            otherwise: (schema) => schema.nullable(),
         }),
+        squareCardId: yup.string().nullable(),
         cardDetails: yup.object().when('paymentMethod', {
-            is: PAYMENT_METHODS.NEW,
+            is: PAYMENT_METHODS.SQUARE_NEW,
             then: (schema) => schema.shape({
                 cardOwnerName: yup.string().required('Cardholder name is required'),
-                creditCardNumber: yup.string()
-                    .required('Card number is required')
-                    .test('is-valid-card', 'Invalid card number', value => isValidCardNumber(value)),
-                expirationDate: yup.string()
-                    .required('Expiration date is required')
-                    .test('is-valid-expiration', 'Invalid expiration date', value => isValidExpiration(value)),
-                securityCode: yup.string()
-                    .required('Security code is required')
-                    .min(3, 'Security code must be at least 3 digits')
-                    .max(4, 'Security code must be at most 4 digits'),
-                zipCode: yup.string().required('Zip code is required')
+                zipCode: yup.string().required('Zip code is required'),
             }),
-            otherwise: (schema) => schema.nullable()
+            otherwise: (schema) => schema.nullable(),
         }),
-        isValidCardInfo: yup.boolean().when('paymentMethod', {
-            is: PAYMENT_METHODS.NEW,
-            then: (schema) => schema.oneOf([true], 'Please validate your card information'),
-            otherwise: (schema) => schema
-        })
+        square: yup.object().nullable(),
     });
     const formikContact = useFormik({
         initialValues: {
@@ -387,16 +346,16 @@ function Index() {
             email: "",
             confirmEmail: "",
             paymentMethod: "",
-            paymentDetailId: 0,
+            paymentDetailId: undefined,
+            squareCardId: undefined,
             cardDetails: {
                 cardOwnerName: "",
-                creditCardNumber: "",
-                expirationDate: "",
-                securityCode: "",
                 zipCode: "",
-                // "isPrimary": false
             },
             isValidCardInfo: false,
+            square: undefined,
+            squareTokenize: undefined,
+            squareTokenizedAtFee: undefined,
             cellPhone: "",
             bookingFor: "Myself",
             passengerFullName: "",
@@ -410,8 +369,10 @@ function Index() {
             feeBeforeGratuity: 0,
         },
         validationSchema: contactValidationSchema,
+        validateOnChange: false,
+        validateOnBlur: true,
         onSubmit: () => {
-            handleNext();
+            advanceFromContactRef.current?.();
         },
     });
     const formikSummary = useFormik({
@@ -430,6 +391,13 @@ function Index() {
     };
 
     const handleBack = () => {
+        if (activeStep === 4) {
+            setTokenizeError(null);
+            formikContact.setFieldValue("square", undefined);
+            formikContact.setFieldValue("isValidCardInfo", false);
+            formikContact.setFieldValue("squareTokenizedAtFee", undefined);
+            clearSquareCheckoutNonce();
+        }
         setActiveStep((prevActiveStep) => prevActiveStep - 1);
     };
 
@@ -517,7 +485,8 @@ function Index() {
               ),
             otherwise: (schema) => schema,
           }) */ hour: yup
-                    .string("Hour to travel")
+                    .number("Hour to travel")
+                    .min(4, "Minimum booking is 4 hours")
                     .required("Hour is required!"),
             });
         }
@@ -583,59 +552,104 @@ function Index() {
     // };
 
 
-    const handleFinish = () => {
-        const contactValues = formikContact.values;
-    
-        // Prepare the payment data based on selected method
-        let paymentData = {};
-    
-        switch (contactValues.paymentMethod) {
-            case PAYMENT_METHODS.PRIMARY:
-                paymentData = {
-                    paymentMethod: PAYMENT_METHODS.PRIMARY
-                };
-                break;
-            case PAYMENT_METHODS.EXISTING:
-                paymentData = {
-                    paymentMethod: PAYMENT_METHODS.EXISTING,
-                    paymentDetailId: contactValues.paymentDetailId
-                };
-                break;
-            case PAYMENT_METHODS.NEW:
-                // Create a copy of cardDetails without isPrimary if it exists
-                const { isPrimary, ...cardDetails } = contactValues.cardDetails;
-                paymentData = {
-                    paymentMethod: PAYMENT_METHODS.NEW,
-                    cardDetails: cardDetails
-                };
-                break;
-            default:
-                break;
+    const handleFinish = async () => {
+        setTokenizeError(null);
+
+        let contact = { ...formikContact.values };
+
+        if (contact.paymentMethod === PAYMENT_METHODS.SQUARE_NEW) {
+            try {
+                const needsReverify =
+                    !hasVerifiedSquarePayment(contact) ||
+                    feeChangedSinceTokenize(
+                        contact.squareTokenizedAtFee,
+                        totalFee
+                    );
+                if (needsReverify) {
+                    await verifySquareCardForCheckout(formikContact, totalFee);
+                }
+                contact = { ...formikContact.values };
+            } catch (err) {
+                setTokenizeError(
+                    err?.message ||
+                        "Card verification failed. Go back to Contact and try again."
+                );
+                return;
+            }
+
+            const bookingError = assertSquarePayloadForBooking(contact);
+            if (bookingError) {
+                setTokenizeError(bookingError);
+                return;
+            }
         }
-        // Create the contact object without cardDetails if they're not needed
-        const cleanedContact = {
-            ...contactValues,
-        };
-        
-        // Remove cardDetails from cleanedContact if not using NEW payment method
-        if (contactValues.paymentMethod !== PAYMENT_METHODS.NEW) {
-            delete cleanedContact.cardDetails;
+
+        const cleanedContact = { ...contact };
+        delete cleanedContact.cardDetails;
+        delete cleanedContact.squareTokenize;
+        delete cleanedContact.isValidCardInfo;
+        delete cleanedContact.squareTokenizedAtFee;
+
+        if (contact.paymentMethod === PAYMENT_METHODS.SQUARE_NEW) {
+            delete cleanedContact.paymentDetailId;
+            delete cleanedContact.squareCardId;
+            cleanedContact.paymentMethod = PAYMENT_METHODS.SQUARE_NEW;
+            cleanedContact.square = resolveSquarePaymentPayload(contact);
+        } else if (contact.paymentMethod === PAYMENT_METHODS.SQUARE_SAVED) {
+            delete cleanedContact.square;
+            cleanedContact.paymentMethod = PAYMENT_METHODS.SQUARE_SAVED;
+            cleanedContact.paymentDetailId = contact.paymentDetailId;
+            if (contact.squareCardId) {
+                cleanedContact.squareCardId = contact.squareCardId;
+            }
         }
-    
+
         const values = {
             rideInfo: formikRideInfo.values,
             vehicle: formikChooseVehicle.values,
             tripDetail: formikTripDetail.values,
-            contact: {
-                ...cleanedContact,
-                ...paymentData
-            },
+            contact: cleanedContact,
             travelType: location.pathname.split("/").pop(),
         };
-        
-        console.log("values11: ", values);
+
         dispatch(book(values));
     };
+
+    const advanceFromContactStep = async () => {
+        formikContact.setTouched({
+            passengerFullName: true,
+            passengerCellPhone: true,
+            email: true,
+            paymentMethod: true,
+            paymentDetailId: true,
+            cardDetails: { cardOwnerName: true, zipCode: true },
+        });
+
+        const errors = await formikContact.validateForm();
+        if (Object.keys(errors).length > 0) {
+            return;
+        }
+
+        setTokenizeError(null);
+
+        if (formikContact.values.paymentMethod === PAYMENT_METHODS.SQUARE_NEW) {
+            setVerifyingCard(true);
+            try {
+                await verifySquareCardForCheckout(formikContact, totalFee);
+            } catch (err) {
+                setTokenizeError(
+                    err?.message ||
+                        "Could not verify your card. Check the fields and try again."
+                );
+                return;
+            } finally {
+                setVerifyingCard(false);
+            }
+        }
+
+        handleNext();
+    };
+    advanceFromContactRef.current = advanceFromContactStep;
 
     const handleSubmit = () => {
         switch (activeStep) {
@@ -646,10 +660,21 @@ function Index() {
                 formikChooseVehicle.handleSubmit();
                 break;
             case 2:
+                formikTripDetail.setTouched({
+                    formattedPickupDate: true,
+                    formattedPickupTime: true,
+                    formattedReturnPickupDate: true,
+                    formattedReturnPickupTime: true,
+                    pickupPreference: true,
+                    occation: true,
+                    returnFlightNumber: true,
+                    returnAirline: true,
+                    additionalStopOnTheWayDescription: true,
+                });
                 formikTripDetail.handleSubmit();
                 break;
             case 3:
-                formikContact.handleSubmit();
+                advanceFromContactStep();
                 break;
             case 4:
                 formikSummary.handleSubmit();
@@ -740,6 +765,7 @@ function Index() {
 
     useEffect(() => {
         if (isBookSuccess) {
+            clearSquareCheckoutNonce();
             handleNext();
         }
         if (isError) setOpen((prev) => !prev);
@@ -798,22 +824,12 @@ function Index() {
     }, []);
 
     return (
-
-        <Box>
-            {entryAsGuestOptionPage &&
-                !isAuthenticated &&
-                !formikContact.values.entryOptionSelected ? (
-                <GuestUser
-                    setEntryAsGuestOptionPage={setEntryAsGuestOptionPage}
-                    formik={formikContact}
-                />
-            ) : (
-                <Box mt={5}>
-                    <Stepper step={activeStep} />
-                    <Grid container justifyContent={"center"} mt={5}>
-                        <Grid item xs={10}>
-                            <Box>
-                                {activeStep === 0 && (
+        <Box mt={5}>
+            <Stepper step={activeStep} />
+            <Grid container justifyContent={"center"} mt={5}>
+                <Grid item xs={10}>
+                    <Box>
+                        {activeStep === 0 && (
                                     <RideDetailForm
                                         formik={formikRideInfo}
                                         handleChangeTripType={handleChangeTripType}
@@ -841,24 +857,82 @@ function Index() {
                                         vehicleSummaryData={generateVehicleSummaryData()}
                                     />
                                 )}
-                                {activeStep === 3 && (
+                                {activeStep === 3 &&
+                                entryAsGuestOptionPage &&
+                                !isAuthenticated &&
+                                !formikContact.values.entryOptionSelected ? (
+                                    <GuestUser
+                                        setEntryAsGuestOptionPage={setEntryAsGuestOptionPage}
+                                        formik={formikContact}
+                                    />
+                                ) : activeStep === 3 ? (
                                     <ContactDetailForm
                                         formik={formikContact}
                                         rideSummaryData={formikRideInfo.values}
                                         vehicleSummaryData={generateVehicleSummaryData()}
                                         tripSummaryData={generateTripSummaryData()}
+                                        travelRouteId={travelType}
+                                        feeParams={{
+                                            vehicleFee: formikChooseVehicle.values.vehicleFee,
+                                            minimumStartFee:
+                                                formikChooseVehicle.values.minimumStartFee,
+                                            extraOptionFee:
+                                                formikChooseVehicle.values.extraOptionFee,
+                                            distanceInMiles:
+                                                formikRideInfo.values.distanceInMiles,
+                                            hour: formikRideInfo.values.hour,
+                                            tripType: formikRideInfo.values.tripType,
+                                            stopOnWayFee:
+                                                formikTripDetail.values.stopOnWayFee,
+                                            pickupPreferenceFee:
+                                                formikTripDetail.values.pickupPreferenceFee,
+                                        }}
                                     />
+                                ) : null}
+                                {activeStep === 3 && tokenizeError && (
+                                    <Alert severity="error" sx={{ mt: 2 }}>
+                                        {tokenizeError}
+                                    </Alert>
                                 )}
                                 {activeStep === 4 && (
-                                    <Summary
-                                        formik={formikSummary}
-                                        rideSummaryData={formikRideInfo.values}
-                                        vehicleSummaryData={generateVehicleSummaryData()}
-                                        tripSummaryData={generateTripSummaryData()}
-                                        contactSummaryData={generateContactSummaryData()}
-                                    />
+                                    <>
+                                        <Summary
+                                            formik={formikSummary}
+                                            rideSummaryData={formikRideInfo.values}
+                                            vehicleSummaryData={generateVehicleSummaryData()}
+                                            tripSummaryData={generateTripSummaryData()}
+                                            contactSummaryData={generateContactSummaryData()}
+                                        />
+                                        {formikContact.values.paymentMethod ===
+                                            PAYMENT_METHODS.SQUARE_NEW && (
+                                            <SquarePaymentStatus
+                                                secured={hasVerifiedSquarePayment(
+                                                    formikContact.values
+                                                )}
+                                                cardholderName={
+                                                    formikContact.values.cardDetails
+                                                        ?.cardOwnerName
+                                                }
+                                                billingZip={
+                                                    formikContact.values.cardDetails?.zipCode
+                                                }
+                                                feeMismatch={feeChangedSinceTokenize(
+                                                    formikContact.values.squareTokenizedAtFee,
+                                                    totalFee
+                                                )}
+                                                onEditPayment={handleBack}
+                                            />
+                                        )}
+                                    </>
                                 )}
-                                {activeStep === 5 && <Success />}
+                                {activeStep === 4 && tokenizeError && (
+                                    <Alert severity="error" sx={{ mt: 2 }}>
+                                        {tokenizeError}
+                                    </Alert>
+                                )}
+                                {activeStep === 5 && (
+                                    <Success bookingResult={lastBookingResult} />
+                                )}
                             </Box>
                         </Grid>
                         {activeStep !== 5 && (
@@ -876,8 +950,12 @@ function Index() {
                                     >
                                         BACK
                                     </Button>
-                                    <Button variant="contained" onClick={handleSubmit}>
-                                        {isBookPending ? (
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleSubmit}
+                                        disabled={verifyingCard || isBookPending}
+                                    >
+                                        {verifyingCard || isBookPending ? (
                                             <CircularProgress size={25} sx={{ color: "#FFF" }} />
                                         ) : (
                                             getNextButtonLabel()
@@ -905,10 +983,7 @@ function Index() {
                             {errorMessage}
                         </Alert>
                     </Snackbar>
-                </Box>
-            )}
         </Box>
-
     );
 }
 

@@ -25,6 +25,7 @@ import UpdateIcon from "@mui/icons-material/Update";
 import ContentIcon from "@mui/icons-material/ContactEmergency";
 import AdminIcon from "@mui/icons-material/AdminPanelSettingsTwoTone";
 import QueueIcon from '@mui/icons-material/Queue';
+import DirectionsCarFilledIcon from "@mui/icons-material/DirectionsCarFilled";
 
 const menus = [
   {
@@ -44,6 +45,12 @@ const menus = [
     link: "/dashboard/add-Admin",
     title: "Admin",
     icon: <AdminIcon />,
+  },
+  {
+    index: 13,
+    link: "/dashboard/drivers",
+    title: "Drivers",
+    icon: <DirectionsCarFilledIcon />,
   },
   {
     index: 3,
@@ -158,10 +165,12 @@ function ListItems() {
 
   const handleClick = (event, index) => {
     setSelectedIndex(index);
-    if (menus[index].subItems) {
+    const menu = menus.find((m) => m.index === index);
+    if (!menu) return;
+    if (menu.subItems) {
       setOpen(!open);
     } else {
-      navigate(menus[index].link);
+      navigate(menu.link);
     }
   };
 

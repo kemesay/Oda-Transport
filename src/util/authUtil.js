@@ -32,3 +32,11 @@ export const isAdminAuthenticated = () => {
     return false;
   }
 };
+
+export const isDriverAuthenticated = () => {
+  try {
+    return getAccessToken() !== null && getUserRole() === "driver";
+  } catch (error) {
+    return false;
+  }
+};

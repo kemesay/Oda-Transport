@@ -37,7 +37,13 @@ import AddCar from "./page/UserManagement/DataTable/Car/AddCar";
 import ContentDetail from "./page/UserManagement/DataTable/UpdateContent/ContentDetail";
 import AddContent from "./page/UserManagement/DataTable/UpdateContent/AddContent";
 import NotInCaliforniaError from "./components/NotInCaliforniaError";
-import { isAdminAuthenticated, isUserAuthenticated } from "./util/authUtil";
+import { isAdminAuthenticated, isUserAuthenticated, isDriverAuthenticated } from "./util/authUtil";
+import DriverDashboard from "./page/driverDashboard";
+import LiveMeterPage from "./page/driverDashboard/LiveMeterPage";
+import DriverHistoryPage from "./page/driverDashboard/DriverHistoryPage";
+import AddDriver from "./page/UserManagement/DataTable/Driver/AddDriver";
+import Drivers from "./page/UserManagement/DataTable/Driver/Driver";
+import DriverDetail from "./page/UserManagement/DataTable/Driver/DriverDetail";
 import SocialMedia from "./page/UserManagement/DataTable/SocialMedia/SocialMedia";
 import SocialMediaDetail from "./page/UserManagement/DataTable/SocialMedia/SocialMediaDetail";
 import Admin from "./page/UserManagement/DataTable/Admin/Admin";
@@ -76,6 +82,13 @@ function App() {
   };
   const PrivateAdminRoute = ({ children }) => {
     return isAdminAuthenticated() ? (
+      <>{children}</>
+    ) : (
+      <Navigate to="/error" replace />
+    );
+  };
+  const PrivateDriverRoute = ({ children }) => {
+    return isDriverAuthenticated() ? (
       <>{children}</>
     ) : (
       <Navigate to="/error" replace />
@@ -243,7 +256,36 @@ function App() {
                   element={<GratuityDetails />}
                 ></Route>
                 <Route path={"airportbook"} element={<AirportBooks />}></Route>
+                <Route path={"add-driver"} element={<AddDriver />}></Route>
+                <Route path={"drivers"} element={<Drivers />}></Route>
+                <Route path={"driver/driver-detail"} element={<DriverDetail />}></Route>
               </Route>
+              {/* ── Driver routes ─────────────────────────────── */}
+              <Route
+                path="/driver"
+                element={
+                  <PrivateDriverRoute>
+                    <DriverDashboard />
+                  </PrivateDriverRoute>
+                }
+              />
+              <Route
+                path="/driver/live-meter/:id"
+                element={
+                  <PrivateDriverRoute>
+                    <LiveMeterPage />
+                  </PrivateDriverRoute>
+                }
+              />
+              <Route
+                path="/driver/history"
+                element={
+                  <PrivateDriverRoute>
+                    <DriverHistoryPage />
+                  </PrivateDriverRoute>
+                }
+              />
+              {/* ─────────────────────────────────────────────── */}
               <Route path="/update-booking" element={<UpdateBooking />} />
               <Route path="/user/*" element={
                 <PrivateUserRoute>

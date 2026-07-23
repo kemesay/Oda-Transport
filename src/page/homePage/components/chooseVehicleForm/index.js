@@ -65,23 +65,18 @@ function Index({
         var carPricePerMile = parseFloat(car.pricePerMile);
         var calculatedCarFee = 0;
         if (travelType == "1" || travelType == "2") {
-          if (isRoundTrip()) {
-            calculatedCarFee =
-              fee -
-              (prevSelectedCarFee * distanceInMiles * 2 +
-                prevCarMinimumStartFee) +
-              (carPricePerMile * distanceInMiles * 2 + minimumCarFee);
-          } else {
-            calculatedCarFee =
-              fee -
-              (prevSelectedCarFee * distanceInMiles + prevCarMinimumStartFee) +
-              (carPricePerMile * distanceInMiles + minimumCarFee);
-          }
+          const rt = isRoundTrip();
+          const prevMin = rt ? prevCarMinimumStartFee * 2 : prevCarMinimumStartFee;
+          const nextMin = rt ? minimumCarFee * 2 : minimumCarFee;
+          const prevMileage = prevSelectedCarFee * distanceInMiles * (rt ? 2 : 1);
+          const nextMileage = carPricePerMile * distanceInMiles * (rt ? 2 : 1);
+          calculatedCarFee =
+            fee - (prevMileage + prevMin) + (nextMileage + nextMin);
         } else if (travelType == "3") {
           calculatedCarFee =
             fee -
-            (prevSelectedCarFee * hour + prevCarMinimumStartFee) +
-            (parseFloat(car.pricePerHour) * hour + minimumCarFee);
+            prevSelectedCarFee * hour +
+            parseFloat(car.pricePerHour) * hour;
         }
         dispatch(adCarFee(calculatedCarFee));
       }

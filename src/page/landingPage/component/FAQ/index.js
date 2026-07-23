@@ -226,11 +226,24 @@ export default function FAQ() {
               viewport={{ once: true }}
             >
               <Typography
+                sx={{
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  letterSpacing: "3px",
+                  textTransform: "uppercase",
+                  color: "#03930A",
+                  mb: 1,
+                  textAlign: { xs: 'center', lg: 'left' },
+                }}
+              >
+                Got questions?
+              </Typography>
+              <Typography
                 variant="h4"
                 sx={{
-                  mb: 1,
-                  fontWeight: 600,
-                  color: "#03930A",
+                  mb: 1.5,
+                  fontWeight: 700,
+                  color: "text.primary",
                   textAlign: { xs: 'center', lg: 'left' },
                 }}
               >
@@ -240,8 +253,9 @@ export default function FAQ() {
                 variant="h6"
                 color="text.secondary"
               sx={{
-                  mb: 6,
+                  mb: 5,
                   textAlign: { xs: 'center', lg: 'left' },
+                  fontSize: "1rem",
                 }}
               >
                 Find answers to common questions about our transportation services.

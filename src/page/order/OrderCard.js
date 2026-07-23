@@ -15,23 +15,21 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  LinearProgress,
+  Tooltip,
 } from "@mui/material";
-import { 
-  MdAccessTime, MdLocationOn, MdPerson, 
+import {
+  MdAccessTime, MdLocationOn, MdPerson,
   MdFlight, MdConfirmationNumber, MdPayments, MdEmail, MdPhone,
   MdDescription, MdAddLocation, MdSchedule, MdEventAvailable,
+  MdElectricBolt, MdTimer,
 } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
-
-const PAYMENT_STATUS_COLORS = {
-  NOT_PAID: '#FF4B55', // Bright red
-  AWAITING_PAYMENT: '#FFA726', // Orange
-  PARTIALLY_PAID: '#42A5F5', // Light blue
-  PAID: '#03930A', // Green
-  PENDING_REFUND: '#AB47BC', // Purple
-  REFUNDED: '#26A69A', // Teal
-  CANCELLED: '#78909C' // Blue grey
-};
+import { PAYMENT_STATUS_COLORS } from '../../constants/paymentStatusColors';
+import useBookingPaymentRealtime from '../../hooks/useBookingPaymentRealtime';
+import BACKEND_API from '../../store/utils/API';
+import { authHeader } from '../../util/authUtil';
+import defaultCarImage from '../../assets/images/car.png';
 
 const BOOKING_STATUS_COLORS = {
   PENDING_APPROVAL: '#FFA726', // Orange
@@ -117,6 +115,7 @@ const ActionButton = styled(Button)(({ theme }) => ({
 
 export default function OrderCard(props) {
   const {
+    bookId,
     confirmationNumber,
     totalTripFeeInDollars,
     bookingStatus,
@@ -141,11 +140,48 @@ export default function OrderCard(props) {
     returnFlightNumber,
     selectedHours,
     occasion,
-    Car,
+    // Car can legitimately be null: it's a soft-deleted / retired vehicle
+    // whose past bookings still need to render (backend should now keep
+    // resolving it, but never trust that a nested relation is present).
+    Car: car,
   } = props.order;
+  const carImageUrl = car?.carImageUrl || defaultCarImage;
+  const carName = car?.carName || 'Vehicle';
+
+  const { paymentStatus: livePaymentStatus } = useBookingPaymentRealtime({
+    travelType,
+    bookingId: bookId,
+    initialPaymentStatus: paymentStatus,
+    enabled: Boolean(bookId && travelType),
+  });
+  const displayPaymentStatus = livePaymentStatus || paymentStatus;
 
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
   const navigate = useNavigate();
+
+  // Live status polling for EN_ROUTE Hourly bookings
+  const [liveStatus, setLiveStatus] = React.useState(null);
+  const isLiveHourly = travelType === 'Hourly' && bookingStatus === 'EN_ROUTE';
+  const { hourlyCharterBookId } = props.order;
+
+  const fetchLiveStatus = React.useCallback(async () => {
+    if (!hourlyCharterBookId) return;
+    try {
+      const res = await BACKEND_API.get(
+        `/api/v1/hourly-charter-books/${hourlyCharterBookId}/live-status`,
+        authHeader()
+      );
+      setLiveStatus(res.data);
+    } catch (_) {}
+  }, [hourlyCharterBookId]);
+
+  React.useEffect(() => {
+    if (isLiveHourly) {
+      fetchLiveStatus();
+      const id = setInterval(fetchLiveStatus, 15000);
+      return () => clearInterval(id);
+    }
+  }, [isLiveHourly, fetchLiveStatus]);
 
   const formatDateTime = (dateTimeStr) => {
     if (!dateTimeStr) return 'Not specified';
@@ -183,10 +219,10 @@ export default function OrderCard(props) {
               Payment Status
             </Typography>
             <Chip
-              label={paymentStatus}
+              label={displayPaymentStatus}
               size="small"
               sx={{
-                backgroundColor: PAYMENT_STATUS_COLORS[paymentStatus],
+                backgroundColor: PAYMENT_STATUS_COLORS[displayPaymentStatus] || '#78909C',
                 color: '#fff',
                 fontWeight: 500,
               }}
@@ -318,6 +354,41 @@ export default function OrderCard(props) {
                   </Typography>
                 </Box>
               </InfoItem>
+
+              {props.order.liveExtensionBaseFare && (
+                <InfoItem sx={{ bgcolor: 'rgba(196,181,253,0.1)', border: '1px solid rgba(196,181,253,0.3)' }}>
+                  <MdElectricBolt color="#c4b5fd" size={20} />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Base Fare (Fixed)</Typography>
+                    <Typography variant="body2" fontWeight="600" color="#7c3aed">
+                      ${Number(props.order.liveExtensionBaseFare).toFixed(2)}
+                    </Typography>
+                  </Box>
+                </InfoItem>
+              )}
+              {props.order.liveExtensionFareInDollars > 0 && (
+                <InfoItem sx={{ bgcolor: 'rgba(196,181,253,0.1)', border: '1px solid rgba(196,181,253,0.3)' }}>
+                  <MdElectricBolt color="#c4b5fd" size={20} />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Live Extension Charge</Typography>
+                    <Typography variant="body2" fontWeight="600" color="#7c3aed">
+                      +${Number(props.order.liveExtensionFareInDollars).toFixed(2)}
+                    </Typography>
+                  </Box>
+                </InfoItem>
+              )}
+              {props.order.billingMode && (
+                <InfoItem>
+                  <MdElectricBolt color="#03930A" size={20} />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Billing Mode</Typography>
+                    <Typography variant="body2" fontWeight="600">
+                      {props.order.billingMode === 'LIVE' ? 'Live Meter' : props.order.billingMode === 'PRE_BOOKED' ? 'Fixed Rate' : props.order.billingMode}
+                      {props.order.convertedToLiveAt ? ' (Converted at Start)' : ''}
+                    </Typography>
+                  </Box>
+                </InfoItem>
+              )}
             </Stack>
           </DetailSection>
         );
@@ -416,8 +487,8 @@ export default function OrderCard(props) {
           height: 200,
           position: 'relative',
         }}
-        image={Car.carImageUrl}
-        title={Car.name}
+        image={carImageUrl}
+        title={carName}
       >
         <PriceTag>
           <Typography variant="h6" fontWeight="bold" color="#03930A">
@@ -481,6 +552,80 @@ export default function OrderCard(props) {
             </InfoItem>
           )}
         </Stack>
+
+        {isLiveHourly && liveStatus && (
+          <Box
+            sx={{
+              mt: 2,
+              p: 2,
+              background: liveStatus.mode === 'EXTENDED'
+                ? 'linear-gradient(135deg, #1e0a3c 0%, #2d1458 100%)'
+                : liveStatus.mode === 'CONVERTED'
+                ? 'linear-gradient(135deg, #0a1628 0%, #142040 100%)'
+                : 'linear-gradient(135deg, #0a2010 0%, #143020 100%)',
+              borderRadius: 2,
+              border: `1px solid ${
+                liveStatus.mode === 'EXTENDED' ? 'rgba(196,181,253,0.3)' :
+                liveStatus.mode === 'CONVERTED' ? 'rgba(96,165,250,0.3)' :
+                'rgba(3,147,10,0.3)'
+              }`,
+            }}
+          >
+            {/* Mode badge row */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+              <MdElectricBolt color={
+                liveStatus.mode === 'EXTENDED' ? '#c4b5fd' :
+                liveStatus.mode === 'CONVERTED' ? '#60a5fa' : '#03930A'
+              } size={18} />
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>
+                Live Trip
+              </Typography>
+              {liveStatus.mode === 'EXTENDED' && (
+                <Chip label="⚡ Extended" size="small" sx={{ bgcolor: 'rgba(196,181,253,0.2)', color: '#c4b5fd', border: '1px solid #c4b5fd', fontSize: 11 }} />
+              )}
+              {liveStatus.mode === 'CONVERTED' && (
+                <Chip label="↔ Converted" size="small" sx={{ bgcolor: 'rgba(96,165,250,0.2)', color: '#60a5fa', border: '1px solid #60a5fa', fontSize: 11 }} />
+              )}
+            </Box>
+
+            {/* Stats row */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+              <Box sx={{ p: 1, bgcolor: 'rgba(255,255,255,0.07)', borderRadius: 1, textAlign: 'center' }}>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>
+                  <MdTimer size={12} /> {liveStatus.mode === 'EXTENDED' ? 'Total Time' : 'Elapsed'}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#fff', fontWeight: 700, fontFamily: 'monospace' }}>
+                  {(() => {
+                    const mins = liveStatus.mode === 'EXTENDED'
+                      ? (liveStatus.totalElapsedMinutes ?? liveStatus.extensionMinutes ?? 0)
+                      : (liveStatus.elapsedMinutes || 0);
+                    return liveStatus.elapsedFormatted && liveStatus.mode !== 'EXTENDED'
+                      ? liveStatus.elapsedFormatted
+                      : `${Math.floor(mins / 60)}h ${mins % 60}m`;
+                  })()}
+                </Typography>
+              </Box>
+              <Box sx={{ p: 1, bgcolor: 'rgba(255,255,255,0.07)', borderRadius: 1, textAlign: 'center' }}>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>Running Fare</Typography>
+                <Typography variant="body2" sx={{ color: '#03930A', fontWeight: 700 }}>
+                  ${Number(liveStatus.runningFare || 0).toFixed(2)}
+                </Typography>
+              </Box>
+              {liveStatus.mode === 'EXTENDED' && liveStatus.baseFare != null && (
+                <>
+                  <Box sx={{ p: 1, bgcolor: 'rgba(255,255,255,0.07)', borderRadius: 1, textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>🔒 Base Fare</Typography>
+                    <Typography variant="body2" sx={{ color: '#c4b5fd', fontWeight: 700 }}>${Number(liveStatus.baseFare).toFixed(2)}</Typography>
+                  </Box>
+                  <Box sx={{ p: 1, bgcolor: 'rgba(255,255,255,0.07)', borderRadius: 1, textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>Extension</Typography>
+                    <Typography variant="body2" sx={{ color: '#c4b5fd', fontWeight: 700 }}>+${Number(liveStatus.extensionFare || 0).toFixed(2)}</Typography>
+                  </Box>
+                </>
+              )}
+            </Box>
+          </Box>
+        )}
       </CardContent>
 
       <Divider sx={{ margin: '0 16px' }} />

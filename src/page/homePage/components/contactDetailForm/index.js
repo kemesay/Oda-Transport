@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Stack, Grid, FormControlLabel, Checkbox, Box, FormControl, RadioGroup, FormLabel } from "@mui/material";
 import RSRadio from "../../../../components/RSRadio";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -13,53 +13,90 @@ import {
   computeGratuityOnCarFare,
   getLegCarPrice,
 } from "../../../../utils/bookingFeeCalculator";
+import {
+  normalizePaymentCardsResponse,
+  isSquareReadyCard,
+} from "../../../../utils/paymentCards";
+import { PAYMENT_METHODS } from "../../../../constants/paymentMethods";
 
 function Index({
   formik,
   vehicleSummaryData,
   rideSummaryData,
   tripSummaryData,
-  /** When true, do not overwrite passenger fields from /users/me on mount (update booking). */
   skipAutoContactFill,
-  /** When true, hide payment method UI — PATCH update does not change payment here. */
   hidePaymentSection,
   travelRouteId,
+  feeParams = {},
 }) {
   const [bookForPassenger, setBookForPassenger] = useState(
     formik.values.bookingFor == "SomeoneElse"
   );
   const [gratuities, setGratuity] = useState([]);
-  const [userCards, setUserCards] = useState([]); // State for user's payment cards
-  const { fee, totalFee } = useSelector((state) => state.bookReducer);
+  const [userCards, setUserCards] = useState([]);
+  const [cardsLoading, setCardsLoading] = useState(false);
+  const [cardsError, setCardsError] = useState(null);
+  const { totalFee } = useSelector((state) => state.bookReducer);
   const dispatch = useDispatch();
 
   const { isAuthenticated } = useSelector((state) => state.authReducer);
+  const authToken = isAuthenticated
+    ? sessionStorage.getItem("access_token")
+    : null;
 
   const tripType = rideSummaryData?.tripType ?? formik.values.tripType;
   const legCarPriceForTip = () =>
     getLegCarPrice(travelRouteId, {
-      vehicleFee: formik.values.vehicleFee,
-      minimumStartFee: formik.values.minimumStartFee,
+      vehicleFee: feeParams.vehicleFee ?? formik.values.vehicleFee,
+      minimumStartFee: feeParams.minimumStartFee ?? formik.values.minimumStartFee,
       distanceInMiles:
-        formik.values.distanceInMiles ?? rideSummaryData?.distanceInMiles,
-      hour: formik.values.hour ?? rideSummaryData?.hour,
+        feeParams.distanceInMiles ??
+        formik.values.distanceInMiles ??
+        rideSummaryData?.distanceInMiles,
+      hour: feeParams.hour ?? formik.values.hour ?? rideSummaryData?.hour,
     });
 
   const tipDollarsForPercentage = (percentage) =>
     computeGratuityOnCarFare(legCarPriceForTip(), percentage, tripType);
 
-  // Function to fetch user's payment cards
-  const fetchUserPaymentCards = async () => {
+  const fetchUserPaymentCards = useCallback(async () => {
+    if (!isAuthenticated || !authToken) {
+      setUserCards([]);
+      setCardsError(null);
+      if (!formik.values.paymentMethod) {
+        formik.setFieldValue("paymentMethod", PAYMENT_METHODS.SQUARE_NEW);
+      }
+      return;
+    }
+
+    setCardsLoading(true);
+    setCardsError(null);
+
     try {
       const response = await BACKEND_API.get(
         "/api/v1/users/payment-detail/paymentCards",
         authHeader()
       );
-      setUserCards(response.data);
+      const list = normalizePaymentCardsResponse(response.data);
+      const squareCards = list.filter(isSquareReadyCard);
+      setUserCards(squareCards);
+
+      if (squareCards.length === 0 && !formik.values.paymentMethod) {
+        formik.setFieldValue("paymentMethod", PAYMENT_METHODS.SQUARE_NEW);
+      }
     } catch (error) {
-      console.error("Error fetching payment cards:", error);
+      const message =
+        error?.response?.data?.message ||
+        "Could not load saved payment methods.";
+      setCardsError(message);
+      setUserCards([]);
+      if (!formik.values.paymentMethod) {
+        formik.setFieldValue("paymentMethod", PAYMENT_METHODS.SQUARE_NEW);
+      }
+    } finally {
+      setCardsLoading(false);
     }
-  };
+  }, [isAuthenticated, authToken, formik]);
 
   const handleBookForPassenger = (e) => {
     setBookForPassenger(e.target.checked);
@@ -78,15 +115,15 @@ function Index({
 
   const getUserInfo = async () => {
     try {
-      await BACKEND_API
-        .get("/api/v1/users/me", authHeader())
-        .then((res) => {
-          const { fullName, email, phoneNumber } = res.data;
-          formik.setFieldValue("passengerFullName", fullName);
-          formik.setFieldValue("passengerCellPhone", phoneNumber);
-          formik.setFieldValue("email", email);
-        });
-    } catch (error) { }
+      await BACKEND_API.get("/api/v1/users/me", authHeader()).then((res) => {
+        const { fullName, email, phoneNumber } = res.data;
+        formik.setFieldValue("passengerFullName", fullName);
+        formik.setFieldValue("passengerCellPhone", phoneNumber);
+        formik.setFieldValue("email", email);
+      });
+    } catch (error) {
+      /* guest may continue without profile */
+    }
   };
 
   const handleChangeGratitude = (e) => {
@@ -105,29 +142,29 @@ function Index({
 
   const getGratitude = async () => {
     try {
-      BACKEND_API.get("/api/v1/gratuities").then((res) => {
-        const gratuityData = res.data.map((gratuity) => ({
-          ...gratuity,
-          gratuityFee: tipDollarsForPercentage(gratuity.percentage).toFixed(2),
-        }));
-        setGratuity(gratuityData);
-        const selected = gratuityData.find(
-          (x) => Number(x.gratuityId) === Number(formik.values.gratuityId)
-        );
-        if (selected && Number(selected.percentage) > 0) {
-          const tip = tipDollarsForPercentage(selected.percentage);
-          formik.setFieldValue("gratuityPercentage", selected.percentage);
-          formik.setFieldValue("gratuityFee", tip);
-          formik.setFieldValue("prevGratuityFee", tip);
-        }
-      });
+      const res = await BACKEND_API.get("/api/v1/gratuities");
+      const gratuityData = res.data.map((gratuity) => ({
+        ...gratuity,
+        gratuityFee: tipDollarsForPercentage(gratuity.percentage).toFixed(2),
+      }));
+      setGratuity(gratuityData);
+      const selected = gratuityData.find(
+        (x) => Number(x.gratuityId) === Number(formik.values.gratuityId)
+      );
+      if (selected && Number(selected.percentage) > 0) {
+        const tip = tipDollarsForPercentage(selected.percentage);
+        formik.setFieldValue("gratuityPercentage", selected.percentage);
+        formik.setFieldValue("gratuityFee", tip);
+        formik.setFieldValue("prevGratuityFee", tip);
+      }
     } catch (error) {
       console.log("unable to load gratitudes: ", error);
     }
   };
 
   useEffect(() => {
-    if (!travelRouteId || !formik.values.vehicleFee) return;
+    const vehicleFee = feeParams.vehicleFee ?? formik.values.vehicleFee;
+    if (!travelRouteId || !vehicleFee) return;
     setGratuity((prev) => {
       if (!prev.length) return prev;
       return prev.map((g) => ({
@@ -138,6 +175,10 @@ function Index({
   }, [
     travelRouteId,
     tripType,
+    feeParams.vehicleFee,
+    feeParams.minimumStartFee,
+    feeParams.distanceInMiles,
+    feeParams.hour,
     formik.values.vehicleFee,
     formik.values.minimumStartFee,
     formik.values.distanceInMiles,
@@ -152,19 +193,14 @@ function Index({
       getUserInfo();
     }
     getGratitude();
-
-    // Fetch payment cards if user is authenticated
-    if (isAuthenticated) {
-      fetchUserPaymentCards();
-    }
-  }, [isAuthenticated, skipAutoContactFill]); // Add isAuthenticated to dependency array
+    fetchUserPaymentCards();
+  }, [isAuthenticated, skipAutoContactFill, fetchUserPaymentCards]);
 
   const isFieldDisabled = () => {
     if (isAuthenticated) {
       return !bookForPassenger;
-    } else {
-      return false;
     }
+    return false;
   };
 
   return (
@@ -183,7 +219,7 @@ function Index({
           travelRouteId={travelRouteId}
         />
       </Grid>
-      <Grid item xs={8} spacing={{ xs: 12, md: 6 }}>
+      <Grid item xs={12} lg={8} spacing={{ xs: 12, md: 6 }}>
         <Grid item xs={12}>
           <FormControlLabel
             control={
@@ -270,8 +306,11 @@ function Index({
             <Box>
               <PaymentMethodSelector
                 formik={formik}
-                authToken={isAuthenticated ? sessionStorage.getItem('access_token') : null}
-                userCards={userCards} // Pass the userCards to PaymentMethodSelector
+                authToken={authToken}
+                userCards={userCards}
+                cardsLoading={cardsLoading}
+                cardsError={cardsError}
+                totalFee={totalFee}
               />
             </Box>
           )}

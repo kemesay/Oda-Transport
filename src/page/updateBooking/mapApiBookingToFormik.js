@@ -112,7 +112,7 @@ export function mapApiBookingToFormik(travelTypeLabel, d) {
     minimumStartFee: d.Car?.minimumStartFee
       ? parseFloat(d.Car.minimumStartFee)
       : 0,
-    hour: Number(d.selectedHours ?? 5),
+    hour: Number(d.selectedHours ?? 4),
     pickupPhysicalAddress: d.pickupPhysicalAddress ?? "",
     pickupLatitude: d.pickupLatitude ?? "",
     pickupLongitude: d.pickupLongitude ?? "",

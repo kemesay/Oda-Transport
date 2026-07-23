@@ -1,6 +1,13 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { BACKEND_API } from "../utils/API";
 import { authHeader } from "../../util/authUtil";
+import { applySquarePaymentToBody } from "../../utils/squareBookingPayload";
+
+function buildBookingBody(contact, baseFields) {
+  const body = { ...baseFields };
+  applySquarePaymentToBody(body, contact);
+  return body;
+}
 
 export const book = createAsyncThunk(
   "book/apply-book",
@@ -58,6 +65,7 @@ export const book = createAsyncThunk(
     if (extraOptions.length === 0) {
       delete body.extraOptions;
     }
+
     try {
       if (travelType == "2") {
         body.tripType = rideInfo?.tripType;
@@ -68,11 +76,16 @@ export const book = createAsyncThunk(
           delete body.additionalStopOnTheWayDescription;
         }
 
+        if (rideInfo?.sidePicks && rideInfo.sidePicks.length > 0) {
+          body.sidePicks = rideInfo.sidePicks;
+        }
+
         res = await BACKEND_API.post(
           "/api/v1/point-to-point-books",
-          body,
+          buildBookingBody(contact, body),
           headers
         );
+        return res.data;
       } else if (travelType == "1") {
         const body = {
           tripType: rideInfo?.tripType,
@@ -142,9 +155,13 @@ export const book = createAsyncThunk(
           delete body.additionalStopOnTheWayDescription;
         }
 
+        if (rideInfo?.sidePicks && rideInfo.sidePicks.length > 0) {
+          body.sidePicks = rideInfo.sidePicks;
+        }
+
         res = await BACKEND_API.post(
           "/api/v1/airport-books",
-          body,
+          buildBookingBody(contact, body),
           headers
         );
         return res.data;
@@ -155,11 +172,13 @@ export const book = createAsyncThunk(
         }
         body.selectedHours = rideInfo?.hour;
         body.occasion = tripDetail?.occation;
+        body.billingMode = rideInfo?.billingMode || "PRE_BOOKED";
         res = await BACKEND_API.post(
           "/api/v1/hourly-charter-books",
-          body,
+          buildBookingBody(contact, body),
           headers
         );
+        return res.data;
       }
     } catch (error) {
       const errorText = error?.response

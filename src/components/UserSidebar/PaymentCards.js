@@ -11,26 +11,18 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  TextField,
   FormControlLabel,
   Switch,
   CircularProgress,
   Alert,
   Snackbar,
   Tooltip,
-  InputAdornment,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import {
   CreditCard as CreditCardIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
   Info as InfoIcon,
@@ -39,7 +31,8 @@ import { styled } from '@mui/material/styles';
 import { BACKEND_API } from '../../store/utils/API';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { format, addYears, isAfter, parse } from 'date-fns';
+import SquareWalletAddCard from './SquareWalletAddCard';
+import { fetchSquareConfig, isSquareEnabled } from '../../services/squareConfigService';
 
 // Styled components
 const PaymentCard = styled(Card)(({ theme }) => ({
@@ -107,104 +100,18 @@ const PrimaryBadge = styled(Box)(({ theme }) => ({
   boxShadow: theme.shadows[2],
 }));
 
-// Validation schema
-const cardValidationSchema = Yup.object().shape({
-  creditCardNumber: Yup.string()
-    .required('Card number is required')
-    .test('is-valid-card', 'Invalid card number', (value) => {
-      if (!value) return false;
-      
-      // Remove all non-digit characters
-      const cleaned = value.replace(/\D/g, '');
-      
-      // Card type validation rules
-      const cardRules = {
-        visa: {
-          pattern: /^4[0-9]{12}(?:[0-9]{3})?$/,
-          length: [13, 16, 19]
-        },
-        mastercard: {
-          pattern: /^5[1-5][0-9]{14}$/,
-          length: [16]
-        },
-        amex: {
-          pattern: /^3[47][0-9]{13}$/,
-          length: [15]
-        },
-        discover: {
-          pattern: /^6(?:011|5[0-9]{2})[0-9]{12}$/,
-          length: [16]
-        },
-        diners: {
-          pattern: /^3(?:0[0-5]|[68][0-9])[0-9]{11}$/,
-          length: [14]
-        },
-        jcb: {
-          pattern: /^(?:2131|1800|35\d{3})\d{11}$/,
-          length: [16]
-        }
-      };
-
-      // Check if the number matches any card type pattern
-      const cardType = Object.keys(cardRules).find(type => 
-        cardRules[type].pattern.test(cleaned) && 
-        cardRules[type].length.includes(cleaned.length)
-      );
-
-      if (!cardType) return false;
-
-      // Luhn algorithm check
-      let sum = 0;
-      let shouldDouble = false;
-
-      for (let i = cleaned.length - 1; i >= 0; i--) {
-        let digit = parseInt(cleaned.charAt(i), 10);
-
-        if (shouldDouble) {
-          digit *= 2;
-          if (digit > 9) digit -= 9;
-        }
-
-        sum += digit;
-        shouldDouble = !shouldDouble;
-      }
-
-      return (sum % 10) === 0;
-    }),
-  cardOwnerName: Yup.string()
-    .required('Cardholder name is required')
-    .matches(/^[a-zA-Z\s]+$/, 'Only letters and spaces allowed'),
-  expirationDate: Yup.string()
-    .required('Expiration date is required')
-    .test('valid-date', 'Invalid expiration date', (value) => {
-      if (!value) return false;
-      const [month, year] = value.split('/');
-      if (!month || !year || month.length !== 2 || year.length !== 2) return false;
-      
-      const expDate = parse(`01/${month}/20${year}`, 'dd/MM/yyyy', new Date());
-      const currentDate = new Date();
-      return isAfter(expDate, currentDate);
-    }),
-  securityCode: Yup.string()
-    .required('Security code is required')
-    .test('valid-cvv', 'Invalid security code', (value) => {
-      if (!value) return false;
-      // American Express cards have 4-digit CVV, others have 3
-      const cardNumber = this.parent.creditCardNumber;
-      if (!cardNumber) return false;
-      
-      const cleaned = cardNumber.replace(/\D/g, '');
-      const isAmex = /^3[47]/.test(cleaned);
-      
-      return isAmex ? 
-        /^[0-9]{4}$/.test(value) : 
-        /^[0-9]{3}$/.test(value);
-    }),
-  zipCode: Yup.string()
-    .required('ZIP code is required')
-    .matches(/^[0-9]{5}(?:-[0-9]{4})?$/, 'Must be a valid ZIP code'),
+const editCardSchema = Yup.object().shape({
   isPrimary: Yup.boolean(),
 });
+
+function detectCardType(number) {
+  const num = String(number || '').replace(/\D/g, '');
+  if (/^4/.test(num)) return 'visa';
+  if (/^5[1-5]/.test(num)) return 'mastercard';
+  if (/^3[47]/.test(num)) return 'amex';
+  if (/^6(?:011|5)/.test(num)) return 'discover';
+  return 'unknown';
+}
 
 function PaymentCards() {
   const [cards, setCards] = useState([]);
@@ -214,34 +121,19 @@ function PaymentCards() {
   const [cardLoading, setCardLoading] = useState({});
   const [error, setError] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [showSecurityCode, setShowSecurityCode] = useState(false);
-  const [cardType, setCardType] = useState('unknown');
+  const [squareActive, setSquareActive] = useState(false);
+  const [walletIsPrimary, setWalletIsPrimary] = useState(false);
+  const squareWalletRef = React.useRef(null);
 
-  // Formik form handling
   const formik = useFormik({
     initialValues: {
-      creditCardNumber: '',
-      expirationDate: '',
-      zipCode: '',
-      securityCode: '',
-      cardOwnerName: '',
       isPrimary: false,
     },
-    validationSchema: cardValidationSchema,
+    validationSchema: editCardSchema,
     onSubmit: async (values) => {
       await handleSaveCard(values);
     },
   });
-
-  // Detect card type based on number
-  const detectCardType = (number) => {
-    const num = number.replace(/\D/g, '');
-    if (/^4/.test(num)) return 'visa';
-    if (/^5[1-5]/.test(num)) return 'mastercard';
-    if (/^3[47]/.test(num)) return 'amex';
-    if (/^6(?:011|5)/.test(num)) return 'discover';
-    return 'unknown';
-  };
 
   // Fetch all cards
   const fetchCards = async () => {
@@ -265,17 +157,10 @@ function PaymentCards() {
 
   useEffect(() => {
     fetchCards();
+    fetchSquareConfig()
+      .then((config) => setSquareActive(isSquareEnabled(config)))
+      .catch(() => setSquareActive(false));
   }, []);
-
-  // Update card type when card number changes
-  useEffect(() => {
-    if (formik.values.creditCardNumber.length >= 4) {
-      const type = detectCardType(formik.values.creditCardNumber);
-      setCardType(type);
-    } else {
-      setCardType('unknown');
-    }
-  }, [formik.values.creditCardNumber]);
 
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -288,6 +173,7 @@ function PaymentCards() {
   const handleAddCard = () => {
     setEditingCard(null);
     formik.resetForm();
+    setWalletIsPrimary(false);
     setOpenDialog(true);
   };
 
@@ -302,11 +188,6 @@ function PaymentCards() {
       );
       setEditingCard(response.data);
       formik.setValues({
-        creditCardNumber: response.data.creditCardNumber,
-        expirationDate: response.data.expirationDate,
-        zipCode: response.data.zipCode,
-        securityCode: response.data.securityCode,
-        cardOwnerName: response.data.cardOwnerName,
         isPrimary: response.data.isPrimary,
       });
       setOpenDialog(true);
@@ -364,65 +245,71 @@ function PaymentCards() {
       const token = sessionStorage.getItem('access_token');
       
       if (editingCard) {
-        // Update existing card
-        await BACKEND_API.put(
-          `/api/v1/users/payment-detail/${editingCard.paymentDetailId}`,
-          values,
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
-
         if (values.isPrimary) {
           await BACKEND_API.patch(
             `/api/v1/users/payment-detail/${editingCard.paymentDetailId}/set-primary`,
             {},
-            {
-              headers: { Authorization: `Bearer ${token}` }
-            }
+            { headers: { Authorization: `Bearer ${token}` } }
           );
         }
-
         showSnackbar('Card updated successfully');
-      } else {
-        // Create new card
+      } else if (squareActive) {
+        const billing = squareWalletRef.current?.getBillingFields() || {};
+        if (!billing.cardOwnerName?.trim() || !billing.zipCode?.trim()) {
+          showSnackbar("Cardholder name and billing ZIP are required", "error");
+          return;
+        }
+        const square = await squareWalletRef.current?.tokenizeForSave();
         const response = await BACKEND_API.post(
-          "/api/v1/users/payment-detail/validate-card",
-          values,
+          "/api/v1/users/payment-detail/validate-square-card",
           {
-            headers: { Authorization: `Bearer ${token}` }
-          }
+            sourceId: square.sourceId,
+            verificationToken: square.verificationToken,
+            cardOwnerName: billing.cardOwnerName.trim(),
+            zipCode: billing.zipCode.trim(),
+            isPrimary: walletIsPrimary,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        if (values.isPrimary && response.data.paymentDetailId) {
+        if (walletIsPrimary && response.data.paymentDetailId) {
           await BACKEND_API.patch(
             `/api/v1/users/payment-detail/${response.data.paymentDetailId}/set-primary`,
             {},
-            {
-              headers: { Authorization: `Bearer ${token}` }
-            }
+            { headers: { Authorization: `Bearer ${token}` } }
           );
         }
-
-        showSnackbar('Card added successfully');
+        showSnackbar("Card saved to your wallet");
+      } else {
+        showSnackbar("Square payments are required to add a card. Please try again later.", "error");
+        return;
       }
       
-      await fetchCards(); // Refresh the list
+      await fetchCards();
       setOpenDialog(false);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Failed to save card';
-      showSnackbar(errorMessage, 'error');
+      const data = err.response?.data;
+      const errorMessage =
+        data?.message ||
+        data?.error ||
+        (Array.isArray(data?.errors) ? data.errors.join(", ") : null) ||
+        err.message ||
+        "Failed to save card";
+      showSnackbar(errorMessage, "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // Format card number for display (mask all but last 4 digits)
   const formatCardNumber = (number) => {
     if (!number) return '';
+    const digits = String(number).replace(/\D/g, '');
+    if (digits.length <= 4) {
+      return `•••• •••• •••• ${digits}`.trim();
+    }
     const visibleDigits = 4;
-    const masked = number.slice(0, -visibleDigits).replace(/\d/g, '•');
-    const visible = number.slice(-visibleDigits);
+    const masked = digits.slice(0, -visibleDigits).replace(/\d/g, '•');
+    const visible = digits.slice(-visibleDigits);
     return `${masked}${visible}`.replace(/(.{4})/g, '$1 ').trim();
   };
 
@@ -438,19 +325,6 @@ function PaymentCards() {
     if (!name) return '';
     return name.toUpperCase();
   };
-
-  // Generate month options for expiration date
-  const months = Array.from({ length: 12 }, (_, i) => ({
-    value: (i + 1).toString().padStart(2, '0'),
-    label: (i + 1).toString().padStart(2, '0'),
-  }));
-
-  // Generate year options for expiration date (next 10 years)
-  const currentYear = new Date().getFullYear() % 100;
-  const years = Array.from({ length: 10 }, (_, i) => ({
-    value: (currentYear + i).toString().padStart(2, '0'),
-    label: `20${currentYear + i}`,
-  }));
 
   // Add this new function to handle primary card switch changes
   const handlePrimarySwitchChange = (e) => {
@@ -580,7 +454,9 @@ function PaymentCards() {
         </Box>
       ) : (
         <Grid container spacing={3}>
-          {cards.map((card) => (
+          {cards.map((card) => {
+            const cardType = detectCardType(card.creditCardNumber || card.last4);
+            return (
             <Grid item xs={12} md={6} key={card.paymentDetailId}>
               <PaymentCard>
                 {card.isPrimary && (
@@ -608,7 +484,7 @@ function PaymentCards() {
                     </Box>
                   </Box>
                   <CardNumber>
-                    {formatCardNumber(card.creditCardNumber)}
+                    {formatCardNumber(card.last4 || card.creditCardNumber)}
                   </CardNumber>
                 </Box>
                 
@@ -667,7 +543,8 @@ function PaymentCards() {
                 </CardTypeIndicator>
               </PaymentCard>
             </Grid>
-          ))}
+            );
+          })}
         </Grid>
       )}
 
@@ -741,142 +618,35 @@ function PaymentCards() {
           borderBottom: '1px solid rgba(3,147,10,0.1)',
         }}>
           <Typography variant="body2" color="text.secondary">
-            {editingCard 
-              ? 'Update your card information below'
-              : 'Please enter your card details to add a new payment method'}
+            {editingCard
+              ? "Update primary status for this saved card"
+              : squareActive
+                ? "Save a card to your wallet — use it as primary or saved card at checkout"
+                : "Card payments are unavailable. Square must be configured to add cards."}
           </Typography>
         </Box>
         
         <DialogContent>
-          <form onSubmit={formik.handleSubmit}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField
-                name="creditCardNumber"
-                label="Card Number"
-                value={formik.values.creditCardNumber}
-                onChange={(e) => {
-                  // Only allow numbers and limit to 16 digits
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 19);
-                  formik.setFieldValue('creditCardNumber', value);
-                }}
-                onBlur={formik.handleBlur}
-                error={formik.touched.creditCardNumber && Boolean(formik.errors.creditCardNumber)}
-                helperText={formik.touched.creditCardNumber && formik.errors.creditCardNumber}
-                fullWidth
-                required
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      {cardType === 'visa' && (
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>VISA</Typography>
-                      )}
-                      {cardType === 'mastercard' && (
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>MC</Typography>
-                      )}
-                      {cardType === 'amex' && (
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>AMEX</Typography>
-                      )}
-                      {cardType === 'discover' && (
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>DISC</Typography>
-                      )}
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              
-              <TextField
-                name="cardOwnerName"
-                label="Card Holder Name"
-                value={formik.values.cardOwnerName}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.cardOwnerName && Boolean(formik.errors.cardOwnerName)}
-                helperText={formik.touched.cardOwnerName && formik.errors.cardOwnerName}
-                fullWidth
-                required
-              />
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <FormControl fullWidth>
-                  <InputLabel>Expiration Month</InputLabel>
-                  <Select
-                    name="expirationMonth"
-                    value={formik.values.expirationDate?.split('/')[0] || ''}
-                    onChange={(e) => {
-                      const month = e.target.value;
-                      const year = formik.values.expirationDate?.split('/')[1] || '';
-                      formik.setFieldValue('expirationDate', year ? `${month}/${year}` : month);
-                    }}
-                    label="Expiration Month"
-                  >
-                    {months.map((month) => (
-                      <MenuItem key={month.value} value={month.value}>
-                        {month.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                
-                <FormControl fullWidth>
-                  <InputLabel>Expiration Year</InputLabel>
-                  <Select
-                    name="expirationYear"
-                    value={formik.values.expirationDate?.split('/')[1] || ''}
-                    onChange={(e) => {
-                      const year = e.target.value;
-                      const month = formik.values.expirationDate?.split('/')[0] || '';
-                      formik.setFieldValue('expirationDate', month ? `${month}/${year}` : `01/${year}`);
-                    }}
-                    label="Expiration Year"
-                  >
-                    {years.map((year) => (
-                      <MenuItem key={year.value} value={year.value}>
-                        {year.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                
-                <TextField
-                  name="securityCode"
-                  label="Security Code"
-                  type={showSecurityCode ? 'text' : 'password'}
-                  value={formik.values.securityCode}
-                  onChange={(e) => {
-                    // Only allow numbers and limit to 4 digits
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                    formik.setFieldValue('securityCode', value);
-                  }}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.securityCode && Boolean(formik.errors.securityCode)}
-                  helperText={formik.touched.securityCode && formik.errors.securityCode}
-                  required
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowSecurityCode(!showSecurityCode)}
-                          edge="end"
-                        >
-                          {showSecurityCode ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Box>
-              
-              <TextField
-                name="zipCode"
-                label="ZIP Code"
-                value={formik.values.zipCode}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.zipCode && Boolean(formik.errors.zipCode)}
-                helperText={formik.touched.zipCode && formik.errors.zipCode}
-                required
-              />
-              
+          {squareActive && !editingCard ? (
+            <SquareWalletAddCard
+              ref={squareWalletRef}
+              open={openDialog}
+              isPrimary={walletIsPrimary}
+              onPrimaryChange={setWalletIsPrimary}
+            />
+          ) : editingCard ? (
+            <Box sx={{ py: 2 }}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {editingCard.squareCardId
+                  ? "This card is stored securely with Square. You can update primary status only."
+                  : "This is a legacy saved card. You can update primary status or delete it and add a new Square card."}
+              </Alert>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                {formatCardholderName(editingCard.cardOwnerName)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                •••• {editingCard.last4 || '****'}
+              </Typography>
               <FormControlLabel
                 control={
                   <Switch
@@ -886,19 +656,14 @@ function PaymentCards() {
                     color="primary"
                   />
                 }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Set as primary payment method</Typography>
-                    <Tooltip title="Only one card can be primary at a time. The primary card will be used as the default payment method.">
-                      <IconButton size="small">
-                        <InfoIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                }
+                label="Set as primary payment method"
               />
             </Box>
-          </form>
+          ) : (
+            <Alert severity="warning">
+              Square payments are not available. You cannot add a card until payment processing is configured.
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions sx={{ borderTop: '1px solid', borderColor: 'red', p: 2 }}>
           <Button 
@@ -909,9 +674,9 @@ function PaymentCards() {
             Cancel
           </Button>
           <Button 
-            onClick={formik.handleSubmit}
+            onClick={() => handleSaveCard(formik.values)}
             variant="contained"
-            disabled={loading || !formik.isValid}
+            disabled={loading || (!squareActive && !editingCard)}
             sx={{
               backgroundColor: '#03930A',
               '&:hover': { backgroundColor: '#03830A' },

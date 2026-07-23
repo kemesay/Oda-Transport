@@ -6,6 +6,7 @@ const initialState = {
   isBookPending: false,
   isBookSuccess: false,
   errorMessage: "",
+  lastBookingResult: null,
   cost: 0,
   fee: 0,
   totalFee: 0,
@@ -69,6 +70,7 @@ const UserSlice = createSlice({
     builder.addCase(book.fulfilled, (state, action) => {
       state.isBookPending = false;
       state.isBookSuccess = true;
+      state.lastBookingResult = action.payload || null;
     });
     builder.addCase(book.rejected, (state, action) => {
       state.isBookPending = false;
