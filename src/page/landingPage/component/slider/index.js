@@ -213,7 +213,7 @@ export default function Slider() {
             fontSize: { xs: "0.98rem", md: "1.08rem" },
             mt: 0.8, maxWidth: 480, lineHeight: 1.7,
           }}>
-            From California & Washington's coastlines to every corner of the USA — in style.
+            From coast to coast, anywhere in the USA — in style.
           </Typography>
         </Box>
 

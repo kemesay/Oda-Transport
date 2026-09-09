@@ -36,6 +36,8 @@ import {
     resolveSquarePaymentPayload,
 } from "../../services/squareCheckoutSession";
 import { assertSquarePayloadForBooking } from "../../utils/squareBookingPayload";
+import { NAME_PART_REGEX, isPlaceholderName } from "../../utils/nameUtil";
+import { validateZip } from "../../utils/zipUtil";
 
 function feeChangedSinceTokenize(tokenizedAtFee, currentFee) {
     if (tokenizedAtFee == null || tokenizedAtFee === "") return false;
@@ -105,7 +107,6 @@ function Index() {
     );
     const { fee } = useSelector((state) => state.bookReducer);
     const phoneRegex = /^[0-9]{10,15}$/;
-    const fullNameRegex = /^[a-zA-Z]+(?: [a-zA-Z]+)$/;
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -312,8 +313,20 @@ function Index() {
         /* .matches(phoneRegex, "Invalid phone number format") */
         passengerFullName:
             yup.string()
-                .matches(fullNameRegex, "invalid full name")
-                .required("full name required"),
+                .required("Passenger full name is required")
+                .test(
+                    "is-valid-full-name",
+                    "Enter the passenger's first and last name (letters only)",
+                    (value) => {
+                        const parts = String(value || "").trim().replace(/\s+/g, " ").split(" ");
+                        return parts.length >= 2 && parts.every((part) => NAME_PART_REGEX.test(part));
+                    }
+                )
+                .test(
+                    "is-not-placeholder-name",
+                    "Please enter the passenger's real name, not a placeholder value",
+                    (value) => !isPlaceholderName(value)
+                ),
         // passengerLastName: yup.string(),
         passengerCellPhone: yup
             .string()
@@ -332,8 +345,28 @@ function Index() {
         cardDetails: yup.object().when('paymentMethod', {
             is: PAYMENT_METHODS.SQUARE_NEW,
             then: (schema) => schema.shape({
-                cardOwnerName: yup.string().required('Cardholder name is required'),
-                zipCode: yup.string().required('Zip code is required'),
+                cardOwnerName: yup.string()
+                    .required('Cardholder name is required')
+                    .test(
+                        "is-valid-cardholder-name",
+                        "Enter the cardholder's first and last name (letters only)",
+                        (value) => {
+                            const parts = String(value || "").trim().replace(/\s+/g, " ").split(" ");
+                            return parts.length >= 2 && parts.every((part) => NAME_PART_REGEX.test(part));
+                        }
+                    )
+                    .test(
+                        "is-not-placeholder-cardholder-name",
+                        'Enter the actual name on the card, not "Cardholder Name"',
+                        (value) => !isPlaceholderName(value)
+                    ),
+                zipCode: yup.string()
+                    .required('ZIP code is required')
+                    .test(
+                        "is-valid-zip",
+                        "Enter a valid US ZIP code (e.g. 90210 or 90210-1234)",
+                        (value) => !validateZip(value)
+                    ),
             }),
             otherwise: (schema) => schema.nullable(),
         }),

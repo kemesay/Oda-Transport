@@ -52,13 +52,13 @@ function SocialMedia() {
   };
 
   const { mutateAsync: deleteData, isPending: isDeleting } = useDeleteData(
-    endpoint,
+    putendpoint,
     socialMediaId
   );
 
   const openDeleteConfirmModal = (row) => {
     if (window.confirm("Are you sure you want to delete this Social Media?")) {
-      deleteData({ endpoint: endpoint, Id: row.original.socialMediaId });
+      deleteData({ endpoint: putendpoint, Id: row.original.socialMediaId });
     }
   };
 

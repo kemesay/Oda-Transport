@@ -39,7 +39,7 @@ const faqCategories = {
     },
     {
       summary: "What areas do you serve?",
-      data: "We provide transportation services throughout the USA, but we are based pickup address in the state of California. We also offer long-distance transportation to neighboring cities and states. Please contact us for specific service area information.",
+      data: "We provide pickup and drop-off transportation services nationwide, anywhere in the USA. Please contact us for specific service area information.",
     },
     {
       summary: "What types of vehicles do you have in your fleet?",

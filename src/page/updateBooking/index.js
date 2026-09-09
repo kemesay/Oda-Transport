@@ -49,6 +49,8 @@ import {
 } from "../../utils/bookingFeeCalculator";
 import SquarePaymentForm from "../../components/SquarePaymentForm";
 import { PAYMENT_METHODS } from "../../constants/paymentMethods";
+import { validateCardholderName } from "../../utils/nameUtil";
+import { validateZip } from "../../utils/zipUtil";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -199,6 +201,13 @@ function UpdateBooking() {
           priceChanged && bookingData?.paymentMethod === PAYMENT_METHODS.SQUARE_NEW;
 
         if (needsSquareRetoken) {
+          const cardNameError = validateCardholderName(values.cardDetails?.cardOwnerName);
+          const cardZipError = validateZip(values.cardDetails?.zipCode);
+          if (cardNameError || cardZipError) {
+            setPaymentRetokenError(cardNameError || cardZipError);
+            setLoading(false);
+            return;
+          }
           try {
             if (typeof values.squareTokenize === "function") {
               await values.squareTokenize();

@@ -17,6 +17,7 @@ import {
 } from '@mui/icons-material';
 import { BACKEND_API } from '../../store/utils/API';
 import { styled } from '@mui/material/styles';
+import { formatFullName, validateFullName } from '../../utils/nameUtil';
 import {
   FlightTakeoff as FlightIcon,
   Schedule as HourlyIcon,
@@ -77,6 +78,7 @@ function UserProfile() {
   const [tempData, setTempData] = useState(null);
   const [totalRides, setTotalRides] = useState(0);
   const [showAlert, setShowAlert] = useState({ show: false, severity: 'success', message: '' });
+  const [nameError, setNameError] = useState('');
 
   const defaultValues = {
     joinDate: "January 2024",
@@ -171,12 +173,20 @@ function UserProfile() {
   };
 
   const handleSave = async () => {
+    const nameValidationError = validateFullName(tempData.name);
+    if (nameValidationError) {
+      setNameError(nameValidationError);
+      return;
+    }
+    setNameError('');
+
     try {
       const token = sessionStorage.getItem('access_token');
+      const formattedName = formatFullName(tempData.name);
 
       // Prepare update payload
       const updatePayload = {
-        fullName: tempData.name,
+        fullName: formattedName,
         email: tempData.email,
         phoneNumber: tempData.phone
       };
@@ -190,7 +200,7 @@ function UserProfile() {
         }
       );
 
-      setUserData(tempData);
+      setUserData({ ...tempData, name: formattedName });
       setEditing(false);
       setShowAlert({
         show: true,
@@ -212,6 +222,7 @@ function UserProfile() {
 
   const handleCancel = () => {
     setTempData(userData);
+    setNameError('');
     setEditing(false);
   };
 
@@ -354,9 +365,14 @@ function UserProfile() {
               fullWidth
               label="Full Name"
               value={editing ? tempData?.name : userData?.name}
-              onChange={(e) => setTempData({ ...tempData, name: e.target.value })}
+              onChange={(e) => {
+                setTempData({ ...tempData, name: e.target.value });
+                if (nameError) setNameError('');
+              }}
               disabled={!editing}
               margin="normal"
+              error={Boolean(nameError)}
+              helperText={nameError || (editing ? 'e.g. John Smith' : '')}
             />
             <TextField
               fullWidth

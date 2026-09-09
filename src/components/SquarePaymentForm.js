@@ -14,6 +14,7 @@ import { configureSquareCard } from "../services/squareCardService";
 import { persistSquareCheckoutNonce, hasVerifiedSquarePayment } from "../services/squareCheckoutSession";
 import { buildCheckoutVerificationDetails } from "../utils/squareVerificationDetails";
 import { PAYMENT_METHODS } from "../constants/paymentMethods";
+import { formatFullName } from "../utils/nameUtil";
 
 /** Stable iframe slot — only the card field needs a fixed height */
 const SQUARE_IFRAME_MIN_HEIGHT = 120;
@@ -159,6 +160,12 @@ function SquarePaymentForm({
             size="small"
             value={formik.values.cardDetails?.cardOwnerName || ""}
             onChange={handleFieldChange("cardOwnerName")}
+            onBlur={(e) => {
+              const formatted = formatFullName(e.target.value);
+              if (formatted !== e.target.value) {
+                formik.setFieldValue("cardDetails.cardOwnerName", formatted);
+              }
+            }}
             error={Boolean(formik.errors.cardDetails?.cardOwnerName)}
             helperText={formik.errors.cardDetails?.cardOwnerName}
             autoComplete="cc-name"
@@ -170,7 +177,7 @@ function SquarePaymentForm({
             label="Billing ZIP"
             margin="dense"
             size="small"
-            inputProps={{ inputMode: "numeric", autoComplete: "postal-code" }}
+            inputProps={{ inputMode: "numeric", autoComplete: "postal-code", maxLength: 10 }}
             value={formik.values.cardDetails?.zipCode || ""}
             onChange={handleFieldChange("zipCode")}
             error={Boolean(formik.errors.cardDetails?.zipCode)}

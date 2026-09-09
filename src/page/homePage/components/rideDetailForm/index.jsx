@@ -45,10 +45,7 @@ import { MdOutlineHotel, MdLocalAirport, MdClose, MdAddLocation } from "react-ic
 import RSRadio from "../../../../components/RSRadio";
 import { useNavigate, useParams } from "react-router-dom";
 import RSTypography from "../../../../components/RSTypography";
-import {
-  checkServiceLocation,
-  isLocationInAllowedPickupState,
-} from "../../../../util/locationUtil";
+import { checkServiceLocation } from "../../../../util/locationUtil";
 const libraries = ["places"];
 
 function Index({
@@ -302,7 +299,7 @@ function Index({
       const place = searchOriginResult.getPlace();
       const address_components = place.address_components;
 
-      const isInAllowedState = isLocationInAllowedPickupState(address_components);
+      const isInUsa = checkServiceLocation(address_components);
 
       const pickupPhysicalAddress = place.formatted_address;
       const latlng = {
@@ -313,10 +310,10 @@ function Index({
       formik.setFieldValue("pickupLatitude", latlng?.lat);
       formik.setFieldValue("pickupLongitude", latlng?.lng);
 
-      if (!isInAllowedState) {
+      if (!isInUsa) {
         setLocationCkecker({
           isUnsupportedLocation: true,
-          errorMessage: "pickup address should be in California or Washington, USA",
+          errorMessage: "pickup address should be in US",
         });
         formik.setFieldValue("isUnsupportedPickupAddr", true);
       } else if (formik.values.isUnsupportedDropoffAddr) {
@@ -326,7 +323,7 @@ function Index({
         });
       }
 
-      if (isInAllowedState) {
+      if (isInUsa) {
         if (formik.values.isUnsupportedDropoffAddr) {
           setLocationCkecker({
             isUnsupportedLocation: true,
@@ -370,7 +367,7 @@ function Index({
       } else if (formik.values.isUnsupportedPickupAddr) {
         setLocationCkecker({
           isUnsupportedLocation: true,
-          errorMessage: "pickup address should be in California or Washington, USA",
+          errorMessage: "pickup address should be in US",
         });
       }
 
@@ -378,7 +375,7 @@ function Index({
         if (formik.values.isUnsupportedPickupAddr) {
           setLocationCkecker({
             isUnsupportedLocation: true,
-            errorMessage: "pickup address should be in California or Washington, USA",
+            errorMessage: "pickup address should be in US",
           });
         } else {
           setLocationCkecker({
@@ -486,7 +483,7 @@ function Index({
     if (searchAirportLocationResult != null) {
       const place = searchAirportLocationResult.getPlace();
       const address_components = place.address_components;
-      const isInAllowedState = isLocationInAllowedPickupState(address_components);
+      const isInUsa = checkServiceLocation(address_components);
       const latlng = {
         lat: place.geometry?.location?.lat(),
         lng: place.geometry?.location?.lng(),
@@ -496,11 +493,10 @@ function Index({
       formik.setFieldValue("airportLocationLatitude", latlng?.lat);
       formik.setFieldValue("airportLocationLongitude", latlng?.lng);
 
-      if (!isInAllowedState) {
+      if (!isInUsa) {
         setAirportLocChecker?.({
           isUnsupportedLocation: true,
-          errorMessage:
-            "Airport/Terminal pick-up must be in California or Washington, USA",
+          errorMessage: "Airport/Terminal pick-up must be in the USA",
         });
       } else {
         setAirportLocChecker?.({
@@ -661,7 +657,7 @@ function Index({
                   helperText={
                     (formik.touched.airportLocationAddress &&
                       formik.errors.airportLocationAddress) ||
-                    "Pick a California or Washington airport/terminal from suggestions so coordinates are sent"
+                    "Pick an airport/terminal from suggestions so coordinates are sent"
                   }
                   InputProps={{
                     startAdornment: (

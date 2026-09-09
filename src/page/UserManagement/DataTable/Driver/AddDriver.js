@@ -16,9 +16,20 @@ import * as yup from "yup";
 import { useFormik } from "formik";
 import BACKEND_API from "../../../../store/utils/API";
 import { authHeader } from "../../../../util/authUtil";
+import { formatFullName, NAME_PART_REGEX } from "../../../../utils/nameUtil";
 
 const schema = yup.object({
-  fullName: yup.string().required("Full name required"),
+  fullName: yup
+    .string()
+    .required("Full name required")
+    .test(
+      "is-valid-full-name",
+      "Enter a full name (first and last, letters only)",
+      (value) => {
+        const parts = String(value || "").trim().replace(/\s+/g, " ").split(" ");
+        return parts.length >= 2 && parts.every((part) => NAME_PART_REGEX.test(part));
+      }
+    ),
   email: yup.string().email("Invalid email").required("Email required"),
   phoneNumber: yup
     .string()
@@ -44,7 +55,11 @@ export default function AddDriver() {
       setSuccess("");
       setError("");
       try {
-        await BACKEND_API.post(`/api/v1/users/driver`, values, authHeader());
+        await BACKEND_API.post(
+          `/api/v1/users/driver`,
+          { ...values, fullName: formatFullName(values.fullName) },
+          authHeader()
+        );
         setSuccess("Driver account created successfully!");
         formik.resetForm();
       } catch (err) {

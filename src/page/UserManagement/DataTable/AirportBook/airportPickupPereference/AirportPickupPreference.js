@@ -25,7 +25,12 @@ function AirportpickupPreference() {
 
   const { mutate, isLoading, isError, data, isSuccess } = usePostData(endpoint);
   const handleNewAdd = async ({ values, table }) => {
-    mutate(values);
+    mutate({
+      ...values,
+      preferencePrice: Number(values.preferencePrice) || 0,
+      currency: values.currency || "USD",
+      status: values.status || "Active",
+    });
 
     table.setCreatingRow(null);
   };
@@ -42,7 +47,12 @@ function AirportpickupPreference() {
     update({
       endpoint: endpoint,
       Id: row.original.pickupPreferenceId,
-      data: values,
+      data: {
+        ...values,
+        preferencePrice: Number(values.preferencePrice) || 0,
+        currency: values.currency || "USD",
+        status: values.status || "Active",
+      },
     });
     table.setEditingRow(null);
   };

@@ -24,8 +24,19 @@ function ExtraOptions() {
   } = useGetData(endpointget);
 
   const { mutate, isLoading, isError, data, isSuccess } = usePostData(endpoint);
+  const normalizeExtraOptionValues = (values) => ({
+    ...values,
+    pricePerItem: Number(values.pricePerItem) || 0,
+    currency: values.currency || "USD",
+    hasMaxAllowedLimit:
+      values.hasMaxAllowedLimit === true || values.hasMaxAllowedLimit === "true",
+    maxAllowedItems:
+      values.maxAllowedItems !== "" && values.maxAllowedItems != null
+        ? Number(values.maxAllowedItems)
+        : null,
+  });
   const handleNewAdd = async ({ values, table }) => {
-    mutate(values);
+    mutate(normalizeExtraOptionValues(values));
 
     table.setCreatingRow(null);
   };
@@ -44,7 +55,7 @@ function ExtraOptions() {
     update({
       endpoint: endpoint,
       Id: row.original.extraOptionId,
-      data: values,
+      data: normalizeExtraOptionValues(values),
     });
     table.setEditingRow(null);
   };

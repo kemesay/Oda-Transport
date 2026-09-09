@@ -27,7 +27,11 @@ function AddtionalStop() {
 
   const { mutate, isLoading, isError, data, isSuccess } = usePostData(endpoint);
   const handleNewAdd = async ({ values, table }) => {
-    mutate(values);
+    mutate({
+      ...values,
+      additionalStopPrice: Number(values.additionalStopPrice) || 0,
+      currency: values.currency || "USD",
+    });
 
     table.setCreatingRow(null);
   };
@@ -45,7 +49,11 @@ function AddtionalStop() {
     update({
       endpoint: endpoint,
       Id: row.original.additionalStopId,
-      data: values,
+      data: {
+        ...values,
+        additionalStopPrice: Number(values.additionalStopPrice) || 0,
+        currency: values.currency || "USD",
+      },
     });
     table.setEditingRow(null);
   };

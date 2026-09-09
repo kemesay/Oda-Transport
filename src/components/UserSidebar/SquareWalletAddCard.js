@@ -5,11 +5,33 @@ import * as Yup from "yup";
 import SquarePaymentForm from "../SquarePaymentForm";
 import { BACKEND_API } from "../../store/utils/API";
 import { authHeader } from "../../util/authUtil";
+import { NAME_PART_REGEX, isPlaceholderName, formatFullName } from "../../utils/nameUtil";
+import { validateZip } from "../../utils/zipUtil";
 
 const schema = Yup.object({
   cardDetails: Yup.object({
-    cardOwnerName: Yup.string().required("Cardholder name is required"),
-    zipCode: Yup.string().required("ZIP code is required"),
+    cardOwnerName: Yup.string()
+      .required("Cardholder name is required")
+      .test(
+        "is-valid-cardholder-name",
+        "Enter the cardholder's first and last name (letters only)",
+        (value) => {
+          const parts = String(value || "").trim().replace(/\s+/g, " ").split(" ");
+          return parts.length >= 2 && parts.every((part) => NAME_PART_REGEX.test(part));
+        }
+      )
+      .test(
+        "is-not-placeholder-cardholder-name",
+        'Enter the actual name on the card, not "Cardholder Name"',
+        (value) => !isPlaceholderName(value)
+      ),
+    zipCode: Yup.string()
+      .required("ZIP code is required")
+      .test(
+        "is-valid-zip",
+        "Enter a valid US ZIP code (e.g. 90210 or 90210-1234)",
+        (value) => !validateZip(value)
+      ),
   }),
 });
 
@@ -36,7 +58,7 @@ const SquareWalletAddCard = forwardRef(function SquareWalletAddCard(
       .then((res) => {
         const { fullName, email, phoneNumber } = res.data || {};
         if (fullName && !formik.values.cardDetails?.cardOwnerName) {
-          formik.setFieldValue("cardDetails.cardOwnerName", fullName);
+          formik.setFieldValue("cardDetails.cardOwnerName", formatFullName(fullName));
         }
         if (email) formik.setFieldValue("email", email);
         if (phoneNumber) formik.setFieldValue("passengerCellPhone", phoneNumber);

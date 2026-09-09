@@ -1,9 +1,11 @@
-import { useMutation } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 import { BACKEND_API } from "../utils/API";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const useDeleteData = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ endpoint, Id }) => {
       try {
@@ -15,6 +17,7 @@ const useDeleteData = () => {
               ? response.message
               : "Data successfully Deleted!";
           toast.success(successMessage);
+          queryClient.invalidateQueries();
         } else {
           const errorMessage = response.response
             ? response.response.data.message
@@ -24,7 +27,11 @@ const useDeleteData = () => {
 
         return response;
       } catch (error) {
-        toast.error(error.message || "An error occurred while deleting data.");
+        toast.error(
+          error?.response?.data?.message ||
+            error.message ||
+            "An error occurred while deleting data."
+        );
       }
     },
   });

@@ -15,6 +15,7 @@ import CustomTextarea from "./../../../../assets/theme/CustomTextarea";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import { ToastContainer, toast } from "react-toastify";
+import { validateZip } from "../../../../utils/zipUtil";
 
 export default function AddContent() {
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,14 @@ export default function AddContent() {
   const contentValidationSchema = yup.object({
     contactEmail: yup.string().required("Contact Email required"),
     contactPhoneNumber: yup.string().required("Phone Number required"),
-    addressZipCode: yup.string().required("Address Zip-code"),
+    addressZipCode: yup
+      .string()
+      .required("Address ZIP code is required")
+      .test(
+        "is-valid-zip",
+        "Enter a valid US ZIP code (e.g. 90210 or 90210-1234)",
+        (value) => !validateZip(value)
+      ),
     addressState: yup.string().required("State Address required"),
     aboutUsDescription: yup.string().required("About us Description required"),
     termsAndCondition: yup.string().required("Terms and Condition"),

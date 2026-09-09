@@ -26,6 +26,7 @@ import * as yup from "yup";
 import { useFormik } from "formik";
 import { useDispatch, useSelector } from "react-redux";
 import { signup } from "../../../../../store/actions/authAction";
+import { formatNamePart, NAME_PART_REGEX } from "../../../../../utils/nameUtil";
 
 function Index() {
   const [showPassword, setShowPassword] = useState(false);
@@ -42,12 +43,18 @@ function Index() {
     firstname: yup
       .string()
       .min(2, "First name must be at least 2 characters")
-      .matches(/^[A-Za-z]+$/, "First name should only contain letters")
+      .matches(
+        NAME_PART_REGEX,
+        "First name should only contain letters (hyphens and apostrophes allowed)"
+      )
       .required("First name is required"),
     lastname: yup
       .string()
       .min(2, "Last name must be at least 2 characters")
-      .matches(/^[A-Za-z]+$/, "Last name should only contain letters")
+      .matches(
+        NAME_PART_REGEX,
+        "Last name should only contain letters (hyphens and apostrophes allowed)"
+      )
       .required("Last name is required"),
     email: yup
       .string()
@@ -82,7 +89,13 @@ function Index() {
     },
     validationSchema: signInValidationSchema,
     onSubmit: (values) => {
-      dispatch(signup(values));
+      dispatch(
+        signup({
+          ...values,
+          firstname: formatNamePart(values.firstname.trim()),
+          lastname: formatNamePart(values.lastname.trim()),
+        })
+      );
     },
   });
 

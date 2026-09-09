@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import {
   Box,
   Container,
@@ -146,6 +147,20 @@ const menuDarkPaper = {
 function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { scrollYProgress } = useScroll();
+
+  // Same admin-editable CMS data the site Footer/About/Terms sections use
+  // (src/store/actions/footerAction.js), so contact details here never
+  // drift out of sync with what an admin sets in the dashboard.
+  const {
+    contactEmail,
+    contactPhoneNumber,
+    addressState,
+    addressZipCode,
+  } = useSelector((state) => state.footerReducer);
+
+  const displayPhone = contactPhoneNumber || '(714) 313-4269';
+  const displayEmail = contactEmail || 'info@odatransportation.com';
+  const displayLocation = addressState || 'California, USA';
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
 
   const formik = useFormik({
@@ -161,7 +176,7 @@ function Contact() {
           service: values.service,
           message: values.message,
           subject: `New Contact Form Submission - ${values.service}`,
-          to_email: 'info@odatransportation.com',
+          to_email: displayEmail,
         });
         toast.success('Message sent successfully! We will contact you soon.', {
           position: 'top-center', autoClose: 5000, theme: 'colored',
@@ -282,7 +297,7 @@ function Contact() {
                         <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 0.3 }}>
                           Phone
                         </Typography>
-                        <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>(714) 313-4269</Typography>
+                        <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>{displayPhone}</Typography>
                         <Typography sx={{ color: '#4CB051', fontSize: '0.8rem' }}>Available 24/7</Typography>
                       </Box>
                     </InfoRow>
@@ -295,7 +310,7 @@ function Contact() {
                         <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', mb: 0.3 }}>
                           Email
                         </Typography>
-                        <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>info@odatransportation.com</Typography>
+                        <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>{displayEmail}</Typography>
                       </Box>
                     </InfoRow>
 
@@ -308,7 +323,9 @@ function Contact() {
                           Location
                         </Typography>
                         <Typography sx={{ color: '#fff', fontWeight: 600 }}>Los Angeles &amp; Anaheim</Typography>
-                        <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem' }}>California, USA</Typography>
+                        <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem' }}>
+                          {displayLocation}{addressZipCode ? ` ${addressZipCode}` : ''}
+                        </Typography>
                       </Box>
                     </InfoRow>
 

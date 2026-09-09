@@ -12,7 +12,6 @@ import {
   Star,
   VerifiedUser,
   SupportAgent,
-  TrendingFlat,
   BoltOutlined,
   PersonPinCircleOutlined,
   DirectionsCarFilledOutlined,
@@ -646,7 +645,7 @@ function Hero({ onLoginClick }) {
               >
                 ODA Black Car Service
               </Typography>
-              {/* Route tag: California & Washington → USA */}
+              {/* Nationwide coverage badge */}
               <Box
                 sx={{
                   display: "inline-flex",
@@ -670,9 +669,16 @@ function Hero({ onLoginClick }) {
                     backgroundClip: "text",
                   }}
                 >
-                  California & Washington
+                  Nationwide
                 </Typography>
-                <TrendingFlat sx={{ color: "rgba(255,255,255,0.4)", fontSize: 22 }} />
+                <Box
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    bgcolor: "rgba(255,255,255,0.4)",
+                  }}
+                />
                 <Typography
                   sx={{
                     fontSize: { xs: "1.1rem", sm: "1.28rem", md: "1.4rem" },
@@ -680,7 +686,7 @@ function Hero({ onLoginClick }) {
                     color: "rgba(255,255,255,0.85)",
                   }}
                 >
-                  Anywhere in the USA
+                  Pickup & Drop-off Anywhere in the USA
                 </Typography>
               </Box>
             </motion.div>
@@ -699,14 +705,14 @@ function Hero({ onLoginClick }) {
                   lineHeight: 1.85,
                 }}
               >
-                Pickup from anywhere in{" "}
+                Pickup and drop-off{" "}
                 <strong style={{ color: "#4CB051" }}>
-                  California & Washington
+                  anywhere in the United States
                 </strong>{" "}
-                — airport transfers, corporate rides & city tours reaching
+                airport transfers, corporate rides & city tours reaching
                 every corner of the{" "}
                 <strong style={{ color: "rgba(255,255,255,0.82)" }}>
-                  United States.
+                  country.
                 </strong>
               </Typography>
             </motion.div>

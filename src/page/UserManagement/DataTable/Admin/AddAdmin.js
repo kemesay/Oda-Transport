@@ -11,6 +11,7 @@ import {
 import * as yup from "yup";
 import { useFormik } from "formik";
 import BACKEND_API from "../../../../store/utils/API";
+import { formatFullName, NAME_PART_REGEX } from "../../../../utils/nameUtil";
 
 export default function AddAdmin() {
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,17 @@ export default function AddAdmin() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const adminValidationSchema = yup.object({
-    fullName: yup.string().required("Full name required"),
+    fullName: yup
+      .string()
+      .required("Full name required")
+      .test(
+        "is-valid-full-name",
+        "Enter a full name (first and last, letters only)",
+        (value) => {
+          const parts = String(value || "").trim().replace(/\s+/g, " ").split(" ");
+          return parts.length >= 2 && parts.every((part) => NAME_PART_REGEX.test(part));
+        }
+      ),
     email: yup.string().required("Email required"),
     phoneNumber: yup.string().required("Phone Number required"),
     password: yup.string().required("Password required"),
@@ -35,7 +46,10 @@ export default function AddAdmin() {
     onSubmit: async (values) => {
       setLoading(true);
       try {
-        const result = await BACKEND_API.post(`/api/v1/users/admin`, values);
+        const result = await BACKEND_API.post(`/api/v1/users/admin`, {
+          ...values,
+          fullName: formatFullName(values.fullName),
+        });
         setSuccessMessage(result.data.message || "Admin created successfully!");
         formikAdmin.resetForm();
       } catch (error) {

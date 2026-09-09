@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Stack, Grid, FormControlLabel, Checkbox, Box, FormControl, RadioGroup, FormLabel } from "@mui/material";
 import RSRadio from "../../../../components/RSRadio";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -18,6 +18,7 @@ import {
   isSquareReadyCard,
 } from "../../../../utils/paymentCards";
 import { PAYMENT_METHODS } from "../../../../constants/paymentMethods";
+import { formatFullName } from "../../../../utils/nameUtil";
 
 function Index({
   formik,
@@ -38,6 +39,16 @@ function Index({
   const [cardsError, setCardsError] = useState(null);
   const { totalFee } = useSelector((state) => state.bookReducer);
   const dispatch = useDispatch();
+
+  // Formik's returned bag is a new object on every render (it isn't
+  // memoized), so we can't put `formik` in a useCallback/useEffect
+  // dependency array without that effect re-firing on every keystroke.
+  // Route reads through a ref so fetchUserPaymentCards always sees the
+  // latest formik state without needing `formik` itself as a dependency.
+  const formikRef = useRef(formik);
+  useEffect(() => {
+    formikRef.current = formik;
+  }, [formik]);
 
   const { isAuthenticated } = useSelector((state) => state.authReducer);
   const authToken = isAuthenticated
@@ -60,11 +71,12 @@ function Index({
     computeGratuityOnCarFare(legCarPriceForTip(), percentage, tripType);
 
   const fetchUserPaymentCards = useCallback(async () => {
+    const currentFormik = formikRef.current;
     if (!isAuthenticated || !authToken) {
       setUserCards([]);
       setCardsError(null);
-      if (!formik.values.paymentMethod) {
-        formik.setFieldValue("paymentMethod", PAYMENT_METHODS.SQUARE_NEW);
+      if (!currentFormik.values.paymentMethod) {
+        currentFormik.setFieldValue("paymentMethod", PAYMENT_METHODS.SQUARE_NEW);
       }
       return;
     }
@@ -81,8 +93,8 @@ function Index({
       const squareCards = list.filter(isSquareReadyCard);
       setUserCards(squareCards);
 
-      if (squareCards.length === 0 && !formik.values.paymentMethod) {
-        formik.setFieldValue("paymentMethod", PAYMENT_METHODS.SQUARE_NEW);
+      if (squareCards.length === 0 && !currentFormik.values.paymentMethod) {
+        currentFormik.setFieldValue("paymentMethod", PAYMENT_METHODS.SQUARE_NEW);
       }
     } catch (error) {
       const message =
@@ -90,13 +102,13 @@ function Index({
         "Could not load saved payment methods.";
       setCardsError(message);
       setUserCards([]);
-      if (!formik.values.paymentMethod) {
-        formik.setFieldValue("paymentMethod", PAYMENT_METHODS.SQUARE_NEW);
+      if (!currentFormik.values.paymentMethod) {
+        currentFormik.setFieldValue("paymentMethod", PAYMENT_METHODS.SQUARE_NEW);
       }
     } finally {
       setCardsLoading(false);
     }
-  }, [isAuthenticated, authToken, formik]);
+  }, [isAuthenticated, authToken]);
 
   const handleBookForPassenger = (e) => {
     setBookForPassenger(e.target.checked);
@@ -241,6 +253,13 @@ function Index({
               fullWidth
               disabled={isFieldDisabled()}
               {...formik.getFieldProps("passengerFullName")}
+              onBlur={(e) => {
+                formik.handleBlur(e);
+                const formatted = formatFullName(e.target.value);
+                if (formatted !== e.target.value) {
+                  formik.setFieldValue("passengerFullName", formatted);
+                }
+              }}
               error={
                 formik.touched.passengerFullName &&
                 Boolean(formik.errors.passengerFullName)
