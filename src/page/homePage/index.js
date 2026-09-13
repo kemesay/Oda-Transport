@@ -291,6 +291,8 @@ function Index() {
             pickupPreferenceFee: 0,
             prevAddtionalStopOnTheWayFee: 0,
             stopOnWayFee: 0,
+            promoCode: "",
+            promoDiscount: 0,
 
         },
         validationSchema: tripDetailValidationSchema,
@@ -820,7 +822,7 @@ function Index() {
         const { vehicleFee, minimumStartFee, extraOptionFee } =
             formikChooseVehicle.values;
         const { distanceInMiles, hour, tripType } = formikRideInfo.values;
-        const { stopOnWayFee, pickupPreferenceFee } = formikTripDetail.values;
+        const { stopOnWayFee, pickupPreferenceFee, promoDiscount } = formikTripDetail.values;
         const { gratuityFee, gratuityPercentage } = formikContact.values;
 
         dispatch(
@@ -835,6 +837,7 @@ function Index() {
                     hour,
                     stopOnWayFee,
                     pickupPreferenceFee,
+                    promoDiscount,
                     gratuityFee,
                     gratuityPercentage,
                 })
@@ -919,6 +922,8 @@ function Index() {
                                                 formikTripDetail.values.stopOnWayFee,
                                             pickupPreferenceFee:
                                                 formikTripDetail.values.pickupPreferenceFee,
+                                            promoDiscount:
+                                                formikTripDetail.values.promoDiscount,
                                         }}
                                     />
                                 ) : null}

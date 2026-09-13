@@ -85,9 +85,7 @@ function Index({
   const mapRef = useRef();
   const pointToPointTripTypes = useMemo(() => ["One-Way", "Round-Trip"]);
   const { isLoaded } = useLoadScript({
-    // googleMapsApiKey: "AIzaSyCvm85RFSLVS4DV7zBb1l0UlOJ1tpSXRPQ",
-    googleMapsApiKey: "AIzaSyAgAp1RwiIqCyZZg63gsmyP6TZBuVxw_8c",
-
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries: libraries,
   });
 
@@ -811,7 +809,7 @@ function Index({
                     variant="caption"
                     sx={{ color: "text.secondary", fontWeight: 600, whiteSpace: "nowrap" }}
                   >
-                    Side Pick / Detour Stops
+                    Additional Stop on the way
                   </Typography>
                   <Divider sx={{ flex: 1 }} />
                 </Stack>

@@ -13,7 +13,15 @@ import {
   Select,
   Checkbox,
   Alert,
+  TextField,
+  Button,
+  CircularProgress,
+  Typography,
+  InputAdornment,
 } from "@mui/material";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CloseIcon from "@mui/icons-material/Close";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -27,7 +35,6 @@ import StepSummary from "../StepSummary";
 import { getAllPreferences } from "../../../../store/actions/preferenceAction";
 import { BACKEND_API } from "../../../../store/utils/API";
 import {
-  addAdditionalStopFee,
   addAirportPreferenceFee,
 } from "../../../../store/reducers/bookReducers";
 import dayjs from "dayjs";
@@ -37,9 +44,10 @@ import timezone from "dayjs/plugin/timezone";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 function Index({ formik, vehicleSummaryData, rideSummaryData, travelRouteId }) {
-  const [stopOnWay, setStopOnWay] = useState(false);
-  const [additionalStopsOnTheWay, setAdditionalStopsOnTheWay] = useState([]);
-  const { fee } = useSelector((state) => state.bookReducer);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [promoStatus, setPromoStatus] = useState("idle"); // idle | loading | applied | error
+  const [promoMessage, setPromoMessage] = useState("");
+  const { fee, totalFee } = useSelector((state) => state.bookReducer);
   const userTimezone = useMemo(() => dayjs.tz.guess(), []);
   const toUserZone = useCallback(
     (value) => (value ? dayjs(value).tz(userTimezone) : null),
@@ -80,44 +88,55 @@ function Index({ formik, vehicleSummaryData, rideSummaryData, travelRouteId }) {
       !(travelType === "3")
     );
   };
-  const getAdditionalAtStopOnTheWay = async () => {
-    await BACKEND_API
-      .get("/api/v1/additional-stops")
-      .then((res) => {
-        setAdditionalStopsOnTheWay(res.data);
-      })
-      .catch((error) =>
-        console.log("error: ", "error while loading additional stop on the way")
+  const promoBookingType = () => {
+    if (isAirportTravel) return "Airport Service";
+    if (isHourlyTravel) return "Hourly Charter";
+    return "Point to point";
+  };
+
+  const handleApplyPromoCode = async () => {
+    const code = promoCodeInput.trim();
+    if (!code) return;
+
+    // Reconstruct the pre-discount fare so re-checking a new code never
+    // validates against an amount that already has a previous discount
+    // baked into it.
+    const currentDiscount = Number(formik.values.promoDiscount) || 0;
+    const baseFare = (Number(totalFee) || 0) + currentDiscount;
+
+    setPromoStatus("loading");
+    setPromoMessage("");
+    try {
+      const response = await BACKEND_API.post("/api/v1/promo-codes/validate", {
+        code,
+        bookingType: promoBookingType(),
+        fareAmount: baseFare > 0 ? baseFare : 0.01,
+      });
+      const { discount } = response.data;
+      formik.setFieldValue("promoCode", code.toUpperCase());
+      formik.setFieldValue("promoDiscount", discount);
+      setPromoStatus("applied");
+      setPromoMessage(`Promo code applied — you saved $${Number(discount).toFixed(2)}.`);
+    } catch (error) {
+      formik.setFieldValue("promoDiscount", 0);
+      setPromoStatus("error");
+      setPromoMessage(
+        error?.response?.data?.message || "That promo code isn't valid for this trip."
       );
+    }
   };
 
-
-
-  const handleStopOnWayChange = (event) => {
-    formik.setFieldValue("additionalStopId", event.target.value);
-    var stopOnWayFee = parseFloat(event.target.name);
-    var prevAddtionalStopOnTheWayFee =
-      formik.values.prevAddtionalStopOnTheWayFee;
-    formik.setFieldValue("stopOnWayFee", stopOnWayFee);
-    dispatch(
-      addAdditionalStopFee({ stopOnWayFee, prevAddtionalStopOnTheWayFee })
-    );
-    formik.setFieldValue("prevAddtionalStopOnTheWayFee", stopOnWayFee);
+  const handleRemovePromoCode = () => {
+    formik.setFieldValue("promoCode", "");
+    formik.setFieldValue("promoDiscount", 0);
+    setPromoCodeInput("");
+    setPromoStatus("idle");
+    setPromoMessage("");
   };
-
-
 
   useEffect(() => {
-    getAdditionalAtStopOnTheWay();
     dispatch(getAllPreferences());
   }, []);
-
-  useEffect(() => {
-    const id = Number(formik.values.additionalStopId);
-    if (!Number.isNaN(id) && id > 0) {
-      setStopOnWay(true);
-    }
-  }, [formik.values.additionalStopId]);
 
   const [currentDateTime, setCurrentDateTime] = useState(() =>
     dayjs().tz(userTimezone)
@@ -799,106 +818,88 @@ function Index({ formik, vehicleSummaryData, rideSummaryData, travelRouteId }) {
 
 
 
-            {( isAirportTravel || isPointToPointTravel) && (
-              <>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={stopOnWay}
-                      onChange={(e) => {
-                        const isChecked = e.target.checked;
-                        setStopOnWay(e.target.checked);
-                        formik.setFieldValue("additionalStopId", 0);
-                        formik.setFieldValue(
-                          "additionalStopOnTheWayDescription",
-                          ""
-                        );
-                        if (!isChecked) {
-
-                          var stopOnWayFee = formik.values.stopOnWayFee;
-                          dispatch(
-                            addAdditionalStopFee({
-                              stopOnWayFee: 0,
-                              prevAddtionalStopOnTheWayFee: stopOnWayFee,
-                            })
-                          );
-                          formik.setFieldValue(
-                            "prevAddtionalStopOnTheWayFee",
-                            0
-                          );
-                          formik.setFieldValue("stopOnWayFee", 0);
-                          formik.setFieldValue("additionalStopId", 0)
-                        }
-                      }}
-                    />
+            <Box>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  color: "#03930A",
+                }}
+              >
+                <LocalOfferOutlinedIcon fontSize="small" />
+                Promo Code
+              </Typography>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.5}
+                alignItems={{ xs: "stretch", sm: "flex-start" }}
+              >
+                <TextField
+                  fullWidth
+                  color="info"
+                  label="Enter promo code"
+                  placeholder="e.g. WELCOME10"
+                  value={promoCodeInput}
+                  disabled={promoStatus === "applied"}
+                  onChange={(e) =>
+                    setPromoCodeInput(e.target.value.toUpperCase())
                   }
-                  label="Additional stop on the way"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleApplyPromoCode();
+                    }
+                  }}
                 />
-                {stopOnWay && (
-                  <Box>
-                    <Stack direction={"column"} spacing={2}>
-                      <FormControl>
-                        <RadioGroup
-                          aria-labelledby="demo-radio-buttons-group-label"
-                          name="radio-buttons-group"
-                          value={
-                            formik.values.additionalStopId
-                              ? String(formik.values.additionalStopId)
-                              : ""
-                          }
-                          onChange={handleStopOnWayChange}
-                        >
-                          {additionalStopsOnTheWay.map((stopOnWay) => {
-                            stopOnWay.hidden =
-                              stopOnWay.stopType == "Roundtrip" &&
-                              !isRoundTrip();
-                            return (
-                              !stopOnWay.hidden && (
-                                <FormControlLabel
-                                  key={stopOnWay.additionalStopId}
-                                  value={stopOnWay.additionalStopId}
-                                  name={stopOnWay.additionalStopPrice}
-                                  control={<RSRadio />}
-                                  label={
-                                    stopOnWay.stopType +
-                                    " (" +
-                                    stopOnWay.additionalStopPrice +
-                                    " " +
-                                    stopOnWay.currency +
-                                    ")"
-                                  }
-                                />
-                              )
-                            );
-                          })}
-                        </RadioGroup>
-
-                      </FormControl>
-                      <RSTextField
-                        color="info"
-                        label="Let's know where you'd like to stop on the way"
-                        multiline
-                        rows={3}
-                        fullWidth
-                        {...formik.getFieldProps(
-                          "additionalStopOnTheWayDescription"
-                        )}
-                        error={
-                          formik.touched.additionalStopOnTheWayDescription &&
-                          Boolean(
-                            formik.errors.additionalStopOnTheWayDescription
-                          )
-                        }
-                        helperText={
-                          formik.touched.additionalStopOnTheWayDescription &&
-                          formik.errors.additionalStopOnTheWayDescription
-                        }
-                      />
-                    </Stack>
-                  </Box>
+                {promoStatus === "applied" ? (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<CloseIcon />}
+                    onClick={handleRemovePromoCode}
+                    sx={{ whiteSpace: "nowrap" }}
+                  >
+                    Remove
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    onClick={handleApplyPromoCode}
+                    disabled={promoStatus === "loading" || !promoCodeInput.trim()}
+                    sx={{
+                      whiteSpace: "nowrap",
+                      backgroundColor: "#03930A",
+                      "&:hover": { backgroundColor: "#027c08" },
+                    }}
+                  >
+                    {promoStatus === "loading" ? (
+                      <CircularProgress size={20} sx={{ color: "#fff" }} />
+                    ) : (
+                      "Apply"
+                    )}
+                  </Button>
                 )}
-              </>
-            )}
+              </Stack>
+              {promoMessage && (
+                <Alert
+                  severity={
+                    promoStatus === "applied"
+                      ? "success"
+                      : promoStatus === "error"
+                      ? "error"
+                      : "info"
+                  }
+                  icon={promoStatus === "applied" ? <CheckCircleIcon fontSize="inherit" /> : undefined}
+                  sx={{ mt: 1.5 }}
+                >
+                  {promoMessage}
+                </Alert>
+              )}
+            </Box>
           </Stack>
         </Grid>
       </Grid>

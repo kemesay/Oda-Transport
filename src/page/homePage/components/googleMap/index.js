@@ -5,7 +5,7 @@ import Map from "./Map";
 
 function RideGoogleMap() {
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: "AIzaSyAgAp1RwiIqCyZZg63gsmyP6TZBuVxw_8c",
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
   });
   if (!isLoaded) return <>loading</>;
   return <Map />;

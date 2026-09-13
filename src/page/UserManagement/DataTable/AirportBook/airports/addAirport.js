@@ -38,7 +38,7 @@ export default function AddAirPort() {
 
 
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: "AIzaSyAgAp1RwiIqCyZZg63gsmyP6TZBuVxw_8c",
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries: libraries,
   });
   function onAirportChanged() {

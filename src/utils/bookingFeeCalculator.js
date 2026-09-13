@@ -67,6 +67,15 @@ export function calculateServiceFee(params) {
       : Number(params.gratuityFee) || 0;
 
   total += gratuity;
+
+  // Promo-code discount is applied last, against the fully-assembled total
+  // (car fare + extras + pickup preference + gratuity) — mirrors the
+  // backend's `chargeAmount = max(totalTripFee - discount, 0)` rule.
+  const promoDiscount = Number(params.promoDiscount) || 0;
+  if (promoDiscount > 0) {
+    total = Math.max(total - promoDiscount, 0);
+  }
+
   return total;
 }
 
@@ -80,6 +89,14 @@ export function calculateServiceFeeBreakdown(params) {
     pct != null && pct !== "" && Number(pct) > 0
       ? computeGratuityOnCarFare(legCar, pct, params.tripType)
       : Number(params.gratuityFee) || 0;
+  const promoDiscount = Number(params.promoDiscount) || 0;
+
+  const beforeDiscount =
+    legCar * legMult +
+    legExtras * legMult +
+    (Number(params.stopOnWayFee) || 0) +
+    (Number(params.pickupPreferenceFee) || 0) +
+    gratuity;
 
   return {
     legCarPrice: legCar,
@@ -90,12 +107,8 @@ export function calculateServiceFeeBreakdown(params) {
     stopOnWayFee: Number(params.stopOnWayFee) || 0,
     pickupPreferenceFee: Number(params.pickupPreferenceFee) || 0,
     gratuity,
-    total:
-      legCar * legMult +
-      legExtras * legMult +
-      (Number(params.stopOnWayFee) || 0) +
-      (Number(params.pickupPreferenceFee) || 0) +
-      gratuity,
+    promoDiscount,
+    total: promoDiscount > 0 ? Math.max(beforeDiscount - promoDiscount, 0) : beforeDiscount,
   };
 }
 

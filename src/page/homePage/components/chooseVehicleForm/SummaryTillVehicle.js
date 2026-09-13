@@ -1,17 +1,9 @@
 import React from "react";
-import { Box, Stack, Button } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 import RSTypography from "../../../../components/RSTypography";
-import colors from "../../../../assets/theme/colors";
 import { useTheme } from "@emotion/react";
-import axios from "axios";
 function SummaryTillVehicle({ summaryData, travelType }) {
   const theme = useTheme();
-  const createUser = async () => {
-    await axios.post("http://localhost:8765/user-manager-service/login", {
-      username: "0910169167",
-      password: "@eyasu123",
-    });
-  };
   const Field = ({ field, value }) => (
     <Stack
       direction={"row"}
@@ -67,9 +59,6 @@ function SummaryTillVehicle({ summaryData, travelType }) {
           )}
         </Stack>
       </Box>
-      {/* <Button variant="contained" onClick={createUser}>
-        create
-      </Button> */}
     </Box>
   );
 }

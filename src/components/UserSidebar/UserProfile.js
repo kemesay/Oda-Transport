@@ -22,6 +22,10 @@ import {
   FlightTakeoff as FlightIcon,
   Schedule as HourlyIcon,
   Route as RouteIcon,
+  CardGiftcard as ReferralIcon,
+  ContentCopy as CopyIcon,
+  Share as ShareIcon,
+  Check as CheckIcon,
 } from '@mui/icons-material';
 
 const ResponsiveGrid = styled(Grid)(({ theme }) => ({
@@ -92,6 +96,11 @@ function UserProfile() {
     hourly: 0,
     airport: 0,
   });
+
+  const [referralCode, setReferralCode] = useState(null);
+  const [referralLoading, setReferralLoading] = useState(true);
+  const [referralError, setReferralError] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Fetch user data and booking data
   useEffect(() => {
@@ -167,6 +176,62 @@ function UserProfile() {
     fetchData();
   }, []);
 
+  // Referral code is fetched independently of the profile/bookings data above —
+  // it's a separate, non-critical section, so a failure here should never
+  // block or blank out the rest of the account page.
+  useEffect(() => {
+    const fetchReferralCode = async () => {
+      setReferralLoading(true);
+      setReferralError(false);
+      try {
+        const token = sessionStorage.getItem('access_token');
+        const response = await BACKEND_API.get(
+          "/api/v1/promo-codes/my-referral-code",
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        setReferralCode(response.data);
+      } catch (err) {
+        console.error('Error fetching referral code:', err);
+        setReferralError(true);
+      } finally {
+        setReferralLoading(false);
+      }
+    };
+
+    fetchReferralCode();
+  }, []);
+
+  const handleCopyReferralLink = async () => {
+    if (!referralCode?.link) return;
+    try {
+      await navigator.clipboard.writeText(referralCode.link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Clipboard copy failed:', err);
+    }
+  };
+
+  const handleShareReferralLink = async () => {
+    if (!referralCode) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'ODA Transportation',
+          text: referralCode.shareMessage,
+          url: referralCode.link,
+        });
+      } catch (err) {
+        // AbortError just means the user closed the native share sheet — not an error.
+        if (err.name !== 'AbortError') console.error('Share failed:', err);
+      }
+    } else {
+      handleCopyReferralLink();
+    }
+  };
+
   const handleEdit = () => {
     setTempData(userData);
     setEditing(true);
@@ -224,6 +289,87 @@ function UserProfile() {
     setTempData(userData);
     setNameError('');
     setEditing(false);
+  };
+
+  const ReferralCodeSection = () => {
+    if (referralLoading) {
+      return (
+        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', py: 2 }}>
+          <CircularProgress size={24} sx={{ color: '#03930A' }} />
+        </Box>
+      );
+    }
+
+    if (referralError || !referralCode) {
+      return null;
+    }
+
+    return (
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#03930A', fontWeight: 600, mb: 1 }}>
+          Refer a Friend
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Share your link — your friend gets {referralCode.discountValue}% off their first ride,
+          and you get a reward once they complete it.
+        </Typography>
+
+        <StatsCard sx={{ '&:hover': { transform: 'none', boxShadow: 'none' } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+            <ReferralIcon sx={{ color: '#03930A', fontSize: 28 }} />
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: 700, color: '#03930A', letterSpacing: 1 }}
+            >
+              {referralCode.code}
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 1,
+              alignItems: { xs: 'stretch', sm: 'center' },
+            }}
+          >
+            <TextField
+              fullWidth
+              size="small"
+              value={referralCode.link}
+              InputProps={{ readOnly: true }}
+              sx={{ bgcolor: '#fff' }}
+            />
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: { xs: 'flex-end', sm: 'flex-start' } }}>
+              <IconButton
+                onClick={handleCopyReferralLink}
+                title="Copy link"
+                sx={{ color: copied ? '#03930A' : 'inherit' }}
+              >
+                {copied ? <CheckIcon /> : <CopyIcon />}
+              </IconButton>
+              <Button
+                variant="contained"
+                startIcon={<ShareIcon />}
+                onClick={handleShareReferralLink}
+                sx={{
+                  bgcolor: '#03930A',
+                  whiteSpace: 'nowrap',
+                  '&:hover': { bgcolor: '#03830A' },
+                }}
+              >
+                Share
+              </Button>
+            </Box>
+          </Box>
+          {copied && (
+            <Typography variant="caption" sx={{ color: '#03930A', mt: 1, display: 'block' }}>
+              Link copied to clipboard!
+            </Typography>
+          )}
+        </StatsCard>
+      </Box>
+    );
   };
 
   // Add this new component for ride statistics
@@ -418,6 +564,11 @@ function UserProfile() {
 
         {/* Add the new statistics section */}
         <RideStatistics />
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* Referral code — visible to every signed-in user, created on first fetch */}
+        <ReferralCodeSection />
 
         {editing && (
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>

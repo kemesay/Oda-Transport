@@ -32,9 +32,7 @@ export const book = createAsyncThunk(
       returnPickupDateTime: "",
       specialInstructions: tripDetail?.instruction,
       bookingFor: contact?.bookingFor,
-      additionalStopId: tripDetail.additionalStopId || 0,
-      additionalStopOnTheWayDescription:
-        tripDetail.additionalStopOnTheWayDescription,
+      promoCode: tripDetail?.promoCode || undefined,
       passengerFullName: contact?.passengerFullName,
       passengerEmail: contact?.email,
       gratuityId: contact.gratuityId,
@@ -70,11 +68,6 @@ export const book = createAsyncThunk(
       if (travelType == "2") {
         body.tripType = rideInfo?.tripType;
         body.distanceInMiles = rideInfo?.distanceInMiles;
-
-        if (!tripDetail.additionalStopId || tripDetail.additionalStopId == 0) {
-          delete body.additionalStopId;
-          delete body.additionalStopOnTheWayDescription;
-        }
 
         if (rideInfo?.sidePicks && rideInfo.sidePicks.length > 0) {
           body.sidePicks = rideInfo.sidePicks;
@@ -112,9 +105,7 @@ export const book = createAsyncThunk(
 
           distanceInMiles: rideInfo?.distanceInMiles,
           carId: vehicle?.vehicle,
-          additionalStopId: tripDetail.additionalStopId,
-          additionalStopOnTheWayDescription:
-            tripDetail.additionalStopOnTheWayDescription,
+          promoCode: tripDetail?.promoCode || undefined,
           pickupPreferenceId: tripDetail?.pickupPreference,
           extraOptions: extraOptions,
           bookingFor: contact?.bookingFor,
@@ -150,11 +141,6 @@ export const book = createAsyncThunk(
           delete body.returnAirline
           delete body.returnFlightNumber
         }
-        if (!tripDetail.additionalStopId || tripDetail.additionalStopId == 0) {
-          delete body.additionalStopId;
-          delete body.additionalStopOnTheWayDescription;
-        }
-
         if (rideInfo?.sidePicks && rideInfo.sidePicks.length > 0) {
           body.sidePicks = rideInfo.sidePicks;
         }
@@ -166,10 +152,6 @@ export const book = createAsyncThunk(
         );
         return res.data;
       } else if (travelType === "3") {
-        if (!tripDetail.additionalStopId || tripDetail.additionalStopId == 0) {
-          delete body.additionalStopId;
-          delete body.additionalStopOnTheWayDescription;
-        }
         body.selectedHours = rideInfo?.hour;
         body.occasion = tripDetail?.occation;
         body.billingMode = rideInfo?.billingMode || "PRE_BOOKED";
