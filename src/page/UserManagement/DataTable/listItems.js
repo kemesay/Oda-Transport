@@ -6,6 +6,7 @@ import ListItemText from "@mui/material/ListItemText";
 import { Collapse, List } from "@mui/material";
 import PeopleIcon from "@mui/icons-material/People";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import LinkIcon from "@mui/icons-material/Link";
 import { HourglassBottom } from "@mui/icons-material";
 import { Stop } from "@mui/icons-material";
@@ -133,6 +134,13 @@ const menus = [
     link: "/dashboard/gratuity",
     title: "Gratuity",
     icon: <QueueIcon />,
+  },
+
+  {
+    index: 13,
+    link: "/dashboard/promo-codes",
+    title: "Promo Codes",
+    icon: <LocalOfferIcon />,
   },
 
 ];

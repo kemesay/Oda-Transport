@@ -226,6 +226,19 @@ const MDataTable = (props) => {
                 >
                   {`Add New Popular Place`}
                 </Button>
+              ) : props.title == "Promo Code" ? (
+                <Button
+                  sx={{
+                    color: "black",
+                    backgroundColor: "info.main",
+                    backgroundColor: "green",
+                  }}
+                  onClick={() => {
+                    navigate("/dashboard/add-promo-code");
+                  }}
+                >
+                  {`Add New Promo Code`}
+                </Button>
               ) : (
                 <Button
                   // variant="contained"
