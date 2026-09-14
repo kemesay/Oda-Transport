@@ -137,7 +137,7 @@ const menus = [
   },
 
   {
-    index: 13,
+    index: 14,
     link: "/dashboard/promo-codes",
     title: "Promo Codes",
     icon: <LocalOfferIcon />,
