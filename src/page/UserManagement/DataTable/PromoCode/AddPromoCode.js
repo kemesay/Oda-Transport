@@ -86,7 +86,10 @@ export default function AddPromoCode() {
     setSubmitState({ loading: true, successMessage: "", errorMessage: "" });
     try {
       const payload = {
-        code: values.code.trim().toUpperCase(),
+        // Casing is preserved as typed (e.g. "OdaCar") — redemption still
+        // works regardless of how a customer later types it, since the
+        // backend's code lookup is case-insensitive.
+        code: values.code.trim(),
         discountType: values.discountType,
         discountValue: Number(values.discountValue),
         maxDiscountAmount:
@@ -131,11 +134,10 @@ export default function AddPromoCode() {
             <TextField
               fullWidth
               label={"Code"}
-              placeholder="e.g. ODACAR"
-              inputProps={{ style: { textTransform: "uppercase" } }}
+              placeholder="e.g. OdaCar"
               helperText={
                 (formik.touched.code && formik.errors.code) ||
-                "What customers will type in at booking"
+                "Shown exactly as typed — customers can still enter it in any case"
               }
               error={formik.touched.code && Boolean(formik.errors.code)}
               {...formik.getFieldProps("code")}
