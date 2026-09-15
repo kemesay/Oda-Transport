@@ -58,6 +58,28 @@ export default function AddPromoCode() {
       .integer("Must be a whole number")
       .min(1, "Must be at least 1")
       .nullable(),
+    periodDays: yup
+      .number()
+      .typeError("Must be a whole number")
+      .integer("Must be a whole number")
+      .min(1, "Must be at least 1")
+      .nullable()
+      .test(
+        "with-period-uses",
+        "Also set how many uses are allowed per period",
+        (value, ctx) => !value || !!ctx.parent.maxRedemptionsPerPeriod
+      ),
+    maxRedemptionsPerPeriod: yup
+      .number()
+      .typeError("Must be a whole number")
+      .integer("Must be a whole number")
+      .min(1, "Must be at least 1")
+      .nullable()
+      .test(
+        "with-period-days",
+        "Also set the period length in days",
+        (value, ctx) => !value || !!ctx.parent.periodDays
+      ),
     expiresAt: yup.date().nullable(),
   });
 
@@ -69,6 +91,8 @@ export default function AddPromoCode() {
       minFareAmount: "",
       maxRedemptionsPerUser: 5,
       maxTotalRedemptions: "",
+      periodDays: "",
+      maxRedemptionsPerPeriod: "",
       expiresAt: "",
       isActive: true,
     },
@@ -90,6 +114,9 @@ export default function AddPromoCode() {
         maxRedemptionsPerUser: Number(values.maxRedemptionsPerUser),
         maxTotalRedemptions:
           values.maxTotalRedemptions !== "" ? Number(values.maxTotalRedemptions) : null,
+        periodDays: values.periodDays !== "" ? Number(values.periodDays) : null,
+        maxRedemptionsPerPeriod:
+          values.maxRedemptionsPerPeriod !== "" ? Number(values.maxRedemptionsPerPeriod) : null,
         expiresAt: values.expiresAt || null,
         isActive: values.isActive,
       };
@@ -208,6 +235,38 @@ export default function AddPromoCode() {
                 Boolean(formik.errors.maxTotalRedemptions)
               }
               {...formik.getFieldProps("maxTotalRedemptions")}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label={"Rolling Period (days, optional)"}
+              helperText={
+                (formik.touched.periodDays && formik.errors.periodDays) ||
+                "e.g. 15 — pair with Uses Per Period below"
+              }
+              error={formik.touched.periodDays && Boolean(formik.errors.periodDays)}
+              {...formik.getFieldProps("periodDays")}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label={"Uses Per Period (optional)"}
+              helperText={
+                (formik.touched.maxRedemptionsPerPeriod &&
+                  formik.errors.maxRedemptionsPerPeriod) ||
+                "e.g. 5 — max uses per customer within the rolling period above"
+              }
+              error={
+                formik.touched.maxRedemptionsPerPeriod &&
+                Boolean(formik.errors.maxRedemptionsPerPeriod)
+              }
+              {...formik.getFieldProps("maxRedemptionsPerPeriod")}
             />
           </Grid>
 

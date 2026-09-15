@@ -40,6 +40,15 @@ export const columns = [
     Cell: ({ cell }) => cell.getValue() ?? "Unlimited",
   },
   {
+    accessorKey: "maxRedemptionsPerPeriod",
+    header: "Period Cap",
+    enableEditing: false,
+    Cell: ({ row }) =>
+      row.original.periodDays && row.original.maxRedemptionsPerPeriod
+        ? `${row.original.maxRedemptionsPerPeriod} / ${row.original.periodDays} days`
+        : "—",
+  },
+  {
     accessorKey: "expiresAt",
     header: "Expires",
     enableEditing: false,
