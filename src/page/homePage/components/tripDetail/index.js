@@ -138,6 +138,20 @@ function Index({ formik, vehicleSummaryData, rideSummaryData, travelRouteId }) {
     dispatch(getAllPreferences());
   }, []);
 
+  // A referral link lands here as /?promoCode=CODE — pre-fill the box so
+  // all the customer has to do is click Apply, instead of having to notice
+  // the code sitting in the URL and copy it in by hand. Not auto-applied:
+  // this runs before any real trip details (and therefore fare) exist, so
+  // validating this early would price it against a placeholder fare.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const codeFromLink = params.get("promoCode");
+    if (codeFromLink) {
+      setPromoCodeInput(codeFromLink.trim().toUpperCase());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [currentDateTime, setCurrentDateTime] = useState(() =>
     dayjs().tz(userTimezone)
   );
