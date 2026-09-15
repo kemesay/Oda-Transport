@@ -345,11 +345,22 @@ function ViewHourlyBookDetail(props) {
                   <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
                     💰 Discount Applied
                   </Typography>
-                  <Typography variant="body1">
-                    Discount Amount: <strong>${response?.discountAmountInDollars}</strong>
-                  </Typography>
+                  {parseFloat(response?.promoDiscountAmountInDollars || 0) > 0 && (
+                    <Typography variant="body1">
+                      Promo Discount: <strong>${response?.promoDiscountAmountInDollars}</strong>
+                    </Typography>
+                  )}
+                  {parseFloat(response?.discountAmountInDollars || 0) > 0 && (
+                    <Typography variant="body1">
+                      Manual Discount: <strong>${response?.discountAmountInDollars}</strong>
+                    </Typography>
+                  )}
                   <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
-                    Original Total: ${(parseFloat(response?.totalTripFeeInDollars || 0) + parseFloat(response?.discountAmountInDollars || 0)).toFixed(2)}
+                    Original Total: ${(
+                      parseFloat(response?.totalTripFeeInDollars || 0) +
+                      parseFloat(response?.promoDiscountAmountInDollars || 0) +
+                      parseFloat(response?.discountAmountInDollars || 0)
+                    ).toFixed(2)}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     New Total: <strong>${response?.totalTripFeeInDollars}</strong>

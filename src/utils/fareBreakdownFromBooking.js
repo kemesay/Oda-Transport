@@ -82,7 +82,12 @@ export function fareBreakdownFromBooking(booking) {
 
   const gratuityPct = asMoney(booking.Gratuity?.percentage);
   const gratuity = gratuityOnCarFare(legCar, gratuityPct, tripType);
-  const discount = asMoney(booking.discountAmountInDollars);
+  // Promo-code and admin-manual discounts live in separate columns (so one
+  // can never silently overwrite the other) — combined here for the total,
+  // but also exposed separately so a receipt can label which is which.
+  const promoDiscount = asMoney(booking.promoDiscountAmountInDollars);
+  const manualDiscount = asMoney(booking.discountAmountInDollars);
+  const discount = Number((promoDiscount + manualDiscount).toFixed(2));
   const subtotal =
     carFare +
     additionalStopPrice +
@@ -100,6 +105,8 @@ export function fareBreakdownFromBooking(booking) {
     gratuity,
     gratuityPercentage: gratuityPct,
     discount,
+    promoDiscount,
+    manualDiscount,
     subtotal,
     total,
     roundTrip,
