@@ -324,24 +324,40 @@ function UserProfile() {
     setEditing(false);
   };
 
-  const DiscountProgressRow = ({ label, used, limit }) => (
-    <Box sx={{ mb: 1.5 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-        <Typography variant="body2" color="text.secondary">{label}</Typography>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>{used} of {limit} used</Typography>
+  const DiscountProgressRow = ({ label, used, limit }) => {
+    // A null limit means this bucket is uncapped (e.g. referral rewards
+    // earned) — show a count instead of a progress bar that can't divide
+    // by a limit that doesn't exist.
+    if (limit == null) {
+      return (
+        <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" color="text.secondary">{label}</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: '#03930A' }}>
+            {used} earned — unlimited
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Box sx={{ mb: 1.5 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+          <Typography variant="body2" color="text.secondary">{label}</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{used} of {limit} used</Typography>
+        </Box>
+        <LinearProgress
+          variant="determinate"
+          value={limit > 0 ? Math.min((used / limit) * 100, 100) : 0}
+          sx={{
+            height: 8,
+            borderRadius: 4,
+            bgcolor: 'rgba(3, 147, 10, 0.1)',
+            '& .MuiLinearProgress-bar': { bgcolor: '#03930A', borderRadius: 4 },
+          }}
+        />
       </Box>
-      <LinearProgress
-        variant="determinate"
-        value={limit > 0 ? Math.min((used / limit) * 100, 100) : 0}
-        sx={{
-          height: 8,
-          borderRadius: 4,
-          bgcolor: 'rgba(3, 147, 10, 0.1)',
-          '& .MuiLinearProgress-bar': { bgcolor: '#03930A', borderRadius: 4 },
-        }}
-      />
-    </Box>
-  );
+    );
+  };
 
   const DiscountSummarySection = () => {
     if (discountSummaryLoading) {
