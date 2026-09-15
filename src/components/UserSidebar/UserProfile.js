@@ -11,6 +11,7 @@ import {
   IconButton,
   Alert,
   CircularProgress,
+  LinearProgress,
 } from '@mui/material';
 import {
   Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon, Receipt as OrderIcon,
@@ -26,6 +27,8 @@ import {
   ContentCopy as CopyIcon,
   Share as ShareIcon,
   Check as CheckIcon,
+  Savings as SavingsIcon,
+  HourglassTop as PendingIcon,
 } from '@mui/icons-material';
 
 const ResponsiveGrid = styled(Grid)(({ theme }) => ({
@@ -101,6 +104,10 @@ function UserProfile() {
   const [referralLoading, setReferralLoading] = useState(true);
   const [referralError, setReferralError] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const [discountSummary, setDiscountSummary] = useState(null);
+  const [discountSummaryLoading, setDiscountSummaryLoading] = useState(true);
+  const [discountSummaryError, setDiscountSummaryError] = useState(false);
 
   // Fetch user data and booking data
   useEffect(() => {
@@ -203,6 +210,32 @@ function UserProfile() {
     fetchReferralCode();
   }, []);
 
+  // Also independent of the profile/bookings fetch — a failure here should
+  // never block or blank out the rest of the account page either.
+  useEffect(() => {
+    const fetchDiscountSummary = async () => {
+      setDiscountSummaryLoading(true);
+      setDiscountSummaryError(false);
+      try {
+        const token = sessionStorage.getItem('access_token');
+        const response = await BACKEND_API.get(
+          "/api/v1/promo-codes/my-discount-summary",
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        setDiscountSummary(response.data);
+      } catch (err) {
+        console.error('Error fetching discount summary:', err);
+        setDiscountSummaryError(true);
+      } finally {
+        setDiscountSummaryLoading(false);
+      }
+    };
+
+    fetchDiscountSummary();
+  }, []);
+
   const handleCopyReferralLink = async () => {
     if (!referralCode?.link) return;
     try {
@@ -291,6 +324,118 @@ function UserProfile() {
     setEditing(false);
   };
 
+  const DiscountProgressRow = ({ label, used, limit }) => (
+    <Box sx={{ mb: 1.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+        <Typography variant="body2" color="text.secondary">{label}</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>{used} of {limit} used</Typography>
+      </Box>
+      <LinearProgress
+        variant="determinate"
+        value={limit > 0 ? Math.min((used / limit) * 100, 100) : 0}
+        sx={{
+          height: 8,
+          borderRadius: 4,
+          bgcolor: 'rgba(3, 147, 10, 0.1)',
+          '& .MuiLinearProgress-bar': { bgcolor: '#03930A', borderRadius: 4 },
+        }}
+      />
+    </Box>
+  );
+
+  const DiscountSummarySection = () => {
+    if (discountSummaryLoading) {
+      return (
+        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', py: 2 }}>
+          <CircularProgress size={24} sx={{ color: '#03930A' }} />
+        </Box>
+      );
+    }
+
+    if (discountSummaryError || !discountSummary) {
+      return null;
+    }
+
+    const {
+      totalSaved,
+      totalReferralRewardsEarned,
+      publicCodes,
+      referralCodesSpent,
+      referralRewardsEarned,
+      pendingReferralRewards,
+    } = discountSummary;
+
+    return (
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#03930A', fontWeight: 600, mb: 1 }}>
+          My Savings &amp; Rewards
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Every discount you've used, and every reward you've earned by referring friends.
+        </Typography>
+
+        <StatsCard sx={{ '&:hover': { transform: 'none', boxShadow: 'none' } }}>
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={6}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <SavingsIcon sx={{ color: '#03930A' }} />
+                <Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#03930A' }}>
+                    ${Number(totalSaved).toFixed(2)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Total Saved
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+            <Grid item xs={6}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ReferralIcon sx={{ color: '#03930A' }} />
+                <Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#03930A' }}>
+                    ${Number(totalReferralRewardsEarned).toFixed(2)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Earned by Referring
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ mb: 2 }} />
+
+          <DiscountProgressRow
+            label="First-booking / occasion promo codes"
+            used={publicCodes.used}
+            limit={publicCodes.limit}
+          />
+          <DiscountProgressRow
+            label="Referral codes you've used"
+            used={referralCodesSpent.used}
+            limit={referralCodesSpent.limit}
+          />
+          <DiscountProgressRow
+            label="Referral rewards earned"
+            used={referralRewardsEarned.used}
+            limit={referralRewardsEarned.limit}
+          />
+
+          {pendingReferralRewards > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+              <PendingIcon sx={{ color: '#c9971e', fontSize: 18 }} />
+              <Typography variant="caption" color="text.secondary">
+                {pendingReferralRewards} referral{pendingReferralRewards > 1 ? 's' : ''} pending —
+                reward arrives once their trip is completed and paid.
+              </Typography>
+            </Box>
+          )}
+        </StatsCard>
+      </Box>
+    );
+  };
+
   const ReferralCodeSection = () => {
     if (referralLoading) {
       return (
@@ -310,7 +455,7 @@ function UserProfile() {
           Refer a Friend
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Share your link — your friend gets {referralCode.discountValue}% off their first ride,
+          Share your link, your friend gets {referralCode.discountValue}% off their first ride,
           and you get a reward once they complete it.
         </Typography>
 
@@ -564,6 +709,11 @@ function UserProfile() {
 
         {/* Add the new statistics section */}
         <RideStatistics />
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* Savings/rewards summary — visible to every signed-in user */}
+        <DiscountSummarySection />
 
         <Divider sx={{ my: 3 }} />
 
