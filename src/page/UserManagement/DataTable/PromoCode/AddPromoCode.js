@@ -41,11 +41,6 @@ export default function AddPromoCode() {
       .typeError("Must be a number")
       .min(0.01, "Must be greater than 0")
       .required("Discount value is required"),
-    maxDiscountAmount: yup
-      .number()
-      .typeError("Must be a number")
-      .min(0.01, "Must be greater than 0")
-      .nullable(),
     minFareAmount: yup
       .number()
       .typeError("Must be a number")
@@ -71,7 +66,6 @@ export default function AddPromoCode() {
       code: "",
       discountType: "percent",
       discountValue: "",
-      maxDiscountAmount: "",
       minFareAmount: "",
       maxRedemptionsPerUser: 5,
       maxTotalRedemptions: "",
@@ -92,8 +86,6 @@ export default function AddPromoCode() {
         code: values.code.trim(),
         discountType: values.discountType,
         discountValue: Number(values.discountValue),
-        maxDiscountAmount:
-          values.maxDiscountAmount !== "" ? Number(values.maxDiscountAmount) : null,
         minFareAmount: values.minFareAmount !== "" ? Number(values.minFareAmount) : null,
         maxRedemptionsPerUser: Number(values.maxRedemptionsPerUser),
         maxTotalRedemptions:
@@ -168,25 +160,6 @@ export default function AddPromoCode() {
               {...formik.getFieldProps("discountValue")}
             />
           </Grid>
-
-          {isPercent && (
-            <Grid item xs={12} md={6} lg={4}>
-              <TextField
-                fullWidth
-                type="number"
-                label={"Max Discount ($, optional)"}
-                helperText={
-                  (formik.touched.maxDiscountAmount && formik.errors.maxDiscountAmount) ||
-                  "Caps the percentage discount in dollars"
-                }
-                error={
-                  formik.touched.maxDiscountAmount &&
-                  Boolean(formik.errors.maxDiscountAmount)
-                }
-                {...formik.getFieldProps("maxDiscountAmount")}
-              />
-            </Grid>
-          )}
 
           <Grid item xs={12} md={6} lg={4}>
             <TextField

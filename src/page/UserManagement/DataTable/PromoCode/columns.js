@@ -22,13 +22,6 @@ export const columns = [
     Cell: ({ row }) => formatDiscount(row.original),
   },
   {
-    accessorKey: "maxDiscountAmount",
-    header: "Max Discount",
-    enableEditing: false,
-    Cell: ({ cell }) =>
-      cell.getValue() != null ? `$${Number(cell.getValue()).toFixed(2)}` : "—",
-  },
-  {
     accessorKey: "minFareAmount",
     header: "Min Fare",
     enableEditing: false,
