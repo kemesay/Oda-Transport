@@ -7,6 +7,7 @@ import { Collapse, List } from "@mui/material";
 import PeopleIcon from "@mui/icons-material/People";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import TuneIcon from "@mui/icons-material/Tune";
 import LinkIcon from "@mui/icons-material/Link";
 import { HourglassBottom } from "@mui/icons-material";
 import { Stop } from "@mui/icons-material";
@@ -141,6 +142,13 @@ const menus = [
     link: "/dashboard/promo-codes",
     title: "Promo Codes",
     icon: <LocalOfferIcon />,
+  },
+
+  {
+    index: 15,
+    link: "/dashboard/referral-settings",
+    title: "Referral Settings",
+    icon: <TuneIcon />,
   },
 
 ];
