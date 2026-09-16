@@ -27,6 +27,7 @@ import axios from "axios";
 import { addMinimumInitialFee, updateTotalFee } from "../../store/reducers/bookReducers";
 import { BACKEND_API } from "../../store/utils/API";
 import { calculateServiceFee } from "../../utils/bookingFeeCalculator";
+import useSideDetourSettings from "../../hooks/useSideDetourSettings";
 import { PAYMENT_METHODS } from "../../constants/paymentMethods";
 import SquarePaymentStatus from "../../components/SquarePaymentStatus";
 import {
@@ -102,6 +103,7 @@ function Index() {
     const advanceFromContactRef = React.useRef(null);
 
     const dispatch = useDispatch();
+    const sideDetourSettings = useSideDetourSettings();
     const { isAuthenticated } = useSelector(
         (state) => state.authReducer
     );
@@ -821,9 +823,13 @@ function Index() {
     const feeCalculator = () => {
         const { vehicleFee, minimumStartFee, extraOptionFee } =
             formikChooseVehicle.values;
-        const { distanceInMiles, hour, tripType } = formikRideInfo.values;
+        const { distanceInMiles, hour, tripType, sidePicks } = formikRideInfo.values;
         const { stopOnWayFee, pickupPreferenceFee, promoDiscount } = formikTripDetail.values;
         const { gratuityFee, gratuityPercentage } = formikContact.values;
+        const sideDetourFee =
+            (sidePicks || []).length > 0 && sideDetourSettings.isActive
+                ? sideDetourSettings.startFee
+                : 0;
 
         dispatch(
             updateTotalFee(
@@ -837,6 +843,7 @@ function Index() {
                     hour,
                     stopOnWayFee,
                     pickupPreferenceFee,
+                    sideDetourFee,
                     promoDiscount,
                     gratuityFee,
                     gratuityPercentage,
@@ -851,7 +858,8 @@ function Index() {
     }, [formikContact,
         formikChooseVehicle,
         formikRideInfo,
-        formikTripDetail])
+        formikTripDetail,
+        sideDetourSettings])
 
     useEffect(() => {
         dispatch(getAllCars());

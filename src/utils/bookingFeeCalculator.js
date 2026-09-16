@@ -48,6 +48,8 @@ export function computeGratuityOnCarFare(legCarPrice, percentage, tripType) {
  * @param {number|string} [params.gratuityPercentage] when set, tip from car fare (backend rule)
  * @param {number} [params.gratuityFee] used when percentage is 0 / cash tip
  * @param {number} params.extraOptionFee per-leg extras total (not pre-doubled for RT)
+ * @param {number} [params.sideDetourFee] flat, added once regardless of trip type — mirrors
+ *   the backend's sideDetourFeeFor (never doubled for round trip, same as stopOnWayFee)
  */
 export function calculateServiceFee(params) {
   const round = isRoundTripTripType(params.tripType);
@@ -59,6 +61,7 @@ export function calculateServiceFee(params) {
   let total = legCar * legMult + legExtras * legMult;
   total += Number(params.stopOnWayFee) || 0;
   total += Number(params.pickupPreferenceFee) || 0;
+  total += Number(params.sideDetourFee) || 0;
 
   const pct = params.gratuityPercentage;
   const gratuity =
@@ -96,6 +99,7 @@ export function calculateServiceFeeBreakdown(params) {
     legExtras * legMult +
     (Number(params.stopOnWayFee) || 0) +
     (Number(params.pickupPreferenceFee) || 0) +
+    (Number(params.sideDetourFee) || 0) +
     gratuity;
 
   return {
@@ -106,6 +110,7 @@ export function calculateServiceFeeBreakdown(params) {
     extraOptionsTotal: legExtras * legMult,
     stopOnWayFee: Number(params.stopOnWayFee) || 0,
     pickupPreferenceFee: Number(params.pickupPreferenceFee) || 0,
+    sideDetourFee: Number(params.sideDetourFee) || 0,
     gratuity,
     promoDiscount,
     total: promoDiscount > 0 ? Math.max(beforeDiscount - promoDiscount, 0) : beforeDiscount,
