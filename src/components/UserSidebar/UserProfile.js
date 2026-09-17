@@ -29,7 +29,26 @@ import {
   Check as CheckIcon,
   Savings as SavingsIcon,
   HourglassTop as PendingIcon,
+  LocalOffer as PromoIcon,
+  Timer as TimerIcon,
 } from '@mui/icons-material';
+
+/** "3d 4h", "2h 15m", "45s", or "Expired" — recomputed every second by the caller. */
+function formatCountdown(msRemaining) {
+  if (msRemaining == null) return '';
+  if (msRemaining <= 0) return 'Expired';
+
+  const totalSeconds = Math.floor(msRemaining / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
 
 const ResponsiveGrid = styled(Grid)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
@@ -108,6 +127,11 @@ function UserProfile() {
   const [discountSummary, setDiscountSummary] = useState(null);
   const [discountSummaryLoading, setDiscountSummaryLoading] = useState(true);
   const [discountSummaryError, setDiscountSummaryError] = useState(false);
+
+  const [activePromo, setActivePromo] = useState(null);
+  const [activePromoLoading, setActivePromoLoading] = useState(true);
+  const [activePromoError, setActivePromoError] = useState(false);
+  const [activePromoCountdown, setActivePromoCountdown] = useState('');
 
   // Fetch user data and booking data
   useEffect(() => {
@@ -236,6 +260,50 @@ function UserProfile() {
     fetchDiscountSummary();
   }, []);
 
+  // Also independent of the other fetches above — a failure here (or simply
+  // no campaign being live right now) should just hide this section, never
+  // block or blank out the rest of the account page.
+  useEffect(() => {
+    const fetchActivePromo = async () => {
+      setActivePromoLoading(true);
+      setActivePromoError(false);
+      try {
+        const token = sessionStorage.getItem('access_token');
+        const response = await BACKEND_API.get(
+          "/api/v1/promo-codes/active-public",
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        setActivePromo(response.data);
+      } catch (err) {
+        console.error('Error fetching active promo code:', err);
+        setActivePromoError(true);
+      } finally {
+        setActivePromoLoading(false);
+      }
+    };
+
+    fetchActivePromo();
+  }, []);
+
+  // Ticks the "expires in" countdown every second while an active,
+  // expiring promo is shown — purely a display timer, recomputed from the
+  // fetched expiresAt each tick rather than counting down a stored value.
+  useEffect(() => {
+    if (!activePromo?.available || !activePromo?.expiresAt) {
+      setActivePromoCountdown('');
+      return undefined;
+    }
+
+    const expiresAtMs = new Date(activePromo.expiresAt).getTime();
+    const tick = () => setActivePromoCountdown(formatCountdown(expiresAtMs - Date.now()));
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [activePromo]);
+
   const handleCopyReferralLink = async () => {
     if (!referralCode?.link) return;
     try {
@@ -355,6 +423,68 @@ function UserProfile() {
             '& .MuiLinearProgress-bar': { bgcolor: '#03930A', borderRadius: 4 },
           }}
         />
+      </Box>
+    );
+  };
+
+  const ActivePromoSection = () => {
+    if (activePromoLoading) {
+      return (
+        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', py: 2 }}>
+          <CircularProgress size={24} sx={{ color: '#03930A' }} />
+        </Box>
+      );
+    }
+
+    // Fails silently (network error) or there's simply nothing live for this
+    // customer right now — either way, showing nothing is correct here.
+    if (activePromoError || !activePromo?.available) {
+      return null;
+    }
+
+    const { code, discountType, discountValue, minFareAmount, remainingUses } = activePromo;
+    const discountLabel =
+      discountType === 'flat' ? `$${Number(discountValue).toFixed(2)} off` : `${Number(discountValue)}% off`;
+
+    return (
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#03930A', fontWeight: 600, mb: 1 }}>
+          Active Promotion
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          A current promo code you can use right now on your next booking.
+        </Typography>
+
+        <StatsCard sx={{ '&:hover': { transform: 'none', boxShadow: 'none' } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5, flexWrap: 'wrap' }}>
+            <PromoIcon sx={{ color: '#03930A', fontSize: 28 }} />
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#03930A', letterSpacing: 1 }}>
+              {code}
+            </Typography>
+            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+              {discountLabel}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            {activePromoCountdown && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <TimerIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Typography variant="body2" color="text.secondary">
+                  Expires in <strong>{activePromoCountdown}</strong>
+                </Typography>
+              </Box>
+            )}
+            <Typography variant="body2" color="text.secondary">
+              {remainingUses} use{remainingUses === 1 ? '' : 's'} left for you
+            </Typography>
+            {minFareAmount > 0 && (
+              <Typography variant="body2" color="text.secondary">
+                Minimum fare ${Number(minFareAmount).toFixed(2)}
+              </Typography>
+            )}
+          </Box>
+        </StatsCard>
       </Box>
     );
   };
@@ -730,6 +860,11 @@ function UserProfile() {
 
         {/* Savings/rewards summary — visible to every signed-in user */}
         <DiscountSummarySection />
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* Current active public promo, if any is live and still usable by this customer */}
+        <ActivePromoSection />
 
         <Divider sx={{ my: 3 }} />
 
