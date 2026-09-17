@@ -504,7 +504,6 @@ function UserProfile() {
 
     const {
       totalSaved,
-      totalReferralRewardsEarned,
       publicCodes,
       referralCodesSpent,
       referralRewardsEarned,
@@ -540,10 +539,10 @@ function UserProfile() {
                 <ReferralIcon sx={{ color: '#03930A' }} />
                 <Box>
                   <Typography variant="h5" sx={{ fontWeight: 700, color: '#03930A' }}>
-                    ${Number(totalReferralRewardsEarned).toFixed(2)}
+                    {referralRewardsEarned.used}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Earned by Referring
+                    Rewards Earned by Referring
                   </Typography>
                 </Box>
               </Box>

@@ -21,11 +21,6 @@ const referralSettingsValidationSchema = yup.object({
     .min(0.01, "Must be greater than 0")
     .max(100, "Can't exceed 100%")
     .required("Required"),
-  referrerRewardAmount: yup
-    .number()
-    .typeError("Must be a number")
-    .min(0.01, "Must be greater than 0")
-    .required("Required"),
   maxLifetimePublicRedemptions: yup
     .number()
     .typeError("Must be a whole number")
@@ -57,7 +52,6 @@ export default function ReferralSettings() {
   const formik = useFormik({
     initialValues: {
       referralDiscountPercent: "",
-      referrerRewardAmount: "",
       maxLifetimePublicRedemptions: "",
       maxLifetimeReferralRedemptions: "",
     },
@@ -72,7 +66,6 @@ export default function ReferralSettings() {
     if (settings) {
       formik.setValues({
         referralDiscountPercent: settings.referralDiscountPercent,
-        referrerRewardAmount: settings.referrerRewardAmount,
         maxLifetimePublicRedemptions: settings.maxLifetimePublicRedemptions,
         maxLifetimeReferralRedemptions: settings.maxLifetimeReferralRedemptions,
       });
@@ -85,7 +78,6 @@ export default function ReferralSettings() {
     try {
       await BACKEND_API.patch("/api/v1/promo-codes/referral-settings", {
         referralDiscountPercent: Number(values.referralDiscountPercent),
-        referrerRewardAmount: Number(values.referrerRewardAmount),
         maxLifetimePublicRedemptions: Number(values.maxLifetimePublicRedemptions),
         maxLifetimeReferralRedemptions: Number(values.maxLifetimeReferralRedemptions),
       });
@@ -116,11 +108,12 @@ export default function ReferralSettings() {
 
       <Box sx={{ px: 2, mb: 2 }}>
         <Typography sx={{ color: "#666", fontSize: 14 }}>
-          These numbers drive the whole referral program — the discount a referred
-          friend gets, the flat reward their referrer earns, and how many discount
-          codes any one customer can spend in a lifetime. Changing a value here only
-          affects codes and rewards created afterward; anything already issued keeps
-          the rate it was given.
+          These numbers drive the whole referral program — one percentage covers
+          both sides: it's the discount a referred friend gets on their first ride,
+          and the same percentage the referrer earns as their own reward once that
+          ride completes and is paid. Changing a value here only affects codes and
+          rewards created afterward; anything already issued keeps the rate it was
+          given.
         </Typography>
       </Box>
 
@@ -147,7 +140,7 @@ export default function ReferralSettings() {
                 helperText={
                   (formik.touched.referralDiscountPercent &&
                     formik.errors.referralDiscountPercent) ||
-                  "% off the referred friend's first ride — never capped in size"
+                  "% off the referred friend's first ride, and the referrer's own reward — never capped in size"
                 }
                 error={
                   formik.touched.referralDiscountPercent &&
@@ -155,24 +148,6 @@ export default function ReferralSettings() {
                 }
                 InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
                 {...formik.getFieldProps("referralDiscountPercent")}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                type="number"
-                label={"Referrer Reward"}
-                helperText={
-                  (formik.touched.referrerRewardAmount && formik.errors.referrerRewardAmount) ||
-                  "Flat $ credited once the referred friend's ride completes and is paid"
-                }
-                error={
-                  formik.touched.referrerRewardAmount &&
-                  Boolean(formik.errors.referrerRewardAmount)
-                }
-                InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-                {...formik.getFieldProps("referrerRewardAmount")}
               />
             </Grid>
 
@@ -202,7 +177,7 @@ export default function ReferralSettings() {
                 helperText={
                   (formik.touched.maxLifetimeReferralRedemptions &&
                     formik.errors.maxLifetimeReferralRedemptions) ||
-                  "Max friends'-invite/reward codes one customer can ever redeem — a separate allowance from public codes"
+                  "Max friends'invite/reward codes one customer can ever redeem, a separate allowance from public codes"
                 }
                 error={
                   formik.touched.maxLifetimeReferralRedemptions &&
