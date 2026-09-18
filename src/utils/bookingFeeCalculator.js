@@ -44,6 +44,22 @@ export function computeGratuityOnCarFare(legCarPrice, percentage, tripType) {
 }
 
 /**
+ * A promo discount reduces the ride's own cost — gratuity should be a tip
+ * on what the ride actually costs after that discount, not on the
+ * pre-discount sticker price. Scales `legCarPrice` down by whatever
+ * fraction of the discount falls on the car-fare portion of the subtotal
+ * (extras/stops/side-detour fees are never part of the gratuity base,
+ * discounted or not, same as before) — mirrors the backend's
+ * discountedLegCarFare, and reduces to exactly `legCarPrice` when there's
+ * no discount, so an undiscounted booking's gratuity is unchanged.
+ */
+function discountedLegCarPrice(legCarPrice, subtotal, discount) {
+  if (!discount || subtotal <= 0) return legCarPrice;
+  const legCarShareOfDiscount = (discount * legCarPrice) / subtotal;
+  return Math.max(legCarPrice - legCarShareOfDiscount, 0);
+}
+
+/**
  * @param {object} params
  * @param {number|string} [params.gratuityPercentage] when set, tip from car fare (backend rule)
  * @param {number} [params.gratuityFee] used when percentage is 0 / cash tip
@@ -58,28 +74,31 @@ export function calculateServiceFee(params) {
   const legCar = getLegCarPrice(params.travelRouteId, params);
   const legExtras = Number(params.extraOptionFee) || 0;
 
-  let total = legCar * legMult + legExtras * legMult;
-  total += Number(params.stopOnWayFee) || 0;
-  total += Number(params.pickupPreferenceFee) || 0;
-  total += Number(params.sideDetourFee) || 0;
+  const subtotal =
+    legCar * legMult +
+    legExtras * legMult +
+    (Number(params.stopOnWayFee) || 0) +
+    (Number(params.pickupPreferenceFee) || 0) +
+    (Number(params.sideDetourFee) || 0);
+
+  // Promo-code discount is subtracted from the subtotal BEFORE gratuity is
+  // added, so gratuity (below) reflects the discounted ride cost — mirrors
+  // the backend's chargeAmount rule, now applied before gratuity instead of
+  // after it.
+  const promoDiscount = Number(params.promoDiscount) || 0;
+  const discountedSubtotal = Math.max(subtotal - promoDiscount, 0);
 
   const pct = params.gratuityPercentage;
   const gratuity =
     pct != null && pct !== "" && Number(pct) > 0
-      ? computeGratuityOnCarFare(legCar, pct, params.tripType)
+      ? computeGratuityOnCarFare(
+          discountedLegCarPrice(legCar, subtotal, promoDiscount),
+          pct,
+          params.tripType
+        )
       : Number(params.gratuityFee) || 0;
 
-  total += gratuity;
-
-  // Promo-code discount is applied last, against the fully-assembled total
-  // (car fare + extras + pickup preference + gratuity) — mirrors the
-  // backend's `chargeAmount = max(totalTripFee - discount, 0)` rule.
-  const promoDiscount = Number(params.promoDiscount) || 0;
-  if (promoDiscount > 0) {
-    total = Math.max(total - promoDiscount, 0);
-  }
-
-  return total;
+  return discountedSubtotal + gratuity;
 }
 
 export function calculateServiceFeeBreakdown(params) {
@@ -87,20 +106,25 @@ export function calculateServiceFeeBreakdown(params) {
   const legMult = round ? 2 : 1;
   const legCar = getLegCarPrice(params.travelRouteId, params);
   const legExtras = Number(params.extraOptionFee) || 0;
-  const pct = params.gratuityPercentage;
-  const gratuity =
-    pct != null && pct !== "" && Number(pct) > 0
-      ? computeGratuityOnCarFare(legCar, pct, params.tripType)
-      : Number(params.gratuityFee) || 0;
   const promoDiscount = Number(params.promoDiscount) || 0;
 
-  const beforeDiscount =
+  const subtotal =
     legCar * legMult +
     legExtras * legMult +
     (Number(params.stopOnWayFee) || 0) +
     (Number(params.pickupPreferenceFee) || 0) +
-    (Number(params.sideDetourFee) || 0) +
-    gratuity;
+    (Number(params.sideDetourFee) || 0);
+  const discountedSubtotal = Math.max(subtotal - promoDiscount, 0);
+
+  const pct = params.gratuityPercentage;
+  const gratuity =
+    pct != null && pct !== "" && Number(pct) > 0
+      ? computeGratuityOnCarFare(
+          discountedLegCarPrice(legCar, subtotal, promoDiscount),
+          pct,
+          params.tripType
+        )
+      : Number(params.gratuityFee) || 0;
 
   return {
     legCarPrice: legCar,
@@ -113,7 +137,9 @@ export function calculateServiceFeeBreakdown(params) {
     sideDetourFee: Number(params.sideDetourFee) || 0,
     gratuity,
     promoDiscount,
-    total: promoDiscount > 0 ? Math.max(beforeDiscount - promoDiscount, 0) : beforeDiscount,
+    subtotal,
+    discountedSubtotal,
+    total: discountedSubtotal + gratuity,
   };
 }
 
