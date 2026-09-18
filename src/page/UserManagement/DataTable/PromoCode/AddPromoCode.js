@@ -53,6 +53,12 @@ export default function AddPromoCode() {
       .integer("Must be a whole number")
       .min(1, "Must be at least 1")
       .nullable(),
+    maxRedemptionsPerPeriod: yup
+      .number()
+      .typeError("Must be a whole number")
+      .integer("Must be a whole number")
+      .min(1, "Must be at least 1")
+      .nullable(),
     startsAt: yup.date().nullable(),
     expiresAt: yup.date().nullable(),
   });
@@ -64,6 +70,7 @@ export default function AddPromoCode() {
       discountValue: "",
       maxRedemptionsPerUser: 5,
       maxTotalRedemptions: "",
+      maxRedemptionsPerPeriod: "",
       startsAt: "",
       expiresAt: "",
       isActive: true,
@@ -85,6 +92,8 @@ export default function AddPromoCode() {
         maxRedemptionsPerUser: Number(values.maxRedemptionsPerUser),
         maxTotalRedemptions:
           values.maxTotalRedemptions !== "" ? Number(values.maxTotalRedemptions) : null,
+        maxRedemptionsPerPeriod:
+          values.maxRedemptionsPerPeriod !== "" ? Number(values.maxRedemptionsPerPeriod) : null,
         startsAt: values.startsAt || null,
         expiresAt: values.expiresAt || null,
         isActive: values.isActive,
@@ -190,6 +199,24 @@ export default function AddPromoCode() {
                 Boolean(formik.errors.maxTotalRedemptions)
               }
               {...formik.getFieldProps("maxTotalRedemptions")}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label={"Uses Per Customer Per Period (optional)"}
+              helperText={
+                (formik.touched.maxRedemptionsPerPeriod &&
+                  formik.errors.maxRedemptionsPerPeriod) ||
+                "On top of Uses Per Customer — counts only from the Start Date below, so moving it forward for a new occasion resets this count"
+              }
+              error={
+                formik.touched.maxRedemptionsPerPeriod &&
+                Boolean(formik.errors.maxRedemptionsPerPeriod)
+              }
+              {...formik.getFieldProps("maxRedemptionsPerPeriod")}
             />
           </Grid>
 

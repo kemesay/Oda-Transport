@@ -33,6 +33,12 @@ export const columns = [
     Cell: ({ cell }) => cell.getValue() ?? "Unlimited",
   },
   {
+    accessorKey: "maxRedemptionsPerPeriod",
+    header: "Uses / Period",
+    enableEditing: false,
+    Cell: ({ cell }) => cell.getValue() ?? "—",
+  },
+  {
     accessorKey: "startsAt",
     header: "Starts",
     enableEditing: false,
