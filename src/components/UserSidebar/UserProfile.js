@@ -392,16 +392,17 @@ function UserProfile() {
     setEditing(false);
   };
 
-  const DiscountProgressRow = ({ label, used, limit }) => {
+  const DiscountProgressRow = ({ label, used, limit, verb = 'earned' }) => {
     // A null limit means this bucket is uncapped (e.g. referral rewards
-    // earned) — show a count instead of a progress bar that can't divide
-    // by a limit that doesn't exist.
+    // earned, or public codes now that each code caps itself instead of a
+    // shared lifetime bucket) — show a count instead of a progress bar that
+    // can't divide by a limit that doesn't exist.
     if (limit == null) {
       return (
         <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body2" color="text.secondary">{label}</Typography>
           <Typography variant="body2" sx={{ fontWeight: 600, color: '#03930A' }}>
-            {used} earned — unlimited
+            {used} {verb} — unlimited
           </Typography>
         </Box>
       );
@@ -555,6 +556,7 @@ function UserProfile() {
             label="First-booking / occasion promo codes"
             used={publicCodes.used}
             limit={publicCodes.limit}
+            verb="used"
           />
           <DiscountProgressRow
             label="Referral codes you've used"

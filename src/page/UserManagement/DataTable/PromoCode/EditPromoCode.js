@@ -213,7 +213,7 @@ export default function EditPromoCode() {
               helperText={
                 (formik.touched.maxRedemptionsPerPeriod &&
                   formik.errors.maxRedemptionsPerPeriod) ||
-                "On top of Uses Per Customer — counts only from the Start Date below, so moving it forward for a new occasion resets this count"
+                "Counts only from the Start Date below; leave blank for no limit"
               }
               error={
                 formik.touched.maxRedemptionsPerPeriod &&
