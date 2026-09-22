@@ -399,6 +399,12 @@ const ViewBookDetail = () => {
                         value={`$${fare.additionalStopPrice.toFixed(2)}`}
                       />
                     )}
+                    {fare.sideDetourFee > 0 && (
+                      <Field
+                        label="Side Detour"
+                        value={`$${fare.sideDetourFee.toFixed(2)}`}
+                      />
+                    )}
                     {fare.gratuity > 0 && (
                       <Field
                         label="Gratuity"

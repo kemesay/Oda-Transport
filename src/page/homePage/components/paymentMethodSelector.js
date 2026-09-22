@@ -198,7 +198,7 @@ const PaymentMethodSelector = ({
                   <CheckCircleOutlineIcon sx={{ fontSize: 16, color: '#03930A' }} />
                 </ListItemIcon>
                 <ListItemText
-                  primary="Saved wallet card — fastest checkout"
+                  primary="Saved wallet card, fastest checkout"
                   primaryTypographyProps={{ variant: 'caption', lineHeight: 1.3 }}
                 />
               </ListItem>
@@ -207,7 +207,7 @@ const PaymentMethodSelector = ({
                   <CheckCircleOutlineIcon sx={{ fontSize: 16, color: '#03930A' }} />
                 </ListItemIcon>
                 <ListItemText
-                  primary="New card — billing + secure card field below"
+                  primary="New card billing + secure card field below"
                   primaryTypographyProps={{ variant: 'caption', lineHeight: 1.3 }}
                 />
               </ListItem>
@@ -235,7 +235,7 @@ const PaymentMethodSelector = ({
             control={<Radio size="small" sx={{ color: '#03930A', '&.Mui-checked': { color: '#03930A' } }} />}
             label={
               <Typography variant="body2" component="span">
-                Primary card — <strong>{primaryCard.displayName}</strong>
+                Primary card <strong>{primaryCard.displayName}</strong>
               </Typography>
             }
           />

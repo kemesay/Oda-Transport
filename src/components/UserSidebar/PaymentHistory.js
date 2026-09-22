@@ -109,9 +109,9 @@ function PaymentHistory() {
   const mapPaymentMethod = (method) => {
     switch (method) {
       case 'SQUARE_NEW_CARD':
-        return 'Square — New Card';
+        return 'Square New Card';
       case 'SQUARE_SAVED_CARD':
-        return 'Square — Saved Card';
+        return 'Square Saved Card';
       default:
         return method || 'Not specified';
     }

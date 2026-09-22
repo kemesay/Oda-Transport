@@ -39,6 +39,11 @@ export function fareBreakdownFromBooking(booking) {
   let extraOptionsPrice = 0;
   let additionalStopPrice = 0;
   let airportPickupPreferencePrice = 0;
+  // Not its own persisted column — the backend attaches it (best-effort, from
+  // the booking's side-pick stops + the CURRENT admin Side Detour setting) to
+  // the same GET response this breakdown is built from. Hourly Charter has no
+  // route to detour from, so it's never present there.
+  let sideDetourFee = 0;
 
   if (isHourly) {
     legCar = legCarFareFromCar(car, {
@@ -61,6 +66,7 @@ export function fareBreakdownFromBooking(booking) {
     airportPickupPreferencePrice = asMoney(
       booking.AirportPickupPreference?.preferencePrice
     );
+    sideDetourFee = asMoney(booking.sideDetourFee);
     extraOptionsPrice = sumExtrasFromBooking(
       booking.ExtraOptions,
       "AirportBookExtraOption",
@@ -73,6 +79,7 @@ export function fareBreakdownFromBooking(booking) {
     });
     carFare = Number((legCar * (roundTrip ? 2 : 1)).toFixed(2));
     additionalStopPrice = asMoney(booking.AdditionalStopOnTheWay?.additionalStopPrice);
+    sideDetourFee = asMoney(booking.sideDetourFee);
     extraOptionsPrice = sumExtrasFromBooking(
       booking.ExtraOptions,
       "PointToPointBookExtraOption",
@@ -90,6 +97,7 @@ export function fareBreakdownFromBooking(booking) {
     carFare +
     additionalStopPrice +
     airportPickupPreferencePrice +
+    sideDetourFee +
     extraOptionsPrice;
 
   const gratuityPct = asMoney(booking.Gratuity?.percentage);
@@ -110,6 +118,7 @@ export function fareBreakdownFromBooking(booking) {
     legCarFare: legCar,
     additionalStopPrice,
     airportPickupPreferencePrice,
+    sideDetourFee,
     extraOptionsPrice,
     gratuity,
     gratuityPercentage: gratuityPct,
