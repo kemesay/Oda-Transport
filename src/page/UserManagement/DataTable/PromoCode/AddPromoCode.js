@@ -83,10 +83,11 @@ export default function AddPromoCode() {
     setSubmitState({ loading: true, successMessage: "", errorMessage: "" });
     try {
       const payload = {
-        // Casing is preserved as typed (e.g. "OdaCar") — redemption still
-        // works regardless of how a customer later types it, since the
-        // backend's code lookup is case-insensitive.
-        code: values.code.trim(),
+        // Uppercase is the one canonical case for every promo code (public
+        // or auto-generated referral/reward) — normalized here too, not just
+        // relying on the backend, so what's shown in the success message
+        // right below matches exactly what got stored.
+        code: values.code.trim().toUpperCase(),
         discountType: values.discountType,
         discountValue: Number(values.discountValue),
         maxRedemptionsPerUser: Number(values.maxRedemptionsPerUser),
@@ -131,13 +132,16 @@ export default function AddPromoCode() {
             <TextField
               fullWidth
               label={"Code"}
-              placeholder="e.g. OdaCar"
+              placeholder="e.g. ODACAR"
               helperText={
                 (formik.touched.code && formik.errors.code) ||
-                "Shown exactly as typed — customers can still enter it in any case"
+                "Always stored and matched in UPPERCASE, however you type it here"
               }
               error={formik.touched.code && Boolean(formik.errors.code)}
               {...formik.getFieldProps("code")}
+              onChange={(e) =>
+                formik.setFieldValue("code", e.target.value.toUpperCase())
+              }
             />
           </Grid>
 

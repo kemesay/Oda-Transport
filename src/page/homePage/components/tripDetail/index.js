@@ -48,6 +48,32 @@ function Index({ formik, vehicleSummaryData, rideSummaryData, travelRouteId }) {
   const [promoStatus, setPromoStatus] = useState("idle"); // idle | loading | applied | error
   const [promoMessage, setPromoMessage] = useState("");
   const { fee, totalFee } = useSelector((state) => state.bookReducer);
+
+  // Update flow only — pre-fills this box with whatever promo code is
+  // already applied to the booking being edited (mapApiBookingToFormik sets
+  // formik.values.promoCode from the booking's data once it's fetched, which
+  // happens after this component's first render). Reflects it as "applied"
+  // rather than leaving the box looking untouched/empty when a discount is
+  // actually already in effect. Guarded by promoStatus === "idle" so it
+  // never overrides anything the customer has since done in this session.
+  useEffect(() => {
+    if (promoStatus === "idle" && formik.values.promoCode) {
+      // Uppercased defensively — a code applied before every code was
+      // normalized to uppercase (e.g. an older lowercase-stored referral
+      // code) should never surface in a different case than what the
+      // customer would type themselves.
+      const code = formik.values.promoCode.toUpperCase();
+      setPromoCodeInput(code);
+      setPromoStatus("applied");
+      const discount = Number(formik.values.promoDiscount) || 0;
+      setPromoMessage(
+        discount > 0
+          ? `${code} is applied — you're saving $${discount.toFixed(2)}.`
+          : `${code} is applied.`
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formik.values.promoCode]);
   const userTimezone = useMemo(() => dayjs.tz.guess(), []);
   const toUserZone = useCallback(
     (value) => (value ? dayjs(value).tz(userTimezone) : null),
@@ -115,6 +141,12 @@ function Index({ formik, vehicleSummaryData, rideSummaryData, travelRouteId }) {
       const { discount } = response.data;
       formik.setFieldValue("promoCode", code.toUpperCase());
       formik.setFieldValue("promoDiscount", discount);
+      // Update flow: marks the field as customer-touched so the submit step
+      // knows to actually send it — otherwise an update save can't tell
+      // "customer applied/removed a code this session" apart from "this
+      // booking simply has no promo box touched," and would leave whatever
+      // promo the booking already had completely untouched either way.
+      formik.setFieldTouched("promoCode", true, false);
       setPromoStatus("applied");
       setPromoMessage(`Promo code applied — you saved $${Number(discount).toFixed(2)}.`);
     } catch (error) {
@@ -129,6 +161,8 @@ function Index({ formik, vehicleSummaryData, rideSummaryData, travelRouteId }) {
   const handleRemovePromoCode = () => {
     formik.setFieldValue("promoCode", "");
     formik.setFieldValue("promoDiscount", 0);
+    // See handleApplyPromoCode above — same reason.
+    formik.setFieldTouched("promoCode", true, false);
     setPromoCodeInput("");
     setPromoStatus("idle");
     setPromoMessage("");

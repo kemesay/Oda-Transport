@@ -50,6 +50,26 @@ function formatCountdown(msRemaining) {
   return `${seconds}s`;
 }
 
+/**
+ * Fetches the site's social-share image (same file used for Open Graph/
+ * Twitter link previews, see public/index.html) as a File, for attaching
+ * directly to a native share (Web Share API Level 2). Returns null on any
+ * failure — the caller just falls back to a plain text+link share, which
+ * still carries the same image via the link's own Open Graph preview.
+ */
+async function fetchReferralShareImageFile() {
+  try {
+    const response = await fetch('/social-share.jpg');
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return new File([blob], 'oda-referral-share.jpg', {
+      type: blob.type || 'image/jpeg',
+    });
+  } catch {
+    return null;
+  }
+}
+
 const ResponsiveGrid = styled(Grid)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     '& .MuiGrid-item': {
@@ -318,12 +338,26 @@ function UserProfile() {
   const handleShareReferralLink = async () => {
     if (!referralCode) return;
     if (navigator.share) {
+      const shareData = {
+        title: 'ODA Transportation',
+        text: referralCode.shareMessage,
+        url: referralCode.link,
+      };
       try {
-        await navigator.share({
-          title: 'ODA Transportation',
-          text: referralCode.shareMessage,
-          url: referralCode.link,
-        });
+        // Attach the actual promo image when the browser supports file
+        // sharing (Web Share API Level 2 — most mobile Chrome/Android,
+        // Safari iOS 15+). This makes the image show up as an attached
+        // photo in the share sheet itself, rather than relying on the
+        // receiving app to fetch and unfurl the link's Open Graph image —
+        // plain SMS and some clients never do that at all. Falls back to
+        // the plain text+link share (still backed by the same OG image via
+        // the link preview) wherever file-sharing isn't supported.
+        const imageFile = await fetchReferralShareImageFile();
+        if (imageFile && navigator.canShare?.({ files: [imageFile] })) {
+          await navigator.share({ ...shareData, files: [imageFile] });
+          return;
+        }
+        await navigator.share(shareData);
       } catch (err) {
         // AbortError just means the user closed the native share sheet — not an error.
         if (err.name !== 'AbortError') console.error('Share failed:', err);
@@ -402,7 +436,7 @@ function UserProfile() {
         <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body2" color="text.secondary">{label}</Typography>
           <Typography variant="body2" sx={{ fontWeight: 600, color: '#03930A' }}>
-            {used} {verb} — unlimited
+            {used} {verb} of unlimited
           </Typography>
         </Box>
       );
@@ -453,7 +487,7 @@ function UserProfile() {
           Active Promotion
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          A current promo code you can use right now on your next booking.
+          A public promo is a limited-time deal open to every customer, great for seasonal offers and special occasions.
         </Typography>
 
         <StatsCard sx={{ '&:hover': { transform: 'none', boxShadow: 'none' } }}>
@@ -602,8 +636,8 @@ function UserProfile() {
           Refer a Friend
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Share your link, your friend gets {referralCode.discountValue}% off their first ride,
-          and you get a reward once they complete it.
+          Your personal code is used to invite unlimited friends. Each gets {referralCode.discountValue}% off
+          their first ride, and you earn a reward every time one completes and pays for it.
         </Typography>
 
         <StatsCard sx={{ '&:hover': { transform: 'none', boxShadow: 'none' } }}>

@@ -141,6 +141,26 @@ export function mapApiBookingToFormik(travelTypeLabel, d) {
     prevAddtionalStopOnTheWayFee: d.AdditionalStopOnTheWay?.additionalStopPrice
       ? parseFloat(d.AdditionalStopOnTheWay.additionalStopPrice)
       : 0,
+    // Pre-fills the shared promo-code box (TripDetailForm) with whatever's
+    // already applied to this booking — `appliedPromoCode` is the backend's
+    // display-only field sourced from the confirmed redemption row, not a
+    // real column, same idea as sideDetourFee above.
+    promoCode: d.appliedPromoCode ?? "",
+    promoDiscount: d.promoDiscountAmountInDollars
+      ? parseFloat(d.promoDiscountAmountInDollars)
+      : 0,
+    // Side-pick detour stops — RideDetailForm already has full add/remove UI
+    // for this field (shared with the create flow), it just never had
+    // anything to pre-fill from an existing booking until now.
+    sidePicks: Array.isArray(d.SidePickDetours)
+      ? [...d.SidePickDetours]
+          .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+          .map((sp) => ({
+            address: sp.address ?? "",
+            latitude: sp.latitude != null ? Number(sp.latitude) : null,
+            longitude: sp.longitude != null ? Number(sp.longitude) : null,
+          }))
+      : [],
   };
 
   if (d.PaymentDetail) {

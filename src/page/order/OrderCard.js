@@ -453,6 +453,15 @@ export default function OrderCard(props) {
   };
 
   const isCompleted = bookingStatus === 'COMPLETED';
+  // Only actually locked from self-service editing once the trip is BOTH
+  // completed AND paid in full — matches the backend's own update guard
+  // exactly (updatePointToPointBookForUser / updateAirportBookForUser /
+  // updateHourlyCharterBookForUser). Deliberately separate from `isCompleted`
+  // above, which still drives the card's "done" styling regardless of
+  // payment status. Uses the live-polled payment status, not the possibly
+  // stale initial prop, since payment status can change while this card is
+  // open (e.g. a driver takes payment while the customer is browsing).
+  const isLockedFromEditing = isCompleted && displayPaymentStatus === 'PAID';
 
   return (
     <StyledCard
@@ -633,7 +642,7 @@ export default function OrderCard(props) {
       <CardActions disableSpacing>
         <ActionButton
           onClick={handleUpdateBooking}
-          disabled={isCompleted}
+          disabled={isLockedFromEditing}
         >
           Update Booking
         </ActionButton>
@@ -672,7 +681,7 @@ export default function OrderCard(props) {
               handleUpdateBooking();
             }}
             variant="contained"
-            disabled={isCompleted}
+            disabled={isLockedFromEditing}
             sx={{
               bgcolor: '#03930A',
               '&:hover': { bgcolor: '#027508' },
