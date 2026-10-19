@@ -11,6 +11,12 @@ const initialState = {
   cost: 0,
   fee: 0,
   totalFee: 0,
+  // Itemized version of totalFee (fare, extras, additional stop, pickup
+  // preference, side detour, gratuity, discount) — kept as its own snapshot
+  // object rather than derived piecemeal from `fee`, so a receipt/summary
+  // can show a full breakdown without re-deriving it from the running
+  // accumulator above.
+  feeBreakdown: {},
   prevAirportPickupPreferenceFee: 0,
 
   isGetPassengerBookLoading: false,
@@ -41,6 +47,9 @@ const UserSlice = createSlice({
     },
     updateTotalFee: (state, action) => {
       state.totalFee = action.payload
+    },
+    updateFeeBreakdown: (state, action) => {
+      state.feeBreakdown = action.payload;
     },
     reduceExtraOptionFee: (state, action) => {
       return {
@@ -120,5 +129,6 @@ export const {
   addAdditionalStopFee,
   addMinimumInitialFee,
   updateTotalFee,
+  updateFeeBreakdown,
 } = UserSlice.actions;
 export default UserSlice.reducer;

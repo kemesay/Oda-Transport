@@ -4,8 +4,10 @@ import useGetData from "../../../../store/hooks/useGetData";
 import { BACKEND_API } from "../../../../store/utils/API";
 import { columns } from "./columns";
 import { ToastContainer, toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 function PromoCode() {
+  const navigate = useNavigate();
   const endpoint = `/api/v1/promo-codes?pageSize=200`;
 
   const {
@@ -34,12 +36,20 @@ function PromoCode() {
     table.setEditingRow(null);
   };
 
+  // "View" in the row menu doubles as "Edit" here — it opens the full edit
+  // page (discount, limits, dates, active state) for the selected code,
+  // including one that's currently inactive.
+  const handleViewClick = (rowData) => {
+    navigate("/dashboard/edit-promo-code", { state: { rowData } });
+  };
+
   return (
     <div>
       <MDataTable
         headerTitle="Promo Codes"
         add="Promo Code"
         handleEdit={handleEdit}
+        handleViewClick={handleViewClick}
         editable={true}
         columns={columns}
         data={response?.data || []}

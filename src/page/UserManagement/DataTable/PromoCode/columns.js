@@ -22,13 +22,6 @@ export const columns = [
     Cell: ({ row }) => formatDiscount(row.original),
   },
   {
-    accessorKey: "minFareAmount",
-    header: "Min Fare",
-    enableEditing: false,
-    Cell: ({ cell }) =>
-      cell.getValue() != null ? `$${Number(cell.getValue()).toFixed(2)}` : "Any",
-  },
-  {
     accessorKey: "maxRedemptionsPerUser",
     header: "Uses / User",
     enableEditing: false,
@@ -41,12 +34,16 @@ export const columns = [
   },
   {
     accessorKey: "maxRedemptionsPerPeriod",
-    header: "Period Cap",
+    header: "Uses / Period",
     enableEditing: false,
-    Cell: ({ row }) =>
-      row.original.periodDays && row.original.maxRedemptionsPerPeriod
-        ? `${row.original.maxRedemptionsPerPeriod} / ${row.original.periodDays} days`
-        : "—",
+    Cell: ({ cell }) => cell.getValue() ?? "—",
+  },
+  {
+    accessorKey: "startsAt",
+    header: "Starts",
+    enableEditing: false,
+    Cell: ({ cell }) =>
+      cell.getValue() ? new Date(cell.getValue()).toLocaleDateString() : "Immediately",
   },
   {
     accessorKey: "expiresAt",

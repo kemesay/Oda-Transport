@@ -24,9 +24,9 @@ import { getAllCars } from "../../store/actions/carAction";
 import { getExtraOptions } from "../../store/actions/extraOptions";
 import GuestUser from "./components/GuestUser";
 import axios from "axios";
-import { addMinimumInitialFee, updateTotalFee } from "../../store/reducers/bookReducers";
+import { addMinimumInitialFee, updateTotalFee, updateFeeBreakdown } from "../../store/reducers/bookReducers";
 import { BACKEND_API } from "../../store/utils/API";
-import { calculateServiceFee } from "../../utils/bookingFeeCalculator";
+import { calculateServiceFee, calculateServiceFeeBreakdown } from "../../utils/bookingFeeCalculator";
 import useSideDetourSettings from "../../hooks/useSideDetourSettings";
 import { PAYMENT_METHODS } from "../../constants/paymentMethods";
 import SquarePaymentStatus from "../../components/SquarePaymentStatus";
@@ -115,7 +115,7 @@ function Index() {
     const { isBookSuccess, errorMessage, isError, isBookPending, lastBookingResult } = useSelector(
         (state) => state.bookReducer
     );
-    const { totalFee } = useSelector((state) => state.bookReducer);
+    const { totalFee, feeBreakdown } = useSelector((state) => state.bookReducer);
     var travelType = location.pathname.split("/").pop();
     const [open, setOpen] = useState(false);
 
@@ -831,25 +831,41 @@ function Index() {
                 ? sideDetourSettings.startFee
                 : 0;
 
-        dispatch(
-            updateTotalFee(
-                calculateServiceFee({
-                    travelRouteId: travelType,
-                    tripType,
-                    vehicleFee,
-                    minimumStartFee,
-                    extraOptionFee,
-                    distanceInMiles,
-                    hour,
-                    stopOnWayFee,
-                    pickupPreferenceFee,
-                    sideDetourFee,
-                    promoDiscount,
-                    gratuityFee,
-                    gratuityPercentage,
-                })
-            )
-        );
+        const feeParams = {
+            travelRouteId: travelType,
+            tripType,
+            vehicleFee,
+            minimumStartFee,
+            extraOptionFee,
+            distanceInMiles,
+            hour,
+            stopOnWayFee,
+            pickupPreferenceFee,
+            sideDetourFee,
+            promoDiscount,
+            gratuityFee,
+            gratuityPercentage,
+        };
+
+        // Guarded so a dispatch only happens when a number actually changes —
+        // this effect's deps are the Formik objects themselves (recreated on
+        // every render of this page), and this page re-reads this same
+        // Redux slice, so an unconditional dispatch here would re-trigger
+        // its own effect forever ("Maximum update depth exceeded").
+        // Skipping once the values settle breaks that cycle.
+        const newTotal = calculateServiceFee(feeParams);
+        if (newTotal !== totalFee) {
+            dispatch(updateTotalFee(newTotal));
+        }
+
+        // Itemized snapshot (fare, extras, additional stop, pickup
+        // preference, side detour, gratuity, discount) for the step-by-step
+        // fare summary / receipt — same inputs as the total above, so the
+        // line items always add up to exactly the total shown.
+        const newBreakdown = calculateServiceFeeBreakdown(feeParams);
+        if (JSON.stringify(newBreakdown) !== JSON.stringify(feeBreakdown)) {
+            dispatch(updateFeeBreakdown(newBreakdown));
+        }
     };
 
     useEffect(() => {

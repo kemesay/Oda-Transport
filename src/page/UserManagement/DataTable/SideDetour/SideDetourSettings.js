@@ -94,8 +94,8 @@ export default function SideDetourSettings() {
         <Typography sx={{ color: "#666", fontSize: 14 }}>
           An optional flat fee, on top of the normal per-mile fare, for any Point
           to Point or Airport booking where the customer adds at least one
-          side-pick detour stop. Applied once per booking — the same for a
-          one-way trip and a round trip — and only charged when a detour is
+          side-pick detour stop. Applied once per booking, the same for a
+          one-way trip and a round trip and only charged when a detour is
           actually used. Off by default; nothing changes until you turn it on.
         </Typography>
       </Box>
@@ -126,8 +126,8 @@ export default function SideDetourSettings() {
                 }
                 label={
                   formik.values.isActive
-                    ? "Active — fee applies to new bookings with a detour"
-                    : "Inactive — no side detour fee is charged"
+                    ? "Active: fee applies to new bookings with a detour"
+                    : "Inactive: no side detour fee is charged"
                 }
               />
             </Grid>

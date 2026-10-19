@@ -59,6 +59,7 @@ import Gratuity from "./page/UserManagement/DataTable/Gratutity/Gratuity";
 import GratuityDetails from "./page/UserManagement/DataTable/Gratutity/GratuityDetails";
 import PromoCode from "./page/UserManagement/DataTable/PromoCode/PromoCode";
 import AddPromoCode from "./page/UserManagement/DataTable/PromoCode/AddPromoCode";
+import EditPromoCode from "./page/UserManagement/DataTable/PromoCode/EditPromoCode";
 import ReferralSettings from "./page/UserManagement/DataTable/PromoCode/ReferralSettings";
 import SideDetourSettings from "./page/UserManagement/DataTable/SideDetour/SideDetourSettings";
 import Layout from './components/layout/PageWrapper';
@@ -262,6 +263,7 @@ function App() {
 
                 <Route path={"promo-codes"} element={<PromoCode />}></Route>
                 <Route path={"add-promo-code"} element={<AddPromoCode />}></Route>
+                <Route path={"edit-promo-code"} element={<EditPromoCode />}></Route>
                 <Route path={"referral-settings"} element={<ReferralSettings />}></Route>
                 <Route path={"side-detour-settings"} element={<SideDetourSettings />}></Route>
                 <Route path={"airportbook"} element={<AirportBooks />}></Route>

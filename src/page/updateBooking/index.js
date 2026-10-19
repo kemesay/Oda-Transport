@@ -37,11 +37,13 @@ import { getAllCars } from "../../store/actions/carAction";
 import { getExtraOptions } from "../../store/actions/extraOptions";
 import { updateCars } from "../../store/reducers/carReducer";
 import { updateExtraOption } from "../../store/reducers/extraOptionReducer";
-import { updateTotalFee } from "../../store/reducers/bookReducers";
+import { updateTotalFee, updateFeeBreakdown } from "../../store/reducers/bookReducers";
 import { store } from "../../store";
 import useLiveBookingServiceFee from "../../hooks/useLiveBookingServiceFee";
+import useSideDetourSettings from "../../hooks/useSideDetourSettings";
 import {
   calculateServiceFee,
+  calculateServiceFeeBreakdown,
   sumExtraOptionFeePerLeg,
   computeGratuityOnCarFare,
   getLegCarPrice,
@@ -51,6 +53,7 @@ import SquarePaymentForm from "../../components/SquarePaymentForm";
 import { PAYMENT_METHODS } from "../../constants/paymentMethods";
 import { validateCardholderName } from "../../utils/nameUtil";
 import { validateZip } from "../../utils/zipUtil";
+import { applySquarePaymentToBody } from "../../utils/squareBookingPayload";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -82,11 +85,18 @@ function UpdateBooking() {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const sideDetourSettings = useSideDetourSettings();
   const { totalFee } = useSelector((state) => state.bookReducer);
   const [activeStep, setActiveStep] = useState(0);
   const [bookingData, setBookingData] = useState(null);
   const [originalTotal, setOriginalTotal] = useState(0);
   const [paymentRetokenError, setPaymentRetokenError] = useState(null);
+  // Explicit opt-in — the customer must click "Change payment method" before
+  // PaymentMethodSelector even mounts. Doubles as the touched-flag: the PATCH
+  // body only ever includes payment fields when this is true at submit time,
+  // so a customer who never opens this section leaves their payment method
+  // completely untouched (same reasoning as promo code's touched-gating).
+  const [changingPayment, setChangingPayment] = useState(false);
   const [travelRouteId, setTravelRouteId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -197,10 +207,19 @@ function UpdateBooking() {
           originalTotal > 0 &&
           totalFee > 0 &&
           Math.abs(originalTotal - totalFee) > 0.009;
+        // Legacy safety net: price went up on a SQUARE_NEW booking and the
+        // customer never opened "Change payment method" — still force a
+        // re-tokenize of the same new-card flow so Square authorizes the
+        // correct (higher) amount. Superseded entirely once the customer
+        // opts into changingPayment — that flow does its own tokenize below.
         const needsSquareRetoken =
-          priceChanged && bookingData?.paymentMethod === PAYMENT_METHODS.SQUARE_NEW;
+          !changingPayment &&
+          priceChanged &&
+          bookingData?.paymentMethod === PAYMENT_METHODS.SQUARE_NEW;
+        const needsNewCardTokenize =
+          changingPayment && values.paymentMethod === PAYMENT_METHODS.SQUARE_NEW;
 
-        if (needsSquareRetoken) {
+        if (needsSquareRetoken || needsNewCardTokenize) {
           const cardNameError = validateCardholderName(values.cardDetails?.cardOwnerName);
           const cardZipError = validateZip(values.cardDetails?.zipCode);
           if (cardNameError || cardZipError) {
@@ -213,7 +232,9 @@ function UpdateBooking() {
               await values.squareTokenize();
             } else if (!values.square?.sourceId) {
               setPaymentRetokenError(
-                "Trip total changed — re-enter your card to authorize the new amount."
+                needsNewCardTokenize
+                  ? "Enter your new card details to continue."
+                  : "Trip total changed — re-enter your card to authorize the new amount."
               );
               setLoading(false);
               return;
@@ -223,6 +244,18 @@ function UpdateBooking() {
             setLoading(false);
             return;
           }
+        }
+
+        if (
+          changingPayment &&
+          values.paymentMethod === PAYMENT_METHODS.SQUARE_SAVED &&
+          !values.squareCardId
+        ) {
+          setPaymentRetokenError(
+            "Selected card isn't linked to Square. Choose another card or add a new one."
+          );
+          setLoading(false);
+          return;
         }
 
         const tz = dayjs.tz.guess();
@@ -305,6 +338,14 @@ function UpdateBooking() {
           }
 
           if (extraOptions.length > 0) body.extraOptions = extraOptions;
+          // Always sent (even empty) — unlike create, an update must be able
+          // to clear stops the booking already has, not just add new ones.
+          body.sidePicks = Array.isArray(values.sidePicks) ? values.sidePicks : [];
+          // Only sent when the customer actually touched the promo box this
+          // session (applied or removed) — otherwise the backend has no way
+          // to tell "leave whatever's already applied alone" apart from
+          // "remove it," since both would look like an empty string.
+          if (formik.touched.promoCode) body.promoCode = values.promoCode || "";
         } else if (travelType === "point to point") {
           endpoint = `/api/v1/users/bookings/mine/p2p/${bookingData.bookId}`;
           body = {
@@ -341,6 +382,10 @@ function UpdateBooking() {
           }
 
           if (extraOptions.length > 0) body.extraOptions = extraOptions;
+          // Always sent (even empty) — see the airport branch above.
+          body.sidePicks = Array.isArray(values.sidePicks) ? values.sidePicks : [];
+          // See the airport branch above for why this is touched-gated.
+          if (formik.touched.promoCode) body.promoCode = values.promoCode || "";
         } else if (travelType === "hourly") {
           endpoint = `/api/v1/users/bookings/mine/hourly/${bookingData.bookId}`;
           body = {
@@ -363,11 +408,19 @@ function UpdateBooking() {
             carId: Number(values.vehicle),
             gratuityId: Number(values.gratuityId),
           };
+          // See the airport branch above for why this is touched-gated.
+          if (formik.touched.promoCode) body.promoCode = values.promoCode || "";
         } else {
           throw new Error("Invalid booking type");
         }
 
-        if (needsSquareRetoken && values.square?.sourceId) {
+        if (changingPayment) {
+          // Shapes `square`/`paymentDetailId`/`squareCardId` on the body
+          // exactly like a brand-new booking would — same helper the create
+          // flow uses — based on whichever method the customer picked in
+          // PaymentMethodSelector this session.
+          applySquarePaymentToBody(body, values);
+        } else if (needsSquareRetoken && values.square?.sourceId) {
           body.square = values.square;
         }
 
@@ -522,6 +575,11 @@ function UpdateBooking() {
         hour: mergedForm.hour,
         stopOnWayFee: mergedForm.stopOnWayFee,
         pickupPreferenceFee: mergedForm.pickupPreferenceFee,
+        sideDetourFee:
+          (mergedForm.sidePicks || []).length > 0 && sideDetourSettings.isActive
+            ? sideDetourSettings.startFee
+            : 0,
+        promoDiscount: mergedForm.promoDiscount || 0,
       };
       const gratuityPercentage =
         merged.Gratuity?.percentage != null
@@ -543,11 +601,13 @@ function UpdateBooking() {
         },
       });
 
-      dispatch(
-        updateTotalFee(
-          calculateServiceFee({ ...feeBase, gratuityPercentage, gratuityFee })
-        )
-      );
+      const initialFeeParams = { ...feeBase, gratuityPercentage, gratuityFee };
+      dispatch(updateTotalFee(calculateServiceFee(initialFeeParams)));
+      // Itemized snapshot for StepSummary's "Fare Detail" rows — this used to
+      // never be dispatched here, so re-opening an existing booking to edit
+      // it showed only a lump total, never the line-item breakdown the
+      // create flow shows for the exact same fields.
+      dispatch(updateFeeBreakdown(calculateServiceFeeBreakdown(initialFeeParams)));
     } catch (error) {
       setError(
         error.response?.data?.message ||
@@ -593,8 +653,19 @@ function UpdateBooking() {
     totalFee > 0 &&
     Math.abs(originalTotal - totalFee) > 0.009;
   const showSquareRetoken =
+    !changingPayment &&
     priceChangedForPayment &&
     bookingData?.paymentMethod === PAYMENT_METHODS.SQUARE_NEW;
+  const currentPaymentLabel = (() => {
+    const detail = bookingData?.PaymentDetail;
+    if (detail?.cardBrand && detail?.last4) {
+      return `${detail.cardBrand} •••• ${detail.last4}`;
+    }
+    if (bookingData?.paymentMethod === PAYMENT_METHODS.SQUARE_NEW) {
+      return 'New card on file';
+    }
+    return 'Card on file';
+  })();
 
   useLiveBookingServiceFee({
     enabled: Boolean(bookingData && travelRouteId),
@@ -607,6 +678,11 @@ function UpdateBooking() {
     hour: v.hour,
     stopOnWayFee: v.stopOnWayFee,
     pickupPreferenceFee: v.pickupPreferenceFee,
+    sideDetourFee:
+      (v.sidePicks || []).length > 0 && sideDetourSettings.isActive
+        ? sideDetourSettings.startFee
+        : 0,
+    promoDiscount: v.promoDiscount || 0,
     gratuityFee: v.gratuityFee,
     gratuityPercentage: v.gratuityPercentage,
   });
@@ -677,22 +753,55 @@ function UpdateBooking() {
         );
       case 3:
         return (
-          <ContactDetailForm
-            formik={formik}
-            travelRouteId={travelRouteId}
-            skipAutoContactFill
-            hidePaymentSection
-            vehicleSummaryData={[]}
-            rideSummaryData={{
-              tripType: formik.values.tripType,
-              pickupPhysicalAddress: formik.values.pickupPhysicalAddress,
-              dropoffPhysicalAddress: formik.values.dropoffPhysicalAddress,
-              hour: formik.values.hour,
-              airportLocationAddress: formik.values.airportLocationAddress,
-              hotel: formik.values.hotel,
-            }}
-            tripSummaryData={[]}
-          />
+          <>
+            <Box
+              sx={{
+                mt: 2,
+                mb: 1,
+                p: 2,
+                border: '1px solid rgba(3, 147, 10, 0.2)',
+                borderRadius: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 1,
+              }}
+            >
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Payment method
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {currentPaymentLabel}
+                </Typography>
+              </Box>
+              <Button
+                size="small"
+                variant={changingPayment ? 'outlined' : 'text'}
+                onClick={() => setChangingPayment((prev) => !prev)}
+                sx={{ color: '#03930A' }}
+              >
+                {changingPayment ? 'Cancel' : 'Change payment method'}
+              </Button>
+            </Box>
+            <ContactDetailForm
+              formik={formik}
+              travelRouteId={travelRouteId}
+              skipAutoContactFill
+              hidePaymentSection={!changingPayment}
+              vehicleSummaryData={[]}
+              rideSummaryData={{
+                tripType: formik.values.tripType,
+                pickupPhysicalAddress: formik.values.pickupPhysicalAddress,
+                dropoffPhysicalAddress: formik.values.dropoffPhysicalAddress,
+                hour: formik.values.hour,
+                airportLocationAddress: formik.values.airportLocationAddress,
+                hotel: formik.values.hotel,
+              }}
+              tripSummaryData={[]}
+            />
+          </>
         );
       default:
         return null;

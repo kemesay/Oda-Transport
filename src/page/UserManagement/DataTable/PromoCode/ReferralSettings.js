@@ -21,12 +21,6 @@ const referralSettingsValidationSchema = yup.object({
     .min(0.01, "Must be greater than 0")
     .max(100, "Can't exceed 100%")
     .required("Required"),
-  maxLifetimePublicRedemptions: yup
-    .number()
-    .typeError("Must be a whole number")
-    .integer("Must be a whole number")
-    .min(0, "Cannot be negative")
-    .required("Required"),
   maxLifetimeReferralRedemptions: yup
     .number()
     .typeError("Must be a whole number")
@@ -52,7 +46,6 @@ export default function ReferralSettings() {
   const formik = useFormik({
     initialValues: {
       referralDiscountPercent: "",
-      maxLifetimePublicRedemptions: "",
       maxLifetimeReferralRedemptions: "",
     },
     validationSchema: referralSettingsValidationSchema,
@@ -66,7 +59,6 @@ export default function ReferralSettings() {
     if (settings) {
       formik.setValues({
         referralDiscountPercent: settings.referralDiscountPercent,
-        maxLifetimePublicRedemptions: settings.maxLifetimePublicRedemptions,
         maxLifetimeReferralRedemptions: settings.maxLifetimeReferralRedemptions,
       });
     }
@@ -78,7 +70,6 @@ export default function ReferralSettings() {
     try {
       await BACKEND_API.patch("/api/v1/promo-codes/referral-settings", {
         referralDiscountPercent: Number(values.referralDiscountPercent),
-        maxLifetimePublicRedemptions: Number(values.maxLifetimePublicRedemptions),
         maxLifetimeReferralRedemptions: Number(values.maxLifetimeReferralRedemptions),
       });
       setSubmitState({
@@ -148,24 +139,6 @@ export default function ReferralSettings() {
                 }
                 InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
                 {...formik.getFieldProps("referralDiscountPercent")}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                type="number"
-                label={"Public Codes Per Customer (Lifetime)"}
-                helperText={
-                  (formik.touched.maxLifetimePublicRedemptions &&
-                    formik.errors.maxLifetimePublicRedemptions) ||
-                  "Max public/marketing codes one customer can ever redeem"
-                }
-                error={
-                  formik.touched.maxLifetimePublicRedemptions &&
-                  Boolean(formik.errors.maxLifetimePublicRedemptions)
-                }
-                {...formik.getFieldProps("maxLifetimePublicRedemptions")}
               />
             </Grid>
 
